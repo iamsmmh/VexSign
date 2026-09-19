@@ -19,6 +19,8 @@ class ServerInstaller: Identifiable, ObservableObject {
 	let id = UUID()
 	let port = Int.random(in: 4000...8000)
 	private var _needsShutdown = false
+	private let _serverMethod: Int
+	private let _localhostOnly: Bool
 
 	var packageUrl: URL?
 	var manifestUrl: URL?
@@ -29,7 +31,14 @@ class ServerInstaller: Identifiable, ObservableObject {
 
 	private var backgroundTaskManager: BackgroundTaskManager?
 
-	init(app: AppInfoPresentable, viewModel: InstallerStatusViewModel) throws {
+	init(
+		app: AppInfoPresentable,
+		viewModel: InstallerStatusViewModel,
+		serverMethod: Int? = nil,
+		localhostOnly: Bool? = nil
+	) throws {
+		self._serverMethod = serverMethod ?? UserDefaults.standard.integer(forKey: "VexSign.serverMethod")
+		self._localhostOnly = localhostOnly ?? UserDefaults.standard.bool(forKey: "VexSign.ipFix")
 		self.app = app
 		self.viewModel = viewModel
 
@@ -39,13 +48,14 @@ class ServerInstaller: Identifiable, ObservableObject {
 		do {
 			let server = try setupApp(port: port)
 			_server = server
+			_needsShutdown = true
 			try _configureRoutes()
 			try server.server.start()
-			_needsShutdown = true
 			FileLogger.log("server listening on \(sni()):\(port), payload=\(payloadEndpoint.absoluteString)", category: "install")
 		} catch {
 			FileLogger.error("server failed to start: \(error)", category: "install")
 			startupError = error
+			_shutdownServer()
 		}
 	}
 	
@@ -127,10 +137,13 @@ class ServerInstaller: Identifiable, ObservableObject {
 		comps.port = port
 		comps.path = "/healthz"
 
-		guard let url = comps.url else { return nil }
+		guard let url = comps.url else { return LocalInstallError.invalidHostname }
 
 		do {
 			let (_, response) = try await URLSession.shared.data(for: URLRequest(url: url, timeoutInterval: 10))
+			guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+				throw LocalInstallError.unreachable
+			}
 			FileLogger.log("self check reached the server: HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0)", category: "install")
 			return nil
 		} catch {
@@ -154,10 +167,35 @@ class ServerInstaller: Identifiable, ObservableObject {
 	}
 
 	func getServerMethod() -> Int {
-		UserDefaults.standard.integer(forKey: "VexSign.serverMethod")
+		_serverMethod
 	}
 
 	func getIPFix() -> Bool {
-		UserDefaults.standard.bool(forKey: "VexSign.ipFix")
+		_localhostOnly
+	}
+}
+
+// Keep Fully Local genuinely local: never disable TLS trust or silently send a
+// manifest to a remote service. The queue offers an explicit Semi Local retry.
+extension ServerInstaller {
+	enum LocalInstallError: LocalizedError {
+		case missingTLS
+		case invalidHostname
+		case unreachable
+		case unavailable(Error)
+
+		var errorDescription: String? {
+			switch self {
+			case .missingTLS:
+				return .localized("Fully Local requires SSL certificates. Go to Settings → Installation → Update SSL Certificates, then retry.")
+			case .invalidHostname:
+				return .localized("The local SSL hostname is missing or invalid. Update SSL Certificates in Settings → Installation.")
+			case .unreachable:
+				return .localized("The local HTTPS server did not respond successfully.")
+			case .unavailable(let error):
+				return .localized("Fully Local could not start. Update SSL Certificates in Settings → Installation and check that your DNS/VPN allows the certificate hostname to reach this device. You can also retry with Semi Local (localhost); this uses an online manifest service, but the IPA stays on your device.")
+					+ "\n\n" + error.localizedDescription
+			}
+		}
 	}
 }

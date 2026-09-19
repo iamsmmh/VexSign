@@ -28,7 +28,7 @@ final class AppInstaller: ObservableObject {
 
 	private let _isSharing: Bool
 	private let _installationMethod = UserDefaults.standard.integer(forKey: "VexSign.installationMethod")
-	private let _serverMethod = UserDefaults.standard.integer(forKey: "VexSign.serverMethod")
+	private let _serverMethod: Int
 	private let _useShareSheet = UserDefaults.standard.bool(forKey: "VexSign.useShareSheetForArchiving")
 	private let _useNovaDNSDynamic = UserDefaults.standard.bool(forKey: "VexSign.useNovaDNSDynamic")
 
@@ -42,13 +42,19 @@ final class AppInstaller: ObservableObject {
 
 	var fallbackPageURL: URL? { _server?.pageEndpoint }
 
-	init(app: AppInfoPresentable, isSharing: Bool = false) {
+	var canRetryUsingLocalhost: Bool { !_isSharing && _installationMethod == 0 && _serverMethod == 0 }
+
+	init(app: AppInfoPresentable, isSharing: Bool = false, useLocalhost: Bool = false) {
+		self._serverMethod = useLocalhost ? 1 : UserDefaults.standard.integer(forKey: "VexSign.serverMethod")
 		self.app = app
 		self._isSharing = isSharing
 		self.viewModel = InstallerStatusViewModel(isIdevice: _installationMethod == 1)
 
 		if !isSharing, _installationMethod == 0 {
-			_server = try? ServerInstaller(app: app, viewModel: viewModel)
+			_server = try? ServerInstaller(
+				app: app, viewModel: viewModel,
+				serverMethod: _serverMethod, localhostOnly: useLocalhost ? true : nil
+			)
 		}
 	}
 
@@ -164,7 +170,7 @@ final class AppInstaller: ObservableObject {
 					FileLogger.error("idevice fallback failed: \(error.localizedDescription)", category: "install")
 				}
 			}
-			viewModel.status = .broken(failure)
+			viewModel.status = .broken(_serverMethod == 0 ? ServerInstaller.LocalInstallError.unavailable(failure) : failure)
 		} else {
 			viewModel.status = .ready
 		}

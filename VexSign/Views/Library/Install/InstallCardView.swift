@@ -106,11 +106,12 @@ private struct InstallStatusView: View {
 	@ViewBuilder
 	private func _button() -> some View {
 		ZStack {
-			if viewModel.isCompleted {
+			if case .completed(.success) = viewModel.status,
+			   let identifier = app.identifier, !identifier.isEmpty {
 				Button {
-					UIApplication.openApp(with: app.identifier ?? "")
+					UIApplication.openApp(with: identifier)
 				} label: {
-					NBButton("Open", systemImage: "", style: .text)
+					NBButton(.localized("Open"), systemImage: "", style: .text)
 				}
 				.padding()
 				.compatTransition()

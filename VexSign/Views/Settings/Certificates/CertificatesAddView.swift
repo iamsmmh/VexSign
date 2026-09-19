@@ -17,10 +17,11 @@ struct CertificatesAddView: View {
 	@State private var _provisionURL: URL? = nil
 	@State private var _p12Password: String = ""
 	@State private var _certificateName: String = ""
+	@State private var _isSaving = false
 	@State private var _showCracker: Bool = false
 	
 	var saveButtonDisabled: Bool {
-		_p12URL == nil || _provisionURL == nil
+		_isSaving || _p12URL == nil || _provisionURL == nil
 	}
 	
 	// MARK: Body
@@ -58,6 +59,8 @@ struct CertificatesAddView: View {
 					TextField(.localized("Nickname (Optional)"), text: $_certificateName)
 				}
 			}
+			.disabled(_isSaving)
+			.interactiveDismissDisabled(_isSaving)
 			.dismissableKeyboard()
 			.sheet(isPresented: $_showCracker) {
 				if let p12URL = _p12URL {
@@ -68,7 +71,10 @@ struct CertificatesAddView: View {
 				}
 			}
 			.toolbar {
-				NBToolbarButton(role: .cancel)
+				NBToolbarButton(
+					.localized("Cancel"), systemImage: "xmark",
+					placement: .cancellationAction, isDisabled: _isSaving
+				) { dismiss() }
 				
 				NBToolbarButton(
 					.localized("Save"),
@@ -91,11 +97,22 @@ extension CertificatesAddView {
 		file: URL?,
 		action: @escaping () -> Void
 	) -> some View {
-		Button(title) {
-			action()
+		Button(action: action) {
+			HStack {
+				VStack(alignment: .leading, spacing: 4) {
+					Text(title)
+					if let file {
+						Text(file.lastPathComponent)
+							.font(.caption)
+							.foregroundStyle(.secondary)
+					}
+				}
+				Spacer()
+				if file != nil { Image(systemName: "checkmark.circle.fill") }
+			}
 		}
-		.foregroundColor(file == nil ? .accentColor : .disabled())
-		.disabled(file != nil)
+		.foregroundColor(.accentColor)
+		.accessibilityValue(file?.lastPathComponent ?? "")
 		.animation(.easeInOut(duration: 0.3), value: file != nil)
 	}
 }
@@ -106,18 +123,24 @@ extension CertificatesAddView {
 		guard
 			let p12URL = _p12URL,
 			let provisionURL = _provisionURL,
-			FR.checkPasswordForCertificate(for: p12URL, with: _p12Password, using: provisionURL)
+			!_isSaving
 		else {
 			Toast.error(.localized("Please check the password and try again."), duration: .sticky)
 			return
 		}
 
+		_isSaving = true
 		FR.handleCertificateFiles(
 			p12URL: p12URL,
 			provisionURL: provisionURL,
 			p12Password: _p12Password,
 			certificateName: _certificateName
-		) { _ in
+		) { error in
+			_isSaving = false
+			if let error {
+				Toast.error(error.localizedDescription, duration: .sticky)
+				return
+			}
 			Toast.success(.localized("Certificate added"), systemImage: "checkmark.seal.fill")
 			dismiss()
 		}

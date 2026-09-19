@@ -328,7 +328,7 @@ final class BackupManager {
 				}
 				Storage.shared.addCertificate(
 					uuid: cert.uuid,
-					password: cert.signingPassword,
+					password: cert.password,
 					nickname: cert.nickname,
 					ppq: cert.ppq,
 					expiration: cert.expiration

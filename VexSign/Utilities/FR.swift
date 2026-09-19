@@ -6,6 +6,7 @@
 //
 
 import Foundation.NSURL
+import Security
 import UIKit.UIImage
 import Zsign
 import NimbleJSON
@@ -102,6 +103,12 @@ enum FR {
 		completion: @escaping (Error?) -> Void
 	) {
 		Task.detached {
+			let keyAccess = p12URL.startAccessingSecurityScopedResource()
+			let provisionAccess = provisionURL.startAccessingSecurityScopedResource()
+			defer {
+				if keyAccess { p12URL.stopAccessingSecurityScopedResource() }
+				if provisionAccess { provisionURL.stopAccessingSecurityScopedResource() }
+			}
 			let handler = CertificateFileHandler(
 				key: p12URL,
 				provision: provisionURL,
@@ -111,12 +118,16 @@ enum FR {
 			)
 			
 			do {
+				guard checkPasswordForCertificate(for: p12URL, with: p12Password, using: provisionURL) else {
+					throw CertificateFileHandlerError.invalidIdentity
+				}
 				try await handler.copy()
 				try await handler.addToDatabase()
 				await MainActor.run {
 					completion(nil)
 				}
 			} catch {
+				handler.clean()
 				await MainActor.run {
 					completion(error)
 				}
@@ -129,17 +140,22 @@ enum FR {
 		with password: String,
 		using provision: URL
 	) -> Bool {
+		let keyAccess = key.startAccessingSecurityScopedResource()
+		let provisionAccess = provision.startAccessingSecurityScopedResource()
 		defer {
-			password_check_fix_WHAT_THE_FUCK_free(provision.path)
+			if keyAccess { key.stopAccessingSecurityScopedResource() }
+			if provisionAccess { provision.stopAccessingSecurityScopedResource() }
 		}
-		
-		password_check_fix_WHAT_THE_FUCK(provision.path)
-		
-		if (!p12_password_check(key.path, password)) {
-			return false
-		}
-		
-		return true
+
+		// Security validates both the password and private key without the old
+		// OpenSSL CMS warm-up, which asserted on malformed or unreadable profiles.
+		guard CertificateReader(provision).decoded != nil,
+			  let data = try? Data(contentsOf: key), !data.isEmpty else { return false }
+		var items: CFArray?
+		let options = [kSecImportExportPassphrase as String: password] as CFDictionary
+		guard SecPKCS12Import(data as CFData, options, &items) == errSecSuccess,
+			  let identities = items as? [[String: Any]] else { return false }
+		return identities.contains { $0[kSecImportItemIdentity as String] != nil }
 	}
 	
 	static func movePairing(_ url: URL) {

@@ -11,6 +11,7 @@ import ZsignSwift
 
 // MARK: - Class extension: certificate
 extension Storage {
+	@MainActor
 	func addCertificate(
 		uuid: String,
 		password: String? = nil,
@@ -21,11 +22,15 @@ extension Storage {
 		completion: @escaping (Error?) -> Void
 	) {
 		let generator = UIImpactFeedbackGenerator(style: .light)
-		
-        do {
-            try SecureSecretStore.write(Data((password ?? "").utf8), account: "certificate.password.\(uuid)")
-        } catch { completion(error); return }
-        let new = CertificatePair(context: context)
+
+		do {
+			try SecureSecretStore.write(Data((password ?? "").utf8), account: "certificate.password.\(uuid)")
+		} catch {
+			completion(error)
+			return
+		}
+
+		let new = CertificatePair(context: context)
 		new.uuid = uuid
 		new.date = Date()
 		new.password = nil
@@ -34,19 +39,20 @@ extension Storage {
 		new.nickname = nickname
 		new.isDefault = isDefault
 		new.revoked = false
-        do { try context.save() }
-        catch {
-            context.delete(new)
-            try? SecureSecretStore.delete("certificate.password.\(uuid)")
-            completion(error)
-            return
-        }
-		Task { @MainActor in
-			CertificateStatusManager.shared.refreshStatus(for: new)
+
+		do {
+			try context.save()
+		} catch {
+			context.delete(new)
+			try? SecureSecretStore.delete("certificate.password.\(uuid)")
+			completion(error)
+			return
 		}
-        generator.impactOccurred()
-        Task { await AnalyticsStore.shared.record(.certificatesAdded) }
-        completion(nil)
+
+		CertificateStatusManager.shared.refreshStatus(for: new)
+		generator.impactOccurred()
+		Task { await AnalyticsStore.shared.record(.certificatesAdded) }
+		completion(nil)
 	}
 	
     func deleteCertificate(for cert: CertificatePair) {

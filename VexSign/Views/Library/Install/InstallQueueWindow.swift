@@ -7,6 +7,7 @@
 
 import SwiftUI
 import UIKit
+import NimbleExtensions
 
 /// Its own window because the download overlay or signing cover is often already presenting, and a
 /// sheet on the root hierarchy would be silently dropped.
@@ -91,8 +92,25 @@ private struct InstallQueueSheet: View {
 					Text(verbatim: .localized("%lld succeeded · %lld failed", arguments: queue.succeededCount, queue.failedCount))
 						.font(.subheadline)
 						.foregroundStyle(.secondary)
-					Button(.localized("Done")) { queue.clear() }
-						.buttonStyle(.borderedProminent)
+					HStack(spacing: 12) {
+						Button(.localized("Done")) { queue.clear() }
+							.buttonStyle(.bordered)
+						if queue.installedApps.count == 1, let installed = queue.installedApps.first {
+							Button(.localized("Open")) {
+								UIApplication.openApp(with: installed.base.identifier ?? "")
+							}
+							.buttonStyle(.borderedProminent)
+						} else if !queue.installedApps.isEmpty {
+							Menu(.localized("Open")) {
+								ForEach(queue.installedApps) { installed in
+									Button(installed.base.name ?? installed.base.identifier ?? .localized("App")) {
+										UIApplication.openApp(with: installed.base.identifier ?? "")
+									}
+								}
+							}
+							.buttonStyle(.borderedProminent)
+						}
+					}
 				}
 				.frame(maxWidth: .infinity, maxHeight: .infinity)
 				.background(Color(UIColor.secondarySystemBackground))
