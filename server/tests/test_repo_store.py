@@ -252,6 +252,15 @@ def test_upload_replaces_and_delete_removes(client, tmp_path):
 
 def test_feed_still_reports_health_and_root_endpoints(client):
     assert client.get("/api/health").json() == {"status": "ok"}
-    endpoints = client.get("/").json()["endpoints"]
-    assert any("/repo/source.json" in entry for entry in endpoints)
-    assert any("/api/admin/apps" in entry for entry in endpoints)
+    public = client.get("/").json()["endpoints"]
+    assert any("/repo/source.json" in entry for entry in public)
+    # The admin surface is only advertised to an authenticated admin.
+    assert not any("/api/admin/apps" in entry for entry in public)
+    authed = client.get("/", headers={"X-Admin-Token": ADMIN_TOKEN}).json()["endpoints"]
+    assert any("/api/admin/apps" in entry for entry in authed)
+
+    # Browsers get the human-readable status page instead of JSON.
+    page = client.get("/", headers={"Accept": "text/html"})
+    assert page.status_code == 200
+    assert "text/html" in page.headers["content-type"]
+    assert "VexSign Premium API" in page.text

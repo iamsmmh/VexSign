@@ -39,10 +39,20 @@ ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
 # attacker distinguish "route disabled" from "token found".
 
 
+def is_valid_admin_token(x_admin_token: str | None) -> bool:
+    """Non-raising token check (e.g. for deciding what `/` may reveal)."""
+    if not ADMIN_TOKEN or not x_admin_token:
+        return False
+    try:
+        return secrets.compare_digest(x_admin_token, ADMIN_TOKEN)
+    except TypeError:  # non-ASCII input blows up compare_digest
+        return False
+
+
 def _require_admin(x_admin_token: str | None):
     if not ADMIN_TOKEN:
         raise HTTPException(status_code=403, detail="Admin API is disabled.")
-    if not x_admin_token or not secrets.compare_digest(x_admin_token, ADMIN_TOKEN):
+    if not is_valid_admin_token(x_admin_token):
         raise HTTPException(status_code=403, detail="Invalid admin token.")
 
 
