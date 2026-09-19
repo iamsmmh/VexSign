@@ -14,8 +14,10 @@ struct UpdatesSettingsView: View {
 	@AppStorage("VexSign.selfUpdateAutoCheck") private var _autoCheck: Bool = true
 	@AppStorage("VexSign.selfUpdateCertIndex") private var _certIndex: Int = -1
 	@AppStorage("VexSign.selfUpdateMethod") private var _method: Int = 0
+	@AppStorage(AppStoreUpdateTracker.enabledKey) private var _appStoreTracking: Bool = false
 
 	@State private var _selected: SelfUpdateRelease?
+	@ObservedObject private var _appStoreTracker = AppStoreUpdateTracker.shared
 
 	private let _certificates = Storage.shared.getAllCertificates()
 
@@ -23,6 +25,7 @@ struct UpdatesSettingsView: View {
 		NBList(.localized("Updates")) {
 			_statusSection
 			_optionsSection
+			_appStoreSection
 			if !_manager.ignoredVersions.isEmpty { _ignoredSection }
 			Section {
 				NavigationLink(destination: AllVersionsView()) {
@@ -35,6 +38,26 @@ struct UpdatesSettingsView: View {
 		}
 		.task {
 			await _manager.check()
+		}
+	}
+
+	// MARK: App Store tracking
+
+	/// Optional second update source: the public App Store version of each bundle
+	/// ID, so apps whose sideloaded copy is behind the store release get a badge.
+	private var _appStoreSection: some View {
+		NBSection(.localized("App Store Tracking")) {
+			Toggle(.localized("Check the App Store"), isOn: $_appStoreTracking)
+
+			Button {
+				AppStoreUpdateTracker.shared.clearCache()
+				Toast.info(.localized("Cleared the App Store version cache."))
+			} label: {
+				Label(.localized("Clear Cache"), systemImage: "trash")
+			}
+			.disabled(_appStoreTracker.infos.isEmpty)
+		} footer: {
+			Text(.localized("Looks each bundle identifier up on the public iTunes Search API and badges the library when a newer version exists. Nothing is uploaded beyond the bundle identifier."))
 		}
 	}
 

@@ -137,6 +137,11 @@ final class SigningHandler: NSObject {
 			try await _isolateKeychainGroups(for: movedAppPath)
 		}
 
+		// Runs after keychain isolation so it layers on top of whatever that wrote.
+		if _options.enableJIT {
+			try _applyJITEntitlements()
+		}
+
 		let handler = ZsignHandler(appUrl: movedAppPath, options: _options, cert: appCertificate)
 		try await handler.disinject()
 		
@@ -224,6 +229,31 @@ final class SigningHandler: NSObject {
 }
 
 extension SigningHandler {
+	/// Adds the JIT keys to the entitlements Zsign signs with. Silently skipped for
+	/// PPQLess certificates: their distribution profile can't grant `get-task-allow`,
+	/// so the keys would only produce an app that fails to launch.
+	private func _applyJITEntitlements() throws {
+		guard let cert = appCertificate, cert.supportsJIT else {
+			SigningLog.shared.info(.localized("Skipping JIT: needs a PPQ certificate."))
+			return
+		}
+
+		guard let dictionary = _baseEntitlements() else {
+			SigningLog.shared.info(.localized("Skipping JIT: no entitlements to extend."))
+			return
+		}
+
+		let base = ((dictionary as NSDictionary) as? [String: Any]) ?? [:]
+		guard EntitlementBuilder.addsJIT(base: base, enableJIT: true, supportsJIT: true) else { return }
+
+		let built = EntitlementBuilder.entitlements(base: base, enableJIT: true, supportsJIT: true)
+		let entitlementsURL = _uniqueWorkDir.appendingPathComponent("entitlements.plist")
+		try EntitlementBuilder.write(built, to: entitlementsURL)
+		_options.appEntitlementsFile = entitlementsURL
+
+		SigningLog.shared.info(.localized("Enabling JIT entitlements"))
+	}
+
 	private func _isolateKeychainGroups(for app: URL) async throws {
 		guard
 			let bundleId = _options.appIdentifier ?? _app.identifier, !bundleId.isEmpty,

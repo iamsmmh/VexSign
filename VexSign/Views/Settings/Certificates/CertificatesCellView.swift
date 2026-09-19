@@ -81,9 +81,10 @@ extension CertificatesCellView {
 			)
 		)
 
-		if cert.ppQCheck == true {
-			pills.append(NBPillItem(title: .localized("PPQCheck"), icon: "checkmark.shield", color: .red))
-		}
+		// PPQLess (green) = distribution profile Apple can't revoke through PPQ.
+		// PPQ (orange) = development profile: revocable, but the only kind JIT works on.
+		let ppq = cert.ppqBadge
+		pills.append(NBPillItem(title: ppq.title, icon: ppq.icon, color: ppq.color))
 
 		if let info = cert.expiration?.expirationInfo() {
 			pills.append(NBPillItem(

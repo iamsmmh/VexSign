@@ -78,6 +78,8 @@ final class AppUpdateChecker: ObservableObject {
                 }
                 self.appsWithUpdates = finalUpdatesSet
                 self.updateCount = finalUpdateCount
+                // The Home Screen widget shows this number.
+                WidgetStatusPublisher.publish()
             }
         }.value
     }

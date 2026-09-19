@@ -19,7 +19,21 @@ enum MachOEntitlements {
 
 	static func read(forExecutableAt url: URL) -> [String: Any]? {
 		guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else { return nil }
+		guard let offset = codeSignatureOffset(in: data) else { return nil }
+		return entitlements(in: data, at: offset)
+	}
 
+	/// True when the binary carries an `LC_CODE_SIGNATURE` load command — the
+	/// cheapest on-device proof that it was signed at all. installd still decides
+	/// whether the signature is acceptable; this only tells signed from unsigned.
+	static func hasCodeSignature(forExecutableAt url: URL) -> Bool {
+		guard let data = try? Data(contentsOf: url, options: .mappedIfSafe) else { return false }
+		return codeSignatureOffset(in: data) != nil
+	}
+
+	/// Absolute offset of the code signature superblob, or nil when the binary is
+	/// unsigned or not a readable 64-bit Mach-O.
+	private static func codeSignatureOffset(in data: Data) -> Int? {
 		let slice = MachOReader.sliceOffset(in: data)
 
 		// iOS binaries are 64-bit
@@ -41,7 +55,7 @@ enum MachOEntitlements {
 			else { return nil }
 
 			if cmdId == codeSignatureCommand, let off = MachOReader.u32(data, at: cmd + 8, bigEndian: bigEndian) {
-				return entitlements(in: data, at: slice + Int(off))
+				return slice + Int(off)
 			}
 
 			cmd += Int(cmdSize)

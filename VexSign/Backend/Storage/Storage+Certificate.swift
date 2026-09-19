@@ -50,6 +50,7 @@ extension Storage {
 		}
 
 		CertificateStatusManager.shared.refreshStatus(for: new)
+		WidgetStatusPublisher.publish()
 		generator.impactOccurred()
 		Task { await AnalyticsStore.shared.record(.certificatesAdded) }
 		completion(nil)
@@ -69,6 +70,7 @@ extension Storage {
 		}
 		context.delete(cert)
 		saveContext()
+		Task { @MainActor in WidgetStatusPublisher.publish() }
 	}
 	
 	func getCertificate(for index: Int) -> CertificatePair? {

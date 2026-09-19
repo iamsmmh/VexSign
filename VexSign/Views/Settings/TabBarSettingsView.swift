@@ -15,6 +15,17 @@ struct TabBarSettingsView: View {
 
 	var body: some View {
 		NBList(.localized("Tab Bar"), type: .list) {
+			NBSection(.localized("Interface")) {
+				Toggle(isOn: Binding(
+					get: { _prefs.isMinimal },
+					set: { _prefs.setMinimal($0) }
+				)) {
+					Label(.localized("Minimal Mode"), systemImage: "square.split.1x2")
+				}
+			} footer: {
+				Text(.localized("Hides every tab except Home and Settings. Turn it off here, or from Home, to get the rest back."))
+			}
+
 			NBSection(.localized("Default Launch Tab")) {
 				Picker(selection: $_prefs.defaultLaunch) {
 					ForEach(_prefs.visibleTabs, id: \.self) { tab in
@@ -26,6 +37,17 @@ struct TabBarSettingsView: View {
 				.pickerStyle(.menu)
 			} footer: {
 				Text(.localized("Which tab the app opens to."))
+			}
+
+			NBSection(.localized("Interface")) {
+				Toggle(isOn: Binding(
+					get: { _prefs.isMinimal },
+					set: { _prefs.setMinimal($0) }
+				)) {
+					Label(.localized("Minimal Mode"), systemImage: "square.grid.2x2")
+				}
+			} footer: {
+				Text(.localized("Hides every tab except Home and Settings, for a calmer layout. Turn it off here at any time — nothing is deleted."))
 			}
 
 			NBSection(.localized("Tabs")) {
@@ -46,7 +68,23 @@ struct TabBarSettingsView: View {
 
 	@ViewBuilder
 	private func _row(for tab: TabEnum) -> some View {
-		if _prefs.isHideable(tab) {
+		if _prefs.isMinimal {
+			// Nothing to hide while Minimal Mode is on; the toggle above governs.
+			HStack {
+				Label(tab.title, systemImage: tab.icon)
+				Spacer()
+				if TabBarPreferences.minimalTabs.contains(tab) {
+					Image(systemName: "checkmark")
+						.font(.caption)
+						.foregroundStyle(.secondary)
+				} else {
+					Image(systemName: "eye.slash")
+						.font(.caption)
+						.foregroundStyle(.secondary)
+				}
+			}
+			.foregroundStyle(TabBarPreferences.minimalTabs.contains(tab) ? .primary : .secondary)
+		} else if _prefs.isHideable(tab) {
 			Toggle(isOn: Binding(
 				get: { !_prefs.isHidden(tab) },
 				set: { _prefs.setHidden(tab, !$0) }

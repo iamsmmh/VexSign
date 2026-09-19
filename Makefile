@@ -8,7 +8,7 @@ STAGE := $(TMP)/stage
 APP := $(TMP)/Build/Products/Release-$(PLATFORM)
 CERT_JSON_URL := https://vexsign-install.vexsign.workers.dev/pack.json
 
-.PHONY: all deps clean $(SCHEMES)
+.PHONY: all deps clean deploy-server $(SCHEMES)
 
 all: $(SCHEMES)
 
@@ -57,3 +57,17 @@ $(SCHEMES): deps
 	
 	mkdir -p packages
 	zip -r9 "packages/$@.ipa" Payload
+
+# Self-hosted backend (server/). Keep this BELOW `all` — make builds the first
+# target in the file, so a rule above it would hijack a bare `make` (which is
+# what CI runs).
+#   docker run -p 8080:8080 -e ADMIN_TOKEN=<secret> -v vexsign-repo:/data \
+#     vexsign-server   # then add /repo/source.json as a source in the app
+IMAGE ?= vexsign-server
+deploy-server:
+	@command -v docker >/dev/null 2>&1 || { \
+		echo "docker is not installed; see server/README.md for the deploy steps"; exit 1; }
+	docker build --platform linux/amd64 -t $(IMAGE) server
+	@echo "Built $(IMAGE). Run it with:"
+	@echo "  docker run -p 8080:8080 -e ADMIN_TOKEN=<secret> -e REPO_STORE_DIR=/data \\"
+	@echo "    -v vexsign-repo:/data $(IMAGE)"

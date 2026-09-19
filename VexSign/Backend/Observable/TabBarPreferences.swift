@@ -15,8 +15,13 @@ final class TabBarPreferences: ObservableObject {
 	/// Home and Settings stay reachable so users can always undo changes.
 	static let hideableTabs: [TabEnum] = [.sources, .library, .logs, .tweaks]
 
+	/// Minimal Mode keeps only these two, so the toggle that turns it back off is
+	/// always one tap away in Settings.
+	static let minimalTabs: [TabEnum] = [.home, .settings]
+
 	@Published private(set) var order: [TabEnum]
 	@Published private(set) var hidden: Set<TabEnum>
+	@Published private(set) var isMinimal: Bool
 	@Published var defaultLaunch: TabEnum {
 		didSet { _save() }
 	}
@@ -27,11 +32,13 @@ final class TabBarPreferences: ObservableObject {
 		var order: [String]
 		var hidden: [String]
 		var defaultLaunch: String
+		var minimal: Bool
 
-		init(order: [String], hidden: [String], defaultLaunch: String) {
+		init(order: [String], hidden: [String], defaultLaunch: String, minimal: Bool) {
 			self.order = order
 			self.hidden = hidden
 			self.defaultLaunch = defaultLaunch
+			self.minimal = minimal
 		}
 
 		// Tolerant so a future non-optional field can't fail the whole decode and reset the bar.
@@ -40,6 +47,7 @@ final class TabBarPreferences: ObservableObject {
 			order = try c.decodeIfPresent([String].self, forKey: .order) ?? []
 			hidden = try c.decodeIfPresent([String].self, forKey: .hidden) ?? []
 			defaultLaunch = try c.decodeIfPresent(String.self, forKey: .defaultLaunch) ?? TabEnum.home.rawValue
+			minimal = try c.decodeIfPresent(Bool.self, forKey: .minimal) ?? false
 		}
 	}
 
@@ -49,6 +57,7 @@ final class TabBarPreferences: ObservableObject {
 		var loadedOrder = TabEnum.defaultTabs
 		var loadedHidden: Set<TabEnum> = []
 		var loadedLaunch: TabEnum = .home
+		var loadedMinimal = false
 
 		if
 			let data = defaults.data(forKey: _key),
@@ -58,6 +67,7 @@ final class TabBarPreferences: ObservableObject {
 			if !loadedOrder.contains(.home) { loadedOrder.insert(.home, at: 0) }
 			loadedHidden = Set(stored.hidden.compactMap { TabEnum(rawValue: $0) })
 			loadedLaunch = TabEnum(rawValue: stored.defaultLaunch) ?? .library
+			loadedMinimal = stored.minimal
 		} else if defaults.object(forKey: "VexSign.showTweaksTab") != nil,
 				  defaults.bool(forKey: "VexSign.showTweaksTab") == false {
 			// Migrate the old showTweaksTab toggle.
@@ -67,6 +77,7 @@ final class TabBarPreferences: ObservableObject {
 		self.order = loadedOrder
 		self.hidden = loadedHidden
 		self.defaultLaunch = loadedLaunch
+		self.isMinimal = loadedMinimal
 
 		_normalize()
 	}
@@ -83,7 +94,11 @@ final class TabBarPreferences: ObservableObject {
 	}
 
 	var visibleTabs: [TabEnum] {
-		orderedTabs.filter { !hidden.contains($0) }
+		guard !isMinimal else {
+			// Saved order still decides which of the two comes first.
+			return orderedTabs.filter { Self.minimalTabs.contains($0) }
+		}
+		return orderedTabs.filter { !hidden.contains($0) }
 	}
 
 	func isHideable(_ tab: TabEnum) -> Bool {
@@ -104,6 +119,14 @@ final class TabBarPreferences: ObservableObject {
 	func setHidden(_ tab: TabEnum, _ value: Bool) {
 		guard isHideable(tab) else { return }
 		if value { hidden.insert(tab) } else { hidden.remove(tab) }
+		_normalize()
+		_save()
+	}
+
+	/// Minimal Mode: everything but Home and Settings disappears until it's off.
+	func setMinimal(_ value: Bool) {
+		guard isMinimal != value else { return }
+		isMinimal = value
 		_normalize()
 		_save()
 	}
@@ -129,7 +152,8 @@ final class TabBarPreferences: ObservableObject {
 		let stored = Stored(
 			order: orderedTabs.map { $0.rawValue },
 			hidden: hidden.map { $0.rawValue },
-			defaultLaunch: defaultLaunch.rawValue
+			defaultLaunch: defaultLaunch.rawValue,
+			minimal: isMinimal
 		)
 		if let data = try? JSONEncoder().encode(stored) {
 			UserDefaults.standard.set(data, forKey: _key)

@@ -6,7 +6,15 @@ struct HomeView: View {
     @State private var isAddingCertificate = false
 
     private func openTab(_ tab: TabEnum) {
-        TabBarPreferences.shared.setHidden(tab, false)
+        let preferences = TabBarPreferences.shared
+
+        // Minimal Mode hides everything but Home and Settings; using a Home shortcut
+        // to reach a hidden tab means the user wants it back.
+        if preferences.isMinimal, !TabBarPreferences.minimalTabs.contains(tab) {
+            preferences.setMinimal(false)
+        }
+
+        preferences.setHidden(tab, false)
         TabSelectionObserver.shared.selectedTab = tab
     }
 

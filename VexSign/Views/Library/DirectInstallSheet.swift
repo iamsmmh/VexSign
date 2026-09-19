@@ -90,21 +90,73 @@ struct DirectInstallSheet: View {
 			return
 		}
 
-		isProcessing = true
-		statusMessage = .localized("Queuing download…")
-
-		let download = DownloadManager.shared.startDownload(
-			from: targetURL,
-			appName: targetURL.deletingPathExtension().lastPathComponent
-		)
-
-		if selectedMode == .installWithoutSigning {
-			// AutoSign is bypassed; once downloaded and unpacked, app will be in Library.
-			Toast.success(.localized("Download started for direct install"), systemImage: "arrow.down.app")
-			dismiss()
-		} else {
+		guard selectedMode == .installWithoutSigning else {
+			// Normal path: the download manager imports it and AutoSign signs + queues it.
+			_ = DownloadManager.shared.startDownload(
+				from: targetURL,
+				appName: targetURL.deletingPathExtension().lastPathComponent
+			)
 			Toast.success(.localized("Download queued for signing & installation"), systemImage: "arrow.down.app")
 			dismiss()
+			return
+		}
+
+		// "Already signed": fetch, import and install as-is — Zsign is never invoked,
+		// so the original identity, keychain groups and app groups survive.
+		isProcessing = true
+		statusMessage = .localized("Downloading…")
+
+		Task { await _downloadAndInstall(from: targetURL) }
+	}
+
+	@MainActor
+	private func _downloadAndInstall(from targetURL: URL) async {
+		defer { isProcessing = false }
+
+		let downloaded: URL
+		do {
+			let (tempURL, _) = try await URLSession.shared.download(from: targetURL)
+
+			// The importer reads the name and type from the file, so keep the extension.
+			let destination = FileManager.default
+				.uniqueTemporaryDirectory("DirectInstall")
+				.appendingPathComponent(targetURL.lastPathComponent.isEmpty ? "package.ipa" : targetURL.lastPathComponent)
+			try FileManager.default.createDirectoryIfNeeded(at: destination.deletingLastPathComponent())
+			try FileManager.default.moveItem(at: tempURL, to: destination)
+			downloaded = destination
+		} catch {
+			Toast.error(error.localizedDescription, duration: .sticky)
+			return
+		}
+
+		statusMessage = .localized("Importing…")
+
+		let outcome: (app: AppInfoPresentable?, error: Error?) = await withCheckedContinuation { continuation in
+			FR.handlePackageFile(downloaded) { result in
+				switch result {
+				case .success(let app): continuation.resume(returning: (app, nil))
+				case .failure(let error): continuation.resume(returning: (nil, error))
+				}
+			}
+		}
+
+		guard let imported = outcome.app else {
+			Toast.error(
+				outcome.error?.localizedDescription ?? .localized("Could not import that package."),
+				duration: .sticky
+			)
+			return
+		}
+
+		statusMessage = .localized("Verifying signature…")
+
+		do {
+			try DirectInstaller.shared.install(imported)
+			Toast.success(.localized("Installing without signing…"), systemImage: "bolt.badge.checkmark")
+			dismiss()
+		} catch {
+			Toast.error(error.localizedDescription, duration: .sticky)
 		}
 	}
 }
+

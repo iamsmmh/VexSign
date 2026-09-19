@@ -57,6 +57,7 @@ enum PreflightChecks {
 		versions(app: app, options: options, into: &issues)
 		plistKeys(app: app, into: &issues)
 		certificateExpiry(certificate: certificate, options: options, into: &issues)
+		jitEntitlement(certificate: certificate, options: options, into: &issues)
 		dylibInjections(app: app, options: options, into: &issues)
 
 		return PreflightResult(issues: issues)
@@ -154,6 +155,30 @@ enum PreflightChecks {
 				String.localized("The selected certificate expires %@.", arguments: RelativeDateTimeFormatter().localizedString(for: expiration, relativeTo: Date()))
 			))
 		}
+	}
+
+	// MARK: JIT
+
+	/// JIT needs `get-task-allow`, which only a PPQ (development) profile grants.
+	/// Signing continues either way — the entitlement is simply dropped — so this is
+	/// a warning, not a blocker.
+	private static func jitEntitlement(certificate: CertificatePair?, options: Options, into issues: inout [PreflightIssue]) {
+		guard options.enableJIT, options.signingOption == .default else { return }
+
+		guard let certificate else {
+			issues.append(PreflightIssue(
+				.localized("JIT needs a certificate"),
+				.localized("The JIT entitlement is only written when signing with a certificate.")
+			))
+			return
+		}
+
+		guard !certificate.supportsJIT else { return }
+
+		issues.append(PreflightIssue(
+			.localized("JIT requires a PPQ certificate"),
+			.localized("The selected certificate uses a PPQLess distribution profile, so the JIT entitlement will be dropped. Pick a PPQ certificate or turn JIT off.")
+		))
 	}
 
 	// MARK: Dylib injections

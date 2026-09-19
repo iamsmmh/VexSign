@@ -14,6 +14,7 @@ struct LibraryCellView: View {
 	@Environment(\.horizontalSizeClass) private var horizontalSizeClass
 	@Environment(\.editMode) private var editMode
 	@ObservedObject private var skippedUpdates = SkippedUpdatesManager.shared
+	@ObservedObject private var appStoreTracker = AppStoreUpdateTracker.shared
 
 	var certInfo: Date.ExpirationInfo? {
 		Storage.shared.getCertificate(from: app)?.expiration?.expirationInfo()
@@ -26,6 +27,8 @@ struct LibraryCellView: View {
 	var app: AppInfoPresentable
 	/// Presented from the context menu; kept local so every cell owns its own explorer.
 	@State private var _explorerApp: AnyApp?
+	/// Clone sheet target, so "Clone…" can ask for a name and bundle ID.
+	@State private var _cloneApp: AnyApp?
 
 	@Binding var selectedInfoAppPresenting: AnyApp?
 	@Binding var selectedSigningAppPresenting: AnyApp?
@@ -75,6 +78,8 @@ struct LibraryCellView: View {
 			)
 			
 			if !isEditing {
+				_appStoreBadge
+
 				_buttonActions(for: app)
 			}
 		}
@@ -101,6 +106,9 @@ struct LibraryCellView: View {
 		}
 		.sheet(item: $_explorerApp) { app in
 			IPALibraryExplorerView(app: app.base)
+		}
+		.sheet(item: $_cloneApp) { target in
+			AppCloneSheet(app: target.base)
 		}
 		.contextMenu {
 			if !isEditing {
@@ -133,6 +141,22 @@ struct LibraryCellView: View {
 			.animation(.easeInOut(duration: 0.3), value: isHighlighted)
 	}
 	
+	/// "v2.1" pill when the App Store has a newer public version (opt-in tracking).
+	@ViewBuilder
+	private var _appStoreBadge: some View {
+		if
+			let info = appStoreTracker.info(for: app.identifier),
+			appStoreTracker.hasNewerVersion(than: app)
+		{
+			Text(String.localized("v%@", arguments: info.version))
+				.font(.caption2.weight(.semibold))
+				.padding(.horizontal, 6)
+				.padding(.vertical, 3)
+				.background(Color.orange.opacity(0.15), in: Capsule())
+				.foregroundStyle(.orange)
+		}
+	}
+
 	private var _desc: String {
 		if let version = app.version, let id = app.identifier {
 			return "\(version) • \(id)"
@@ -208,6 +232,10 @@ extension LibraryCellView {
 			}
 		}
 
+		Button(.localized("Clone…"), systemImage: "doc.on.doc") {
+			Presentation.afterDismiss { _cloneApp = AnyApp(base: app) }
+		}
+
 		if app.isSigned {
 			if let id = app.identifier {
 				Button(.localized("Open"), systemImage: "app.badge.checkmark") {
@@ -233,11 +261,20 @@ extension LibraryCellView {
 				Presentation.afterDismiss { selectedSigningAppPresenting = AnyApp(base: app) }
 			}
 			Button(.localized("Install Without Signing"), systemImage: "bolt.badge.checkmark") {
-				InstallQueue.shared.enqueue(app)
+				_installWithoutSigning(app)
 			}
 		}
 	}
 	
+	/// Installs a bundle that is already signed, after verifying it actually is.
+	private func _installWithoutSigning(_ app: AppInfoPresentable) {
+		do {
+			try DirectInstaller.shared.install(app)
+		} catch {
+			Toast.error(error.localizedDescription, duration: .sticky)
+		}
+	}
+
 	@ViewBuilder
 	private func _buttonActions(for app: AppInfoPresentable) -> some View {
 		Group {

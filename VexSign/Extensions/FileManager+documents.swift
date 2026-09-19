@@ -8,6 +8,11 @@
 import Foundation.NSFileManager
 
 extension FileManager {
+	/// Firmware (.ipsw) downloads from the IPSW browser
+	var firmware: URL {
+		URL.documentsDirectory.appendingPathComponent("Firmware")
+	}
+
 	/// Gives apps Signed directory
 	var archives: URL {
 		URL.documentsDirectory.appendingPathComponent("Archives")

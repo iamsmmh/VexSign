@@ -1,6 +1,1172 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Development" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Development"
+          }
+        }
+      }
+    },
+    "Enterprise (In-House)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enterprise (In-House)"
+          }
+        }
+      }
+    },
+    "Ad Hoc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ad Hoc"
+          }
+        }
+      }
+    },
+    "Distribution" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Distribution"
+          }
+        }
+      }
+    },
+    "JIT requires a PPQ certificate. This one uses a PPQLess distribution profile." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JIT requires a PPQ certificate. This one uses a PPQLess distribution profile."
+          }
+        }
+      }
+    },
+    "PPQLess" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PPQLess"
+          }
+        }
+      }
+    },
+    "PPQ" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PPQ"
+          }
+        }
+      }
+    },
+    "Skipping JIT: needs a PPQ certificate." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skipping JIT: needs a PPQ certificate."
+          }
+        }
+      }
+    },
+    "Skipping JIT: no entitlements to extend." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skipping JIT: no entitlements to extend."
+          }
+        }
+      }
+    },
+    "Enabling JIT entitlements" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enabling JIT entitlements"
+          }
+        }
+      }
+    },
+    "JIT needs a certificate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JIT needs a certificate"
+          }
+        }
+      }
+    },
+    "The JIT entitlement is only written when signing with a certificate." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The JIT entitlement is only written when signing with a certificate."
+          }
+        }
+      }
+    },
+    "JIT requires a PPQ certificate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JIT requires a PPQ certificate"
+          }
+        }
+      }
+    },
+    "The selected certificate uses a PPQLess distribution profile, so the JIT entitlement will be dropped. Pick a PPQ certificate or turn JIT off." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The selected certificate uses a PPQLess distribution profile, so the JIT entitlement will be dropped. Pick a PPQ certificate or turn JIT off."
+          }
+        }
+      }
+    },
+    "JIT" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JIT"
+          }
+        }
+      }
+    },
+    "Enable JIT" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable JIT"
+          }
+        }
+      }
+    },
+    "Adds the `dynamic-codesigning` entitlement so emulators and JavaScript engines can allocate executable memory. Only apps built for JIT benefit; everything else is unaffected." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adds the `dynamic-codesigning` entitlement so emulators and JavaScript engines can allocate executable memory. Only apps built for JIT benefit; everything else is unaffected."
+          }
+        }
+      }
+    },
+    "Profile Type" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile Type"
+          }
+        }
+      }
+    },
+    "PPQ Status" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PPQ Status"
+          }
+        }
+      }
+    },
+    "JIT Support" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JIT Support"
+          }
+        }
+      }
+    },
+    "Supported" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supported"
+          }
+        }
+      }
+    },
+    "Not supported (PPQLess)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not supported (PPQLess)"
+          }
+        }
+      }
+    },
+    "PPQLess profiles are distribution profiles Apple can't revoke through the provisioning-profile query. JIT needs `get-task-allow`, which only PPQ (development) profiles grant." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PPQLess profiles are distribution profiles Apple can't revoke through the provisioning-profile query. JIT needs `get-task-allow`, which only PPQ (development) profiles grant."
+          }
+        }
+      }
+    },
+    "Valid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valid"
+          }
+        }
+      }
+    },
+    "Expiring Soon" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expiring Soon"
+          }
+        }
+      }
+    },
+    "Provisioning profile is missing." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Provisioning profile is missing."
+          }
+        }
+      }
+    },
+    "Certificate file or password is missing." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certificate file or password is missing."
+          }
+        }
+      }
+    },
+    "Check All Certificates" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check All Certificates"
+          }
+        }
+      }
+    },
+    "Summary" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Summary"
+          }
+        }
+      }
+    },
+    "%lld valid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld valid"
+          }
+        }
+      }
+    },
+    "%lld expiring" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld expiring"
+          }
+        }
+      }
+    },
+    "%lld expired" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld expired"
+          }
+        }
+      }
+    },
+    "%lld revoked" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld revoked"
+          }
+        }
+      }
+    },
+    "Ask Apple (OCSP)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ask Apple (OCSP)"
+          }
+        }
+      }
+    },
+    "Check Again" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check Again"
+          }
+        }
+      }
+    },
+    "Profile metadata is read on-device. OCSP sends certificate identifiers to the responder; an unavailable answer stays Unknown rather than being reported as good." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Profile metadata is read on-device. OCSP sends certificate identifiers to the responder; an unavailable answer stays Unknown rather than being reported as good."
+          }
+        }
+      }
+    },
+    "Checking %lld of %lld…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking %lld of %lld…"
+          }
+        }
+      }
+    },
+    "Days Remaining" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Days Remaining"
+          }
+        }
+      }
+    },
+    "Team" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Team"
+          }
+        }
+      }
+    },
+    "Not supported" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not supported"
+          }
+        }
+      }
+    },
+    "Certificate Health" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Certificate Health"
+          }
+        }
+      }
+    },
+    "%lld signed apps in the library use a certificate from this list." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld signed apps in the library use a certificate from this list."
+          }
+        }
+      }
+    },
+    "Checking certificates…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking certificates…"
+          }
+        }
+      }
+    },
+    "Checked %lld certificates — %lld valid" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checked %lld certificates — %lld valid"
+          }
+        }
+      }
+    },
+    "Clone App" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clone App"
+          }
+        }
+      }
+    },
+    "Original" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Original"
+          }
+        }
+      }
+    },
+    "Clone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clone"
+          }
+        }
+      }
+    },
+    "Bundle Identifier" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bundle Identifier"
+          }
+        }
+      }
+    },
+    "Reset to Suggestions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reset to Suggestions"
+          }
+        }
+      }
+    },
+    "The clone is created unsigned. Sign it afterwards — the certificate's provisioning profile must allow the new bundle identifier, or use a wildcard profile." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The clone is created unsigned. Sign it afterwards — the certificate's provisioning profile must allow the new bundle identifier, or use a wildcard profile."
+          }
+        }
+      }
+    },
+    "Create Clone" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Create Clone"
+          }
+        }
+      }
+    },
+    "Enter a name and a valid bundle identifier (for example com.example.app)." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a name and a valid bundle identifier (for example com.example.app)."
+          }
+        }
+      }
+    },
+    "Cloned %@. Sign it to install." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cloned %@. Sign it to install."
+          }
+        }
+      }
+    },
+    "v%@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "v%@"
+          }
+        }
+      }
+    },
+    "Clone…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clone…"
+          }
+        }
+      }
+    },
+    "Creates a second copy with its own name and bundle identifier, so both can be installed side by side." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creates a second copy with its own name and bundle identifier, so both can be installed side by side."
+          }
+        }
+      }
+    },
+    "Latest Version" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Latest Version"
+          }
+        }
+      }
+    },
+    "Released" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Released"
+          }
+        }
+      }
+    },
+    "A newer version is available on the App Store." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A newer version is available on the App Store."
+          }
+        }
+      }
+    },
+    "Open in App Store" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open in App Store"
+          }
+        }
+      }
+    },
+    "No .app bundle found in this directory." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No .app bundle found in this directory."
+          }
+        }
+      }
+    },
+    "Missing _CodeSignature — the app was never signed." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Missing _CodeSignature — the app was never signed."
+          }
+        }
+      }
+    },
+    "The main executable has no code signature." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The main executable has no code signature."
+          }
+        }
+      }
+    },
+    "%@ has no _CodeSignature." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ has no _CodeSignature."
+          }
+        }
+      }
+    },
+    "Direct Install" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Direct Install"
+          }
+        }
+      }
+    },
+    "https://example.com/app.ipa" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "https://example.com/app.ipa"
+          }
+        }
+      }
+    },
+    "Installation Mode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installation Mode"
+          }
+        }
+      }
+    },
+    "Package URL" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Package URL"
+          }
+        }
+      }
+    },
+    "Directly download, prepare, and install the package on your device in one step." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Directly download, prepare, and install the package on your device in one step."
+          }
+        }
+      }
+    },
+    "Start Direct Install" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start Direct Install"
+          }
+        }
+      }
+    },
+    "Please enter a valid URL." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Please enter a valid URL."
+          }
+        }
+      }
+    },
+    "Download queued for signing & installation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download queued for signing & installation"
+          }
+        }
+      }
+    },
+    "Downloading…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloading…"
+          }
+        }
+      }
+    },
+    "Importing…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing…"
+          }
+        }
+      }
+    },
+    "Could not import that package." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not import that package."
+          }
+        }
+      }
+    },
+    "Verifying signature…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verifying signature…"
+          }
+        }
+      }
+    },
+    "Installing without signing…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installing without signing…"
+          }
+        }
+      }
+    },
+    "Install failed, falling back to idevice installation…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Install failed, falling back to idevice installation…"
+          }
+        }
+      }
+    },
+    "That bundle identifier is empty." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That bundle identifier is empty."
+          }
+        }
+      }
+    },
+    "Could not build the App Store lookup URL." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not build the App Store lookup URL."
+          }
+        }
+      }
+    },
+    "Unexpected App Store response: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unexpected App Store response: %@"
+          }
+        }
+      }
+    },
+    "App Store lookup failed: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store lookup failed: %@"
+          }
+        }
+      }
+    },
+    "App Store Tracking" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App Store Tracking"
+          }
+        }
+      }
+    },
+    "Check the App Store" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Check the App Store"
+          }
+        }
+      }
+    },
+    "Cleared the App Store version cache." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleared the App Store version cache."
+          }
+        }
+      }
+    },
+    "Clear Cache" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear Cache"
+          }
+        }
+      }
+    },
+    "Looks each bundle identifier up on the public iTunes Search API and badges the library when a newer version exists. Nothing is uploaded beyond the bundle identifier." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Looks each bundle identifier up on the public iTunes Search API and badges the library when a newer version exists. Nothing is uploaded beyond the bundle identifier."
+          }
+        }
+      }
+    },
+    "Unknown size" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unknown size"
+          }
+        }
+      }
+    },
+    "Pick a device first." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pick a device first."
+          }
+        }
+      }
+    },
+    "Could not build the firmware catalog URL." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not build the firmware catalog URL."
+          }
+        }
+      }
+    },
+    "Unexpected firmware catalog response: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unexpected firmware catalog response: %@"
+          }
+        }
+      }
+    },
+    "Firmware catalog request failed: %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Firmware catalog request failed: %@"
+          }
+        }
+      }
+    },
+    "Firmware" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Firmware"
+          }
+        }
+      }
+    },
+    "Search Devices" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search Devices"
+          }
+        }
+      }
+    },
+    "Loading devices…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading devices…"
+          }
+        }
+      }
+    },
+    "Firmware comes from Apple's CDN through the ipsw.me catalog. Files are stored in Documents → Firmware." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Firmware comes from Apple's CDN through the ipsw.me catalog. Files are stored in Documents → Firmware."
+          }
+        }
+      }
+    },
+    "Firmware for %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Firmware for %@"
+          }
+        }
+      }
+    },
+    "Loading firmware…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading firmware…"
+          }
+        }
+      }
+    },
+    "The catalog has no download link for that build." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The catalog has no download link for that build."
+          }
+        }
+      }
+    },
+    "Firmware download continuing" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Firmware download continuing"
+          }
+        }
+      }
+    },
+    "The download will continue when you reopen the app" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The download will continue when you reopen the app"
+          }
+        }
+      }
+    },
+    "Downloaded %@" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloaded %@"
+          }
+        }
+      }
+    },
+    "Firmware Browser…" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Firmware Browser…"
+          }
+        }
+      }
+    },
+    "Minimal Mode" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Minimal Mode"
+          }
+        }
+      }
+    },
+    "Hides every tab except Home and Settings. Turn it off here, or from Home, to get the rest back." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hides every tab except Home and Settings. Turn it off here, or from Home, to get the rest back."
+          }
+        }
+      }
+    },
+    "Hides every tab except Home and Settings, for a calmer layout. Turn it off here at any time — nothing is deleted." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hides every tab except Home and Settings, for a calmer layout. Turn it off here at any time — nothing is deleted."
+          }
+        }
+      }
+    },
     "Fully Local serves the manifest and IPA from this device over HTTPS. It requires valid SSL certificates and a hostname that resolves to this device. Semi Local uses an online manifest service, while the IPA stays on your device. If the LAN address fails, enable Only use localhost address." : {
       "extractionState" : "manual",
       "localizations" : {
