@@ -103,7 +103,7 @@ struct IPSWBrowserView: View {
 					.foregroundStyle(.secondary)
 				if _selectedDevice?.identifier == device.identifier {
 					Image(systemName: "checkmark")
-						.foregroundStyle(.accentColor)
+						.foregroundStyle(Color.accentColor)
 				}
 			}
 		}
