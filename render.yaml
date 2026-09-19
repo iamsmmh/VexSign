@@ -11,11 +11,23 @@ services:
     healthCheckPath: /api/health
     autoDeploy: false
     envVars:
-      # Set VEXSIGN_DB=/data/vexsign.db in the dashboard ONLY on paid plans
-      # where you've mounted a persistent disk at /data. On free tier the
-      # directory doesn't exist and isn't writable, so leaving it unset uses
-      # a SQLite file next to the app (ephemeral but bootable; SEED_KEYS
-      # below re-mints keys on every boot so nothing is lost).
+      # NOTE on free tier: the filesystem (SQLite keys DB + uploaded IPAs) is
+      # ephemeral — every restart/redeploy wipes device activations and the
+      # self-hosted source. SEED_KEYS below re-creates the *keys* on boot, but
+      # as FRESH keys: previous device bindings are lost, so old devices must
+      # re-validate and a used key becomes redeemable again until it is.
+      # For persistence, upgrade to a paid plan, attach a disk mounted at
+      # /data, and set VEXSIGN_DB=/data/vexsign.db plus
+      # REPO_STORE_DIR=/data/repo-store in the dashboard, e.g.:
+      #
+      #     disk:
+      #       name: vexsign-data
+      #       mountPath: /data
+      #       sizeGB: 1
+      #
+      # (Disks require a paid plan — adding the block above on `plan: free`
+      # fails to deploy. Leaving the DB vars unset intentionally uses a
+      # SQLite file next to the app so the service still boots.)
       - key: SEED_KEYS
         sync: false
       - key: ADMIN_TOKEN

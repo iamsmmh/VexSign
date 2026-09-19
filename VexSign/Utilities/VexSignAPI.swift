@@ -40,6 +40,22 @@ enum VexSignAPI {
 
 	struct ErrorResponse: Decodable {
 		let detail: String
+
+		// Current hosts send a lowercase key; a capitalised variant is also
+		// accepted so a differently-cased host never degrades to fallback text.
+		enum CodingKeys: String, CodingKey {
+			case detail
+			case capitalDetail = "Detail"
+		}
+
+		init(from decoder: Decoder) throws {
+			let container = try decoder.container(keyedBy: CodingKeys.self)
+			if let value = try container.decodeIfPresent(String.self, forKey: .capitalDetail) {
+				detail = value
+			} else {
+				detail = try container.decode(String.self, forKey: .detail)
+			}
+		}
 	}
 
 	// MARK: - Repos
