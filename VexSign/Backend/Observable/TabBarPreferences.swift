@@ -12,7 +12,7 @@ import Foundation
 final class TabBarPreferences: ObservableObject {
 	static let shared = TabBarPreferences()
 
-	/// `settings` excluded so the user can always reach this screen to undo changes.
+	/// Home and Settings stay reachable so users can always undo changes.
 	static let hideableTabs: [TabEnum] = [.sources, .library, .logs, .tweaks]
 
 	@Published private(set) var order: [TabEnum]
@@ -39,7 +39,7 @@ final class TabBarPreferences: ObservableObject {
 			let c = try decoder.container(keyedBy: CodingKeys.self)
 			order = try c.decodeIfPresent([String].self, forKey: .order) ?? []
 			hidden = try c.decodeIfPresent([String].self, forKey: .hidden) ?? []
-			defaultLaunch = try c.decodeIfPresent(String.self, forKey: .defaultLaunch) ?? TabEnum.library.rawValue
+			defaultLaunch = try c.decodeIfPresent(String.self, forKey: .defaultLaunch) ?? TabEnum.home.rawValue
 		}
 	}
 
@@ -48,13 +48,14 @@ final class TabBarPreferences: ObservableObject {
 
 		var loadedOrder = TabEnum.defaultTabs
 		var loadedHidden: Set<TabEnum> = []
-		var loadedLaunch: TabEnum = .library
+		var loadedLaunch: TabEnum = .home
 
 		if
 			let data = defaults.data(forKey: _key),
 			let stored = try? JSONDecoder().decode(Stored.self, from: data)
 		{
 			loadedOrder = stored.order.compactMap { TabEnum(rawValue: $0) }
+			if !loadedOrder.contains(.home) { loadedOrder.insert(.home, at: 0) }
 			loadedHidden = Set(stored.hidden.compactMap { TabEnum(rawValue: $0) })
 			loadedLaunch = TabEnum(rawValue: stored.defaultLaunch) ?? .library
 		} else if defaults.object(forKey: "VexSign.showTweaksTab") != nil,
@@ -118,6 +119,7 @@ final class TabBarPreferences: ObservableObject {
 
 	private func _normalize() {
 		order = orderedTabs
+		hidden = hidden.intersection(Self.hideableTabs)
 		if !visibleTabs.contains(defaultLaunch) {
 			defaultLaunch = visibleTabs.first ?? .library
 		}

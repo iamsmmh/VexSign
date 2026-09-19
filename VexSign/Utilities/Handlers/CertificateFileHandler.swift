@@ -52,26 +52,46 @@ final class CertificateFileHandler: NSObject {
 		try _fileManager.copyItem(at: _provision, to: destinationURL.appendingPathComponent(_provision.lastPathComponent))
 	}
 	
+	@MainActor
 	func addToDatabase() async throws {
-		
-		Storage.shared.addCertificate(
-			uuid: _uuid,
-			password: _keyPassword,
-			nickname: _certNickname,
-			ppq: _certPair?.PPQCheck ?? false,
-			expiration: _certPair?.ExpirationDate ?? Date(),
-			isDefault: _isDefault
-		) { _ in
-			Logger.misc.info("[\(self._uuid)] Added to database")
+		guard let certificate = _certPair else { throw CertificateFileHandlerError.certNotValid }
+		try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+			Storage.shared.addCertificate(
+				uuid: _uuid,
+				password: _keyPassword,
+				nickname: _certNickname,
+				ppq: certificate.PPQCheck ?? false,
+				expiration: certificate.ExpirationDate,
+				isDefault: _isDefault
+			) { error in
+				if let error {
+					continuation.resume(throwing: error)
+				} else {
+					continuation.resume()
+				}
+			}
 		}
+	}
+
+	func clean() {
+		try? _fileManager.removeItem(at: _fileManager.certificates(_uuid))
 	}
 	
 	private func _directory() async throws -> URL {
-		// Documents/VexSign/Certificates/\(UUID)
 		_fileManager.certificates(_uuid)
 	}
 }
 
-private enum CertificateFileHandlerError: Error {
+enum CertificateFileHandlerError: LocalizedError {
 	case certNotValid
+	case invalidIdentity
+
+	var errorDescription: String? {
+		switch self {
+		case .certNotValid:
+			return .localized("The provisioning profile is invalid or could not be read.")
+		case .invalidIdentity:
+			return .localized("Unable to import the certificate. Check the P12 file, provisioning profile, and password.")
+		}
+	}
 }

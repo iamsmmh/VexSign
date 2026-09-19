@@ -26,6 +26,7 @@ extension AppIconView {
 	}
 
 	static func altImage(_ name: String?) -> UIImage {
+		if name == nil, let logo = UIImage(named: "AppLogo") { return logo }
 		let path = Bundle.main.bundleURL.appendingPathComponent((name ?? "AppIcon60x60") + "@2x.png")
 		return UIImage(contentsOfFile: path.path) ?? UIImage()
 	}
