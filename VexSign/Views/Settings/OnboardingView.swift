@@ -119,7 +119,7 @@ private struct PicketInstall: View {
 				}
 				Spacer()
 				if method == value {
-					Image(systemName: "checkmark.circle.fill").foregroundStyle(.accent)
+					Image(systemName: "checkmark.circle.fill").foregroundStyle(.tint)
 				}
 			}
 			.padding()

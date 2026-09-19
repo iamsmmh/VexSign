@@ -95,7 +95,7 @@ _VexSign/
 manifest-worker
 
 # Premium API server
-server/__pycache__/
+__pycache__/
 server/*.db
 server/.venv/
 server/premium.json
