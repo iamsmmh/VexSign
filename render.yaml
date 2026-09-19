@@ -2,7 +2,7 @@
 #
 # Render dashboard -> New -> Blueprint -> pick this repo (any branch), done.
 # After the first deploy, set these private env vars in the dashboard:
-#   SEED_KEYS          comma-separated RYK-... keys, (re)created on every boot
+#   SEED_KEYS          comma-separated VEX-... keys, (re)created on every boot
 #   ADMIN_TOKEN        distributor secret that unlocks /api/admin/* (mint &
 #                      manage keys remotely). Leave UNSET until you want the
 #                      admin surface live; unset = fully disabled. Generate one
