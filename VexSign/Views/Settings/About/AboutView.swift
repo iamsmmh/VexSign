@@ -2,8 +2,7 @@
 //  AboutView.swift
 //  VexSign
 //
-//  Created by VexSign Team on 30.04.2025.
-//  Maintained by @iamsmmh — https://github.com/iamsmmh/VexSign
+//  Created by the VexSign contributors.
 //
 
 import SwiftUI
@@ -21,15 +20,15 @@ extension AboutView {
 // MARK: - View
 struct AboutView: View {
 	private let _credits: [CreditsModel] = [
-		.init(name: "iamsmmh", desc: "Lead Developer — VexSign (Exclusive Features)", github: "iamsmmh"),
-		.init(name: "Samara / @claration", desc: "Feather — Original Base Project (GPL-3.0)", github: "claration"),
-		.init(name: "jkcoxson", desc: "idevice — AFC Installation Backend", github: "jkcoxson"),
-		.init(name: "zhlynn", desc: "Zsign — On-Device Signing", github: "zhlynn"),
-		.init(name: "tealbathingsuit", desc: "ElleKit — Tweak Injection", github: "tealbathingsuit"),
-		.init(name: "kean", desc: "Nuke — Image Caching", github: "kean"),
-		.init(name: "Lakr233", desc: "Asspp — HTTP Server Reference", github: "Lakr233"),
-		.init(name: "nekohaxx", desc: "plistserver — Install Helper", github: "nekohaxx"),
-		.init(name: "VexSign Team", desc: "Contributors & Translators", github: "iamsmmh"),
+		.init(name: "iamsmmh", desc: "Lead developer — VexSign", github: "iamsmmh"),
+		.init(name: "Samara / claration", desc: "Feather — original base (GPL-3.0)", github: "claration"),
+		.init(name: "jkcoxson", desc: "idevice — AFC installation backend", github: "jkcoxson"),
+		.init(name: "zhlynn", desc: "Zsign — on-device signing", github: "zhlynn"),
+		.init(name: "tealbathingsuit", desc: "ElleKit — tweak injection", github: "tealbathingsuit"),
+		.init(name: "kean", desc: "Nuke — image caching", github: "kean"),
+		.init(name: "Lakr233", desc: "Asspp — HTTP server reference", github: "Lakr233"),
+		.init(name: "nekohaxx", desc: "plistserver — install helper", github: "nekohaxx"),
+		.init(name: "Contributors", desc: "Translations & pull requests", github: "iamsmmh/VexSign"),
 	]
 
 	private let _sourceURL = "https://github.com/iamsmmh/VexSign"
@@ -49,7 +48,7 @@ struct AboutView: View {
 						.bold()
 						.foregroundStyle(Color.accentColor)
 
-					Text("by @iamsmmh")
+					Text("On-device IPA signer")
 						.font(.headline)
 						.foregroundStyle(.secondary)
 
@@ -60,7 +59,7 @@ struct AboutView: View {
 					.font(.footnote)
 					.foregroundStyle(.secondary)
 
-					Text("The most powerful on-device signer")
+					Text("Sign · tweak · install — no PC needed.")
 						.font(.caption)
 						.foregroundStyle(.secondary)
 						.padding(.top, 2)
@@ -69,38 +68,36 @@ struct AboutView: View {
 			.frame(maxWidth: .infinity)
 			.listRowBackground(EmptyView())
 
-			NBSection("Base Project — Feather") {
+			NBSection("Built on Feather") {
 				VStack(alignment: .leading, spacing: 6) {
-					Text("VexSign is built on top of Feather by @claration")
+					Text("VexSign is a GPL-3.0 fork of Feather by claration.")
 						.font(.subheadline)
 						.bold()
-					Text("Feather pioneered on-device signing on stock iOS. Without Feather, VexSign wouldn't exist. Special thanks to @claration for open sourcing GPL-3.0.")
+					Text("Feather pioneered on-device signing on stock iOS. The signing engine, CoreData model, and large parts of the UI architecture originate from that project.")
 						.font(.caption)
 						.foregroundStyle(.secondary)
 				}
 				Button {
 					UIApplication.open(_featherURL)
 				} label: {
-					Label("Feather by @claration (Base)", systemImage: "arrow.triangle.branch")
+					Label("Feather on GitHub", systemImage: "arrow.triangle.branch")
 				}
 			} footer: {
-				Text("Base features: Signing engine, CoreData model, UI architecture from Feather.")
+				Text("All VexSign-exclusive additions are released under GPL-3.0.")
 			}
 
-			NBSection("Exclusive by @iamsmmh") {
+			NBSection("Exclusive features") {
 				VStack(alignment: .leading, spacing: 8) {
-					Label("IPA Explorer — Edit inside IPA", systemImage: "folder.badge.gearshape")
+					Label("IPA Explorer — edit inside IPA", systemImage: "folder.badge.gearshape")
 					Label("File Transfer Server — HTTP/WebDAV", systemImage: "antenna.radiowaves.left.and.right")
 					Label("Live Activities & Dynamic Island", systemImage: "sparkles")
-					Label("Auto Cleanup Pipeline", systemImage: "wand.and.stars")
+					Label("Auto Cleanup pipeline", systemImage: "wand.and.stars")
 					Label("Batch Signing & Update All", systemImage: "square.stack.3d.up.fill")
 					Label("Backup & Restore (.vexbackup)", systemImage: "externaldrive.connected.to.line.below")
 					Label("Logs & File Manager", systemImage: "doc.text.magnifyingglass")
 				}
 				.font(.subheadline)
 				.foregroundStyle(.secondary)
-			} footer: {
-				Text("Exclusive features added by @iamsmmh — not available in Feather, ESign or Scarlet.")
 			}
 
 			NBSection(.localized("Credits")) {
@@ -111,18 +108,22 @@ struct AboutView: View {
 
 			NBSection(.localized("Source & License")) {
 				Button {
+					UIApplication.open(_sourceURL)
+				} label: {
+					Label(.localized("Source Code"), systemImage: "chevron.left.forwardslash.chevron.right")
+				}
+				Button {
+					UIApplication.open(_licenseURL)
+				} label: {
+					Label(.localized("License (GPL-3.0)"), systemImage: "doc.text")
+				}
+				Button {
 					UIApplication.open(_authorURL)
 				} label: {
-					Label("Author: @iamsmmh", systemImage: "person.crop.circle.fill")
-				}
-				Button(.localized("Source Code"), systemImage: "chevron.left.forwardslash.chevron.right") {
-					UIApplication.open(_sourceURL)
-				}
-				Button(.localized("License (GPL-3.0)"), systemImage: "doc.text") {
-					UIApplication.open(_licenseURL)
+					Label("Author on GitHub", systemImage: "person.crop.circle.fill")
 				}
 			} footer: {
-				Text("VexSign by @iamsmmh, based on Feather by @claration. Free software under GPL-3.0. Star the repo if you like it! Built with ❤️")
+				Text("Free software under GPL-3.0. Built on top of Feather by claration.")
 			}
 		}
 	}

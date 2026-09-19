@@ -23,7 +23,7 @@ struct SettingsDonationCellView: View {
 				VStack(spacing: 4) {
 					Text("VexSign")
 						.font(.title3.bold())
-					Text("by @iamsmmh — The most powerful signer")
+					Text("On-device IPA signer")
 						.font(.subheadline)
 						.foregroundStyle(.secondary)
 						.multilineTextAlignment(.center)
@@ -37,7 +37,7 @@ struct SettingsDonationCellView: View {
 				Button {
 					UIApplication.open(site)
 				} label: {
-					Text("⭐ Star on GitHub — @iamsmmh")
+					Text("⭐ Star on GitHub")
 						.font(.subheadline.weight(.semibold))
 						.foregroundStyle(.white)
 						.padding(.horizontal, 28)
