@@ -1,17 +1,14 @@
-VexSign by @iamsmmh
+VexSign — on-device iOS IPA signer
 https://github.com/iamsmmh/VexSign
 
-The most powerful on-device iOS signer.
-Features added by @iamsmmh:
-- IPA Explorer
-- File Transfer Server (HTTP/WebDAV)
-- Live Activities & Dynamic Island
-- Auto Cleanup Pipeline
+VexSign-exclusive features (on top of the Feather base):
+- IPA Explorer (edit Info.plist, files and images inside any IPA)
+- File Transfer Server (HTTP / WebDAV)
+- Live Activities & Dynamic Island for downloads
+- Auto Cleanup pipeline
 - Batch Signing & Update All
-- Backup & Restore
-- Logs & File Manager
-- And more...
+- Backup & Restore (.vexbackup)
+- Logs & built-in File Manager
 
-Bundle: com.vexsign.app
-Author: iamsmmh (https://github.com/iamsmmh)
-License: GPL-3.0
+Bundle ID:   com.vexsign.app
+License:     GPL-3.0 (see LICENSE; built on Feather by claration, also GPL-3.0)

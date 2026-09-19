@@ -12,9 +12,40 @@ A key row looks like:
 
 import os
 import sqlite3
+import sys
 import time
 
-DB_PATH = os.environ.get("VEXSIGN_DB", os.path.join(os.path.dirname(__file__), "vexsign.db"))
+# Default DB lives next to this file (writable everywhere, including Render
+# free tier where /data isn't mounted and not writable). Override with
+# VEXSIGN_DB when you actually have a persistent disk mounted (paid plan).
+_DEFAULT_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "vexsign.db")
+
+
+def _resolve_db_path() -> str:
+    env = os.environ.get("VEXSIGN_DB")
+    if not env:
+        return _DEFAULT_DB
+
+    # If the configured path's parent is writable (e.g. /data on a paid Render
+    # plan with a mounted disk), use it. Otherwise fall back to the default
+    # rather than crashing at startup on free-tier / sandbox hosts.
+    parent = os.path.dirname(os.path.abspath(env)) or "."
+    if os.path.exists(parent) and os.access(parent, os.W_OK):
+        return env
+    # Try creating the parent; if that fails, fall back.
+    try:
+        os.makedirs(parent, exist_ok=True)
+        return env
+    except (PermissionError, OSError) as exc:
+        print(
+            f"[db] VEXSIGN_DB={env!r} is not writable ({exc}); "
+            f"falling back to {_DEFAULT_DB}",
+            file=sys.stderr,
+        )
+        return _DEFAULT_DB
+
+
+DB_PATH = _resolve_db_path()
 
 # Shared with keygen.py and the admin API: keep O/0 and I/1 out of keys so a
 # key read off a phone screen and typed back is never ambiguous.
@@ -33,9 +64,9 @@ CREATE TABLE IF NOT EXISTS keys (
 
 def connect() -> sqlite3.Connection:
     """Open the database (creating the schema on first use)."""
-    parent = os.path.dirname(DB_PATH)
+    parent = os.path.dirname(os.path.abspath(DB_PATH))
     if parent:
-        os.makedirs(parent, exist_ok=True)  # e.g. /data before a volume exists
+        os.makedirs(parent, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.executescript(_SCHEMA)

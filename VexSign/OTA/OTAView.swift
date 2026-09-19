@@ -10,20 +10,34 @@ private struct OTAManifestFile: FileDocument {
 }
 
 struct OTAView: View {
-    @State private var name = ""
-    @State private var bundleID = ""
-    @State private var version = "1.0"
-    @State private var download = ""
-    @State private var manifest = ""
-    @State private var link: URL?
-    @State private var qr: UIImage?
-    @State private var file = OTAManifestFile(data: Data())
-    @State private var exporting = false
-    @State private var error: String?
-    var body: some View {
-        Form {
-            Section("Hosted Signed IPA") {
-                TextField("App name", text: $name)
+	@State private var name = ""
+	@State private var bundleID = ""
+	@State private var version = "1.0"
+	@State private var download = ""
+	@State private var manifest = ""
+	@State private var signedApps: [AppInfoPresentable] = []
+	@State private var link: URL?
+	@State private var qr: UIImage?
+	@State private var file = OTAManifestFile(data: Data())
+	@State private var exporting = false
+	@State private var error: String?
+	var body: some View {
+		Form {
+			Section("Hosted Signed IPA") {
+				if !signedApps.isEmpty {
+					Menu {
+						ForEach(signedApps, id: \.uuid) { app in
+							Button {
+								prefill(from: app)
+							} label: {
+								Text(app.name ?? "Untitled")
+							}
+						}
+					} label: {
+						Label("Prefill from Signed Apps", systemImage: "square.and.arrow.down.on.square")
+					}
+				}
+				TextField("App name", text: $name)
                 TextField("Bundle identifier", text: $bundleID)
                 TextField("Version", text: $version)
                 TextField("HTTPS IPA URL", text: $download)
@@ -47,8 +61,19 @@ struct OTAView: View {
             }
             if let error { Text(error).foregroundStyle(.red) }
         }.textInputAutocapitalization(.never).autocorrectionDisabled().navigationTitle("OTA Distribution")
+            .onAppear {
+                if signedApps.isEmpty {
+                    signedApps = Storage.shared.getAllApps().filter { $0.isSigned }
+                }
+            }
             .fileExporter(isPresented: $exporting, document: file, contentType: .xml, defaultFilename: "manifest.plist") { result in
                 if case .failure(let error) = result { self.error = error.localizedDescription }
             }
+    }
+
+    private func prefill(from app: AppInfoPresentable) {
+        name = app.name ?? ""
+        bundleID = app.identifier ?? ""
+        version = app.version ?? "1.0"
     }
 }

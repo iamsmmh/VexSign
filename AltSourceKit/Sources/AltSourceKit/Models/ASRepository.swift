@@ -189,6 +189,32 @@ extension ASRepository {
 			public var iPhone: [URL]?
 			public var iPad: [URL]?
 
+			private struct Entry: Decodable {
+				var url: URL?
+
+				init(from decoder: any Decoder) throws {
+					// An entry is either a plain URL string …
+					if let single = try? decoder.singleValueContainer() {
+						if let string = try? single.decode(String.self) {
+							self.url = URL(string: string)
+							return
+						}
+					}
+
+					// … or a dictionary: { "url": "...", "width": 100, "height": 200 }.
+					let container = try decoder.container(keyedBy: CodingKeys.self)
+					if let string = try container.decodeIfPresent(String.self, forKey: .url) {
+						self.url = URL(string: string)
+					} else if let absolute = try container.decodeIfPresent(String.self, forKey: .imageURL) {
+						self.url = URL(string: absolute)
+					}
+				}
+
+				enum CodingKeys: String, CodingKey {
+					case url, imageURL = "image_url"
+				}
+			}
+
 			public init(from decoder: any Decoder) throws {
 				// theres a bunch of ways this shit can be formatted
 				// 1. an array of urls (strings)
@@ -196,7 +222,41 @@ extension ASRepository {
 				// 3. a mix of 1 and 2, having urls or dictionaries
 				// 4. a dictionary with properties for iphone and ipad, which are arrays of above types
 
-				#warning("implement screenshots decoding")
+				// Case 4: { "iphone": [...], "ipad": [...] }
+				if let keyed = try? decoder.container(keyedBy: CodingKeys.self),
+				   keyed.contains(.iPhone) || keyed.contains(.iPad) {
+					let iPhoneEntries = (try? keyed.decodeIfPresent([Entry].self, forKey: .iPhone)) ?? nil
+					let iPadEntries = (try? keyed.decodeIfPresent([Entry].self, forKey: .iPad)) ?? nil
+					self.iPhone = (iPhoneEntries ?? []).compactMap(\.url)
+					self.iPad = (iPadEntries ?? []).compactMap(\.url)
+					return
+				}
+
+				// Cases 1-3: a flat array of url strings, dictionaries, or a mix.
+				// Treat it as the iPhone set (AltStore semantics for a flat list).
+				if var unkeyed = try? decoder.unkeyedContainer() {
+					var urls: [URL] = []
+					while !unkeyed.isAtEnd {
+						// Nulls: consume and skip.
+						if (try? unkeyed.decodeNil()) == true { continue }
+
+						if let entry = try? unkeyed.decode(Entry.self) {
+							if let url = entry.url { urls.append(url) }
+							continue
+						}
+
+						// Unrecognized primitives: consume so the index advances.
+						if (try? unkeyed.decode(Bool.self)) != nil { continue }
+						if (try? unkeyed.decode(Double.self)) != nil { continue }
+
+						// Exotic element (nested array, …): stop scanning rather
+						// than risk spinning on an index that cannot advance.
+						break
+					}
+					self.iPhone = urls
+					self.iPad = []
+					return
+				}
 
 				self.iPad = []
 				self.iPhone = []

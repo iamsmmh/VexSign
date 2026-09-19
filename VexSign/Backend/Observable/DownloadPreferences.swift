@@ -8,15 +8,22 @@
 
 import Foundation
 import Network
+import UIKit
 
 enum DownloadPreferences {
 	static let wifiOnlyKey = "VexSign.downloads.wifiOnly"
+	static let chargeOnlyKey = "VexSign.downloads.chargeOnly"
 	static let maxParallelKey = "VexSign.downloads.maxParallel"
 	static let resumeAfterGameModeKey = "VexSign.downloads.resumeAfterGameMode"
 
 	static var wifiOnly: Bool {
 		get { UserDefaults.standard.bool(forKey: wifiOnlyKey) }
 		set { UserDefaults.standard.set(newValue, forKey: wifiOnlyKey) }
+	}
+
+	static var chargeOnly: Bool {
+		get { UserDefaults.standard.bool(forKey: chargeOnlyKey) }
+		set { UserDefaults.standard.set(newValue, forKey: chargeOnlyKey) }
 	}
 
 	/// 1…8 simultaneous network downloads. Default 3 so a big IPA does not starve the rest.
@@ -39,6 +46,14 @@ enum DownloadPreferences {
 	/// Cellular / expensive path when Wi-Fi-only is on.
 	static var isOnExpensivePath: Bool {
 		PathMonitor.shared.isExpensive
+	}
+
+	/// True while plugged in (or the battery is full). Battery monitoring is enabled
+	/// on the spot so the check is self-contained.
+	static var isCharging: Bool {
+		UIDevice.current.isBatteryMonitoringEnabled = true
+		let state = UIDevice.current.batteryState
+		return state == .charging || state == .full
 	}
 
 	static func etaString(bytesRemaining: Int64, bytesPerSecond: Int64) -> String? {

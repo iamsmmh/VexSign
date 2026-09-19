@@ -27,6 +27,9 @@ struct DownloadsSettingsView: View {
 	@AppStorage(DownloadPreferences.wifiOnlyKey)
 	private var _wifiOnly: Bool = false
 
+	@AppStorage(DownloadPreferences.chargeOnlyKey)
+	private var _chargeOnly: Bool = false
+
 	@AppStorage(DownloadPreferences.maxParallelKey)
 	private var _maxParallel: Int = 3
 
@@ -55,6 +58,7 @@ struct DownloadsSettingsView: View {
 		NBList(.localized("Downloads")) {
 			NBSection(.localized("Reliability")) {
 				Toggle(.localized("Wi-Fi Only"), isOn: $_wifiOnly)
+				Toggle(.localized("Charge Only"), isOn: $_chargeOnly)
 				Stepper(value: $_maxParallel, in: 1...8) {
 					HStack {
 						Text(.localized("Parallel downloads"))
@@ -65,7 +69,7 @@ struct DownloadsSettingsView: View {
 				}
 				Toggle(.localized("Resume when Game Mode turns off"), isOn: $_resumeAfterGameMode)
 			} footer: {
-				Text(.localized("Wi-Fi only refuses cellular. Parallel cap keeps a huge IPA from starving everything else. Resume is the pair to Game Mode."))
+				Text(.localized("Wi-Fi only refuses cellular. Charge only refuses new downloads while the device is unplugged. Parallel cap keeps a huge IPA from starving everything else. Resume is the pair to Game Mode."))
 			}
 
 			NBSection(.localized("Display Mode")) {

@@ -12,6 +12,7 @@
 //
 
 import SwiftUI
+import QuickLook
 import NimbleViews
 import NimbleExtensions
 
@@ -29,6 +30,10 @@ struct FileManagerView: View {
 	@State private var _query = ""
 	@State private var _prompt: Prompt?
 	@State private var _promptText = ""
+	@State private var _previewURL: URL?
+	@State private var _verifyURL: URL?
+	@State private var _showsVerifyAlert = false
+	@State private var _verifyText = ""
 	@State private var _isIPSWPresenting = false
 
 	/// The three things the "+" menu can create or bring in.
@@ -90,6 +95,16 @@ struct FileManagerView: View {
 		.searchable(text: $_query, placement: .navigationBarDrawer(displayMode: .automatic))
 		.toolbar { _toolbar }
 		.refreshable { _load() }
+		.quickLookPreview($_previewURL)
+		.alert(.localized("Verify Hash"), isPresented: $_showsVerifyAlert) {
+			TextField(.localized("Expected SHA-256"), text: $_verifyText)
+				.textInputAutocapitalization(.never)
+				.autocorrectionDisabled()
+			Button(.localized("Verify")) { _runVerify() }
+			Button(.localized("Cancel"), role: .cancel) { _verifyText = "" }
+		} message: {
+			Text(.localized("Paste the SHA-256 the source published for this file. “sha256:” prefixes are ignored."))
+		}
 		.sheet(isPresented: $_isIPSWPresenting) {
 			IPSWBrowserView()
 		}
@@ -196,6 +211,39 @@ struct FileManagerView: View {
 		}
 	}
 
+	// MARK: Hash tools
+
+	private func _copyHash(_ url: URL) {
+		DispatchQueue.global(qos: .userInitiated).async {
+			guard let hash = FileIntegrity.sha256(of: url) else {
+				DispatchQueue.main.async { Toast.error(.localized("Could not read the file")) }
+				return
+			}
+			DispatchQueue.main.async {
+				UIPasteboard.general.string = hash
+				Toast.info(.localized("SHA-256 copied"), systemImage: "number")
+			}
+		}
+	}
+
+	private func _runVerify() {
+		guard let url = _verifyURL else { return }
+		let expected = _verifyText
+		_verifyText = ""
+		guard !expected.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+
+		DispatchQueue.global(qos: .userInitiated).async {
+			let matches = FileIntegrity.matches(url, expected: expected)
+			DispatchQueue.main.async {
+				if matches {
+					Toast.success(.localized("Hash matches — file is intact"))
+				} else {
+					Toast.error(.localized("Hash does not match — file differs from the expected one"))
+				}
+			}
+		}
+	}
+
 	@ViewBuilder
 	private func _menu(for entry: IPAFileEntry) -> some View {
 		Button(.localized("Rename"), systemImage: "pencil") {
@@ -208,8 +256,22 @@ struct FileManagerView: View {
 		}
 
 		if !entry.isDirectory {
+			Button(.localized("Preview"), systemImage: "eye") {
+				_previewURL = entry.url
+			}
+
 			Button(.localized("Share"), systemImage: "square.and.arrow.up") {
 				FileManagerActions.share(entry.url)
+			}
+
+			Button(.localized("Copy SHA-256"), systemImage: "number") {
+				_copyHash(entry.url)
+			}
+
+			Button(.localized("Verify Hash…"), systemImage: "checkmark.seal") {
+				_verifyURL = entry.url
+				_verifyText = ""
+				_showsVerifyAlert = true
 			}
 		}
 

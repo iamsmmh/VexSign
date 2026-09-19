@@ -204,6 +204,8 @@
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>VexSign uses your local network to transfer IPAs and tweaks to this device over the Web Manager server.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>VexSign uses Face ID to unlock the app when App Lock is enabled.</string>
 	<key>NSUserNotificationUsageDescription</key>
 	<string>VexSign will notify you when downloads complete and are ready to import.</string>
 	<key>UIBackgroundModes</key>
