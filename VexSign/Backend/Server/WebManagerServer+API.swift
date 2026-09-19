@@ -161,16 +161,16 @@ extension WebManagerServer {
 			let ipaURL = staging.appendingPathComponent("upload.ipa")
 			let promise = req.eventLoop.makePromise(of: Response.self)
 
-			self.streamToFile(req, destination: ipaURL, route: false, report: false, successStatus: .ok)
-				.whenSuccess { _ in
-					Task { @MainActor in
-						let response = await self._signAndPackage(ipaURL: ipaURL, staging: staging)
-						promise.succeed(response)
-					}
+			let streamed = self.streamToFile(req, destination: ipaURL, route: false, report: false, successStatus: .ok)
+			streamed.whenSuccess { _ in
+				Task { @MainActor in
+					let response = await self._signAndPackage(ipaURL: ipaURL, staging: staging)
+					promise.succeed(response)
 				}
-				.whenFailure { error in
-					promise.fail(error)
-				}
+			}
+			streamed.whenFailure { error in
+				promise.fail(error)
+			}
 
 			return promise.futureResult
 		}
@@ -260,7 +260,7 @@ extension WebManagerServer {
 		return expiry > Date()
 	}
 
-	private static func apiJSON<T: Content>(_ value: T) -> Response {
+	private static func apiJSON<T: Encodable>(_ value: T) -> Response {
 		let data = (try? JSONEncoder().encode(value)) ?? Data("{}".utf8)
 		var headers = HTTPHeaders()
 		headers.contentType = .json

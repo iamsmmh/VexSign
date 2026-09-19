@@ -82,7 +82,7 @@ struct BatchCertCheckView: View {
 		Section {
 			VStack(alignment: .leading, spacing: 8) {
 				ProgressView(value: Double(_checker.checkedCount), total: Double(max(1, _checker.totalCount)))
-				Text(.localized("Checking %lld of %lld…", arguments: _checker.checkedCount, _checker.totalCount))
+				Text(String.localized("Checking %lld of %lld…", arguments: _checker.checkedCount, _checker.totalCount))
 					.font(.footnote)
 					.foregroundStyle(.secondary)
 			}

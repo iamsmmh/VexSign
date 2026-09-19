@@ -60,7 +60,7 @@ struct IPSWBrowserView: View {
 				}
 			}
 
-			ForEach(_filteredDevices) { device in
+			ForEach(_filteredDevices, id: \.identifier) { device in
 				Button {
 					_select(device)
 				} label: {

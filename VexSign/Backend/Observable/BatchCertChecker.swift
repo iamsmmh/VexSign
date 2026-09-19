@@ -109,7 +109,7 @@ struct CertCheckResult: Identifiable, Equatable {
 // MARK: - Snapshot
 
 /// Everything the concurrent check needs, copied off the managed object.
-private struct CertCheckSnapshot: Sendable {
+struct CertCheckSnapshot: Sendable {
 	let uuid: String
 	let name: String
 	let storedExpiry: Date?
