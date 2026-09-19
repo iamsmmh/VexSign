@@ -88,7 +88,7 @@ private struct InstallQueueSheet: View {
 				VStack(spacing: 12) {
 					Text(.localized("Queue Finished"))
 						.font(.headline)
-					Text(.localized("%lld succeeded · %lld failed", arguments: queue.succeededCount, queue.failedCount))
+					Text(verbatim: .localized("%lld succeeded · %lld failed", arguments: queue.succeededCount, queue.failedCount))
 						.font(.subheadline)
 						.foregroundStyle(.secondary)
 					Button(.localized("Done")) { queue.clear() }

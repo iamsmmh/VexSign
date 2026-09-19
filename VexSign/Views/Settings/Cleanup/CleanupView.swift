@@ -186,7 +186,7 @@ extension CleanupView {
 				HStack {
 					Text(.localized("Warn when storage exceeds"))
 					Spacer()
-					Text(_warnGB == 0 ? .localized("Off") : .localized("%lld GB", arguments: _warnGB))
+					Text(verbatim: _warnGB == 0 ? .localized("Off") : .localized("%lld GB", arguments: _warnGB))
 						.foregroundStyle(.secondary)
 				}
 			}

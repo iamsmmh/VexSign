@@ -152,7 +152,7 @@ extension CertificatesView {
 				if expiring > 0 { _stat(.localized("%lld expiring", arguments: expiring), color: .orange) }
 				if revoked > 0 { _stat(.localized("%lld revoked", arguments: revoked), color: .red) }
 			}
-			Text(.localized("%lld signed apps in the library use a certificate from this list.", arguments: apps))
+			Text(verbatim: .localized("%lld signed apps in the library use a certificate from this list.", arguments: apps))
 				.font(.caption)
 				.foregroundStyle(.secondary)
 			Button(.localized("Refresh Apple Status")) {
