@@ -266,8 +266,9 @@ final class AppInstaller: ObservableObject {
 
 	private func _finish(_ result: Result<Outcome, Error>) {
 		guard !_hasFinished else { return }
-		_hasFinished = true
-		_disarmDeclineWatch()
+        _hasFinished = true
+        if case .success(.installed) = result { Task { await AnalyticsStore.shared.record(.appsInstalled) } }
+        _disarmDeclineWatch()
 		_statusObserver = nil
 
 		let completion = _completion

@@ -7,9 +7,10 @@
 
 import Foundation
 import Security
+import OSLog
 
-/// Keychain survives reinstalls but gets wiped by dev tooling and restores, so every
-/// value is mirrored to disk and defaults, and a missing tier heals on the next read.
+/// Non-secret identity preferences retain legacy mirroring. API credentials are
+/// Keychain-only; plaintext legacy copies are removed only after successful migration.
 enum IdentityVault {
 	enum Key: String {
 		case deviceUUID
@@ -43,7 +44,22 @@ enum IdentityVault {
 		_lock.lock()
 		defer { _lock.unlock() }
 
-		if let cached = _cache[key] { return cached }
+		if key == .premiumAPIKey {
+            do {
+                let data = try SecureSecretStore.read(key.account, service: key.service)
+                let value = data.map { String(decoding: $0, as: UTF8.self) } ?? _fileValue(key) ?? _defaultsValue(key)
+                if let value {
+                    try SecureSecretStore.write(Data(value.utf8), account: key.account, service: key.service)
+                    _writeFile(key, nil)
+                    UserDefaults.standard.removeObject(forKey: key.defaultsKey)
+                }
+                return value
+            } catch {
+                Logger.misc.error("Credential migration requires an unlocked Keychain.")
+                return nil
+            }
+        }
+        if let cached = _cache[key] { return cached }
 
 		let tiers = [_keychainValue(key), _fileValue(key), _defaultsValue(key)]
 		guard let value = tiers.compactMap({ $0 }).first else { return nil }
@@ -60,8 +76,16 @@ enum IdentityVault {
 		_lock.lock()
 		defer { _lock.unlock() }
 
-		_cache[key] = value
-		_writeAllTiers(key, value)
+		if key == .premiumAPIKey {
+            do {
+                try SecureSecretStore.write(Data(value.utf8), account: key.account, service: key.service)
+                _writeFile(key, nil)
+                UserDefaults.standard.removeObject(forKey: key.defaultsKey)
+            } catch { Logger.misc.error("Unable to save API credential to Keychain.") }
+            return
+        }
+        _cache[key] = value
+        _writeAllTiers(key, value)
 	}
 
 	static func delete(_ key: Key) {

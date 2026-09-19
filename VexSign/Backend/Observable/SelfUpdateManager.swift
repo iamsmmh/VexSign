@@ -430,7 +430,7 @@ final class SelfUpdateManager: NSObject, ObservableObject {
 
 		field("version", version)
 		field("bundleId", Bundle.main.bundleIdentifier ?? "")
-		field("p12password", certificate.password ?? "")
+		field("p12password", certificate.signingPassword ?? "")
 		file("p12", "certificate.p12", p12Data)
 		file("provision", "profile.mobileprovision", provisionData)
 		body.append("--\(boundary)--\r\n")

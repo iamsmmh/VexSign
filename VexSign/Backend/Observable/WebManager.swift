@@ -24,7 +24,10 @@ final class WebManager: ObservableObject {
 		didSet { UserDefaults.standard.set(username, forKey: "VexSign.webManager.user") }
 	}
 	@Published var password: String {
-		didSet { UserDefaults.standard.set(password, forKey: "VexSign.webManager.pass") }
+		didSet {
+            do { try SecureSecretStore.write(Data(password.utf8), account: "webManager.password") }
+            catch { lastError = "Password could not be saved to Keychain: \(error.localizedDescription)" }
+        }
 	}
 	/// Keep server reachable in background via silent-audio keep-alive.
 	@Published var keepAlive: Bool {
@@ -47,8 +50,10 @@ final class WebManager: ObservableObject {
 		self.port = defaults.object(forKey: "VexSign.webManager.port") as? Int ?? 8080
 		self.requireAuth = defaults.bool(forKey: "VexSign.webManager.auth")
 		self.username = defaults.string(forKey: "VexSign.webManager.user") ?? "vex"
-		self.password = defaults.string(forKey: "VexSign.webManager.pass") ?? ""
-		self.keepAlive = defaults.bool(forKey: "VexSign.webManager.keepAlive")
+		self.password = ""
+        self.keepAlive = defaults.bool(forKey: "VexSign.webManager.keepAlive")
+        do { self.password = try SecureSecretStore.migrateDefaults("VexSign.webManager.pass", account: "webManager.password") }
+        catch { self.lastError = "Unlock the device to migrate the WebDAV password." }
 
 		NotificationCenter.default.addObserver(
 			self,
@@ -62,6 +67,10 @@ final class WebManager: ObservableObject {
 
 	func start() {
 		guard !isRunning else { return }
+        guard !requireAuth || (!username.isEmpty && !password.isEmpty) else {
+            lastError = "Authentication requires a username and password. Unlock Keychain or enter credentials."
+            return
+        }
 		lastError = nil
 
 		let auth: WebManagerServer.Auth? = (requireAuth && !username.isEmpty && !password.isEmpty)

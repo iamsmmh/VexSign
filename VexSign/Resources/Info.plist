@@ -12,6 +12,7 @@
 		<string>com.vexsign.background.download.continued</string>
 		<string>com.vexsign.background.maintenance</string>
 		<string>com.vexsign.background.refresh</string>
+        <string>com.vexsign.ecosystem.refresh</string>
 	</array>
 	<key>CFBundleDocumentTypes</key>
 	<array>

@@ -19,9 +19,9 @@ enum CertificateStatusValue: String, Codable {
 	init(apiStatus: String) {
 		let normalizedStatus = apiStatus.lowercased()
 
-		if normalizedStatus.contains("signed") {
+        if ["signed", "good", "valid"].contains(normalizedStatus) {
 			self = .signed
-		} else if normalizedStatus.contains("revoked") {
+		} else if normalizedStatus == "revoked" {
 			self = .revoked
 		} else {
 			self = .unknown
@@ -29,7 +29,7 @@ enum CertificateStatusValue: String, Codable {
 	}
 
 	static func deviceStatus(for cert: CertificatePair) -> CertificateStatusValue {
-		cert.revoked == true ? .revoked : .signed
+		cert.revoked == true ? .revoked : .unknown
 	}
 
 	var title: String {
@@ -164,7 +164,10 @@ final class CertificateStatusManager: ObservableObject {
 		refreshAppleStatusIfNeeded(for: cert)
 	}
 
-	func refreshAppleStatus(for cert: CertificatePair, force: Bool = true) {
+    func refreshAppleStatus(for cert: CertificatePair, force: Bool = true) {
+        // This legacy service receives the PRIVATE KEY and password. Never upload
+        // silently during import/startup. The dashboard exposes explicit consent.
+        guard UserDefaults.standard.bool(forKey: "VexSign.security.allowLegacyCertificateUpload") else { return }
 		guard
 			let uuid = cert.uuid,
 			let p12URL = Storage.shared.getFile(.certificate, from: cert)
@@ -182,7 +185,7 @@ final class CertificateStatusManager: ObservableObject {
 
 		refreshingAppleStatusIDs.insert(uuid)
 
-		let password = cert.password ?? ""
+		let password = cert.signingPassword ?? ""
 
 		Task { [checkerURL = _checkerURL] in
 			defer {

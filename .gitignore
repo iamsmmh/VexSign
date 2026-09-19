@@ -99,3 +99,9 @@ __pycache__/
 server/*.db
 server/.venv/
 server/premium.json
+
+# Cloud signing build/deployment data
+cloud-signing/node_modules/
+cloud-signing/dist/
+cloud-signing/work/
+cloud-signing/*.log

@@ -22,28 +22,44 @@ extension Storage {
 		completion: @escaping (Error?) -> Void
 	) {
 		let generator = UIImpactFeedbackGenerator(style: .light)
-		
+
+		do {
+			try SecureSecretStore.write(Data((password ?? "").utf8), account: "certificate.password.\(uuid)")
+		} catch {
+			completion(error)
+			return
+		}
+
 		let new = CertificatePair(context: context)
 		new.uuid = uuid
 		new.date = Date()
-		new.password = password
+		new.password = nil
 		new.ppQCheck = ppq
 		new.expiration = expiration
 		new.nickname = nickname
 		new.isDefault = isDefault
 		new.revoked = false
+
 		do {
 			try context.save()
-			CertificateStatusManager.shared.refreshStatus(for: new)
-			generator.impactOccurred()
-			completion(nil)
 		} catch {
 			context.delete(new)
+			try? SecureSecretStore.delete("certificate.password.\(uuid)")
 			completion(error)
+			return
 		}
+
+		CertificateStatusManager.shared.refreshStatus(for: new)
+		generator.impactOccurred()
+		Task { await AnalyticsStore.shared.record(.certificatesAdded) }
+		completion(nil)
 	}
 	
-	func deleteCertificate(for cert: CertificatePair) {
+    func deleteCertificate(for cert: CertificatePair) {
+        if let uuid = cert.uuid {
+            do { try SecureSecretStore.delete("certificate.password.\(uuid)") }
+            catch { return } // Keep the entry so deletion can be retried after unlock.
+        }
 		Task { @MainActor in
 			CertificateStatusManager.shared.removeAppleStatus(for: cert)
 		}
@@ -78,7 +94,7 @@ extension Storage {
 		Zsign.checkRevokage(
 			provisionPath: Storage.shared.getFile(.provision, from: cert)?.path ?? "",
 			p12Path: Storage.shared.getFile(.certificate, from: cert)?.path ?? "",
-			p12Password: cert.password ?? ""
+			p12Password: cert.signingPassword ?? ""
 		) { (status, _, _) in
 			DispatchQueue.main.async {
 				if status == 1 {

@@ -207,7 +207,7 @@ final class BackupManager {
 				certEntries.append(.init(
 					uuid: uuid,
 					nickname: cert.nickname,
-					password: cert.password,
+					password: cert.signingPassword,
 					expiration: cert.expiration ?? Date(),
 					ppq: cert.ppQCheck
 				))

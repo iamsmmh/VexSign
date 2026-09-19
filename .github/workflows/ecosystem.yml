@@ -1,0 +1,38 @@
+name: Ecosystem contracts
+on:
+  pull_request:
+    paths:
+      - 'cloud-signing/**'
+      - 'VexSign/RepositoryBuilder/**'
+      - 'VexSign/RepositorySync/**'
+      - 'VexSign/Discovery/**'
+      - 'VexSign/CertificateDashboard/**'
+      - 'VexSign/Security/**'
+      - 'VexSign/OTA/**'
+      - 'VexSign/Analytics/**'
+      - 'VexSign/CloneWizard/**'
+      - 'VexSign/Ecosystem/**'
+      - '.github/workflows/ecosystem.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cloud:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cloud-signing
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: cloud-signing/package-lock.json
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+      - run: npm run contracts && git diff --exit-code -- openapi.json
+      - run: npm audit --omit=dev --audit-level=high
+# The existing Release workflow builds the full iOS app on macOS for PRs.
