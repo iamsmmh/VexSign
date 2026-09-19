@@ -26,14 +26,17 @@ extension ServerInstaller {
 		let app = Application(Self.env)
 		app.threadPool = .init(numberOfThreads: 1)
 		
-		if getServerMethod() != 1 {
-			if let tls = try tls() {
-				app.http.server.configuration.tlsConfiguration = tls
-			} else {
-				FileLogger.error("no certificate found, serving plain HTTP on an https:// url — iOS will refuse this", category: "install")
+		do {
+			if getServerMethod() != 1 {
+				guard readCommonName() != nil else { throw LocalInstallError.invalidHostname }
+				guard let configuration = try tls() else { throw LocalInstallError.missingTLS }
+				app.http.server.configuration.tlsConfiguration = configuration
 			}
+		} catch {
+			app.shutdown()
+			throw error
 		}
-		
+
 		app.http.server.configuration.hostname = sni()
 		app.http.server.configuration.tcpNoDelay = true
 		app.http.server.configuration.address = .hostname("0.0.0.0", port: port)
@@ -94,8 +97,18 @@ extension ServerInstaller {
 			return nil
 		}
 		
-		// A wildcard CN is not a hostname; any concrete label under it both matches the cert and resolves.
-		return name.hasPrefix("*.") ? "local" + name.dropFirst() : name
+		return Self.normalizedHostname(name)
+	}
+
+	static func normalizedHostname(_ name: String) -> String? {
+		// A wildcard CN needs a concrete label that matches the certificate.
+		let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+		let host = name.hasPrefix("*.") ? "local" + name.dropFirst() : name
+		guard host != "null", !host.contains(where: { $0.isWhitespace }),
+			  let url = URL(string: "https://" + host), url.host == host,
+			  url.port == nil, url.user == nil, url.path.isEmpty,
+			  url.query == nil, url.fragment == nil, !host.isEmpty else { return nil }
+		return host
 	}
 }
 
@@ -145,7 +158,11 @@ extension ServerInstaller {
 			var ptr = ifaddr
 			while ptr != nil {
 				let interface = ptr!.pointee
-				let addrFamily = interface.ifa_addr.pointee.sa_family
+				guard let addr = interface.ifa_addr else {
+					ptr = interface.ifa_next
+					continue
+				}
+				let addrFamily = addr.pointee.sa_family
 				
 				if addrFamily == UInt8(AF_INET) {
 					

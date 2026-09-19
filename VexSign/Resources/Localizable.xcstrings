@@ -1,6 +1,182 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Fully Local serves the manifest and IPA from this device over HTTPS. It requires valid SSL certificates and a hostname that resolves to this device. Semi Local uses an online manifest service, while the IPA stays on your device. If the LAN address fails, enable Only use localhost address." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fully Local serves the manifest and IPA from this device over HTTPS. It requires valid SSL certificates and a hostname that resolves to this device. Semi Local uses an online manifest service, while the IPA stays on your device. If the LAN address fails, enable Only use localhost address."
+          }
+        }
+      }
+    },
+    "Retry with Semi Local (localhost)" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry with Semi Local (localhost)"
+          }
+        }
+      }
+    },
+    "Fully Local requires SSL certificates. Go to Settings → Installation → Update SSL Certificates, then retry." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fully Local requires SSL certificates. Go to Settings → Installation → Update SSL Certificates, then retry."
+          }
+        }
+      }
+    },
+    "The local SSL hostname is missing or invalid. Update SSL Certificates in Settings → Installation." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The local SSL hostname is missing or invalid. Update SSL Certificates in Settings → Installation."
+          }
+        }
+      }
+    },
+    "The local HTTPS server did not respond successfully." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The local HTTPS server did not respond successfully."
+          }
+        }
+      }
+    },
+    "Fully Local could not start. Update SSL Certificates in Settings → Installation and check that your DNS/VPN allows the certificate hostname to reach this device. You can also retry with Semi Local (localhost); this uses an online manifest service, but the IPA stays on your device." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fully Local could not start. Update SSL Certificates in Settings → Installation and check that your DNS/VPN allows the certificate hostname to reach this device. You can also retry with Semi Local (localhost); this uses an online manifest service, but the IPA stays on your device."
+          }
+        }
+      }
+    },
+    "The provisioning profile is invalid or could not be read." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The provisioning profile is invalid or could not be read."
+          }
+        }
+      }
+    },
+    "Unable to import the certificate. Check the P12 file, provisioning profile, and password." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to import the certificate. Check the P12 file, provisioning profile, and password."
+          }
+        }
+      }
+    },
+    "Queue Finished" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Queue Finished"
+          }
+        }
+      }
+    },
+    "Recover / Find Password" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recover / Find Password"
+          }
+        }
+      }
+    },
+    "Password recovered!" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password recovered!"
+          }
+        }
+      }
+    },
+    "Drag to reorder (tap Edit). Hidden tabs stay reachable from Home. Home and Settings can't be hidden." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drag to reorder (tap Edit). Hidden tabs stay reachable from Home. Home and Settings can't be hidden."
+          }
+        }
+      }
+    },
+    "Home" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Home"
+          }
+        }
+      }
+    },
+    "Sign, install, and manage your apps." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sign, install, and manage your apps."
+          }
+        }
+      }
+    },
+    "Quick Actions" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quick Actions"
+          }
+        }
+      }
+    },
+    "Import Certificate" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import Certificate"
+          }
+        }
+      }
+    },
     "Wi-Fi only is on. Connect to Wi-Fi or turn the setting off." : {
       "extractionState" : "manual",
       "localizations" : {

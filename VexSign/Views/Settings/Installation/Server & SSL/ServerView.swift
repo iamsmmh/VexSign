@@ -66,6 +66,8 @@ struct ServerView: View {
 				}
 				Toggle(.localized("Only use localhost address"), systemImage: "lifepreserver", isOn: $_ipFix)
 					.disabled(_serverMethod != 1)
+			} footer: {
+				Text(.localized("Fully Local serves the manifest and IPA from this device over HTTPS. It requires valid SSL certificates and a hostname that resolves to this device. Semi Local uses an online manifest service, while the IPA stays on your device. If the LAN address fails, enable Only use localhost address."))
 			}
 			
 			Section {

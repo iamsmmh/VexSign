@@ -36,7 +36,7 @@ struct TabBarSettingsView: View {
 					_prefs.move(from: source, to: destination)
 				}
 			} footer: {
-				Text(.localized("Drag to reorder (tap Edit). Hidden tabs stay reachable from Settings — the Settings tab can't be hidden."))
+				Text(.localized("Drag to reorder (tap Edit). Hidden tabs stay reachable from Home. Home and Settings can't be hidden."))
 			}
 		}
 		.toolbar {

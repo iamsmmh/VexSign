@@ -16,7 +16,7 @@ struct Certificate: Codable {
 	var Platform: [String]
 	var IsXcodeManaged: Bool?
 	var DeveloperCertificates: [Data]?
-	var derEncodedProfile: Data
+	var derEncodedProfile: Data?
 	var PPQCheck: Bool?
 	var Entitlements: [String: AnyCodable]?
 	var ExpirationDate: Date

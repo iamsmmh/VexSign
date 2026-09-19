@@ -39,24 +39,31 @@ extension ServerInstaller {
 	}
 	
 	var iTunesLink: String {
-		_iTunesLink(with: plistEndpoint.absoluteString)
+		Self.installLink(manifest: plistEndpoint.absoluteString)
 	}
 	
 	var iTunesLinkExternal: String? {
-		guard let encoded = manifestUrl?.absoluteString.addingPercentEncoding(withAllowedCharacters: .alphanumerics) else {
+		guard let manifestUrl else {
 			return nil
 		}
 		
-		return _iTunesLink(with: encoded)
+		return Self.installLink(manifest: manifestUrl.absoluteString)
 	}
 	
-	private func _iTunesLink(with url: String) -> String {
-		return "itms-services://?action=download-manifest&url=\(url)"
+	static func installLink(manifest url: String) -> String {
+		var components = URLComponents()
+		components.scheme = "itms-services"
+		components.host = ""
+		components.queryItems = [
+			URLQueryItem(name: "action", value: "download-manifest"),
+			URLQueryItem(name: "url", value: url)
+		]
+		return components.url!.absoluteString
 	}
 
 	var displayImageSmallEndpoint: URL {
 		var comps = URLComponents()
-		comps.scheme = "https"
+		comps.scheme = self.getServerMethod() == 1 ? "http" : "https"
 		comps.host = sni()
 		comps.path = "/app57x57.png"
 		comps.port = port
@@ -65,7 +72,7 @@ extension ServerInstaller {
 
 	var displayImageLargeEndpoint: URL {
 		var comps = URLComponents()
-		comps.scheme = "https"
+		comps.scheme = self.getServerMethod() == 1 ? "http" : "https"
 		comps.host = sni()
 		comps.path = "/app512x512.png"
 		comps.port = port
@@ -92,7 +99,7 @@ extension ServerInstaller {
 	var html: String {
 		"""
 		<html style="background-color: black;">
-		<script type="text/javascript">window.location="\(iTunesLinkExternal ?? "")"</script>
+		<script type="text/javascript">window.location="\(getServerMethod() == 1 ? (iTunesLinkExternal ?? "") : iTunesLink)"</script>
 		</html>
 		"""
 	}

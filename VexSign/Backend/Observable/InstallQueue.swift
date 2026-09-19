@@ -32,6 +32,10 @@ final class InstallQueue: ObservableObject {
 		case succeeded
 		case failed(String)
 		case skipped
+
+		func canOpenApp(isExport: Bool, identifier: String?) -> Bool {
+			self == .succeeded && !isExport && !(identifier ?? "").isEmpty
+		}
 	}
 
 	private init() {}
@@ -39,6 +43,13 @@ final class InstallQueue: ObservableObject {
 	var current: AnyApp? { apps.indices.contains(index) ? apps[index] : nil }
 	var upcoming: [AnyApp] { Array(apps.dropFirst(index + 1)) }
 	var showsPill: Bool { current != nil && !isSheetPresented && !isFinished }
+
+	/// Exports share the success counter, but must never get an Open action.
+	var installedApps: [AnyApp] {
+		apps.filter {
+			outcomes[$0.id]?.canOpenApp(isExport: $0.archive, identifier: $0.base.identifier) == true
+		}
+	}
 
 	var succeededCount: Int { outcomes.values.filter { $0 == .succeeded }.count }
 	var failedCount: Int {
@@ -67,7 +78,7 @@ final class InstallQueue: ObservableObject {
 	}
 
 	/// Never starts in the background since an OTA install needs its prompt on screen.
-	func activate() {
+	func activate(useLocalhost: Bool = false) {
 		guard
 			!isPaused,
 			installer == nil,
@@ -77,7 +88,7 @@ final class InstallQueue: ObservableObject {
 			return
 		}
 
-		let installer = AppInstaller(app: current.base, isSharing: current.archive)
+		let installer = AppInstaller(app: current.base, isSharing: current.archive, useLocalhost: useLocalhost)
 		self.installer = installer
 		installer.start { [weak self] result in self?._handle(result) }
 	}
@@ -107,12 +118,12 @@ final class InstallQueue: ObservableObject {
 	}
 
 	/// Retries the app at `index` (or the current one) by reinstating it and advancing back.
-	func retryCurrent() {
+	func retryCurrent(useLocalhost: Bool = false) {
 		guard apps.indices.contains(index) else { return }
 		_teardownInstaller()
 		outcomes[apps[index].id] = .pending
 		isPaused = false
-		activate()
+		activate(useLocalhost: useLocalhost)
 	}
 
 	/// Marks the failed app as pending again and rebuilds a fresh installer for it.
@@ -144,25 +155,29 @@ final class InstallQueue: ObservableObject {
 			if let current {
 				outcomes[current.id] = .failed(String(describing: error))
 			}
-			// One failure no longer abandons the queue: show it, then offer retry vs continue.
+			var actions: [(String, UIAlertAction.Style, (() -> Void)?)] = [
+				(.localized("Retry"), .default, { [weak self] in
+					HeartbeatManager.shared.start(true)
+					self?.retryCurrent()
+				})
+			]
+			if installer?.canRetryUsingLocalhost == true {
+				actions.append((.localized("Retry with Semi Local (localhost)"), .default, { [weak self] in
+					self?.retryCurrent(useLocalhost: true)
+				}))
+			}
+			actions.append((.localized("Skip"), .default, { [weak self] in
+				HeartbeatManager.shared.start(true)
+				self?.skip()
+			}))
+			actions.append((.localized("Stop"), .cancel, { [weak self] in
+				HeartbeatManager.shared.start(true)
+				self?._abandonAndFinish()
+			}))
 			UIAlertController.showAlertWithOptions(
 				title: .localized("Install Failed"),
-				message: "\(String(describing: error))\n\n\(String.localized("%lld more apps are waiting.", arguments: max(upcoming.count, 0)))",
-				actions: [
-					(.localized("Retry"), .default, { [weak self] in
-						HeartbeatManager.shared.start(true)
-						self?._teardownInstaller()
-						self?.retryCurrent()
-					}),
-					(.localized("Skip"), .default, { [weak self] in
-						HeartbeatManager.shared.start(true)
-						self?.skip()
-					}),
-					(.localized("Stop"), .cancel, { [weak self] in
-						HeartbeatManager.shared.start(true)
-						self?._abandonAndFinish()
-					})
-				]
+				message: "\(error.localizedDescription)\n\n\(String.localized("%lld more apps are waiting.", arguments: max(upcoming.count, 0)))",
+				actions: actions
 			)
 		}
 	}

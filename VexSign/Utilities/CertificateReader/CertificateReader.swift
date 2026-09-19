@@ -29,7 +29,13 @@ class CertificateReader: NSObject {
 				return nil
 			}
 			
-			let xmlData = fileData.subdata(in: xmlRange.lowerBound..<fileData.endIndex)
+			// CMS signatures contain binary data after the plist. Do not feed
+			// that trailer to PropertyListDecoder.
+			guard let endRange = fileData.range(
+				of: Data("</plist>".utf8),
+				in: xmlRange.upperBound..<fileData.endIndex
+			) else { return nil }
+			let xmlData = fileData.subdata(in: xmlRange.lowerBound..<endRange.upperBound)
 			
 			let decoder = PropertyListDecoder()
 			let data = try decoder.decode(Certificate.self, from: xmlData)
