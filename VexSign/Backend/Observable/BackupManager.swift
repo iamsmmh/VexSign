@@ -207,7 +207,7 @@ final class BackupManager {
 				certEntries.append(.init(
 					uuid: uuid,
 					nickname: cert.nickname,
-					password: cert.password,
+					password: cert.signingPassword,
 					expiration: cert.expiration ?? Date(),
 					ppq: cert.ppQCheck
 				))
@@ -328,7 +328,7 @@ final class BackupManager {
 				}
 				Storage.shared.addCertificate(
 					uuid: cert.uuid,
-					password: cert.password,
+					password: cert.signingPassword,
 					nickname: cert.nickname,
 					ppq: cert.ppq,
 					expiration: cert.expiration

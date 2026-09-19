@@ -26,7 +26,7 @@ enum CertificateExporter {
 			try fm.createDirectoryIfNeeded(at: dir)
 			try fm.copyItem(at: p12, to: dir.appendingPathComponent("\(safe).p12"))
 			try fm.copyItem(at: provision, to: dir.appendingPathComponent("\(safe).mobileprovision"))
-			try Data((cert.password ?? "").utf8).write(to: dir.appendingPathComponent("password.txt"))
+			try Data(cert.requireSigningPassword().utf8).write(to: dir.appendingPathComponent("password.txt"))
 			try Zip.zipFiles(
 				paths: [
 					dir.appendingPathComponent("\(safe).p12"),

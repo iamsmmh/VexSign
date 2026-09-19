@@ -139,6 +139,7 @@ struct VexSignApp: App {
                 UIApplication.topViewController()?.view.window?.tintColor = UIColor(Color.userTint)
             }
             .onChange(of: scenePhase) { newPhase in
+                if newPhase == .background { EcosystemMaintenance.schedule() }
                 if newPhase == .active {
                     Task { @MainActor in
                         SourcesViewModel.shared.resetLoadingState()
@@ -147,6 +148,7 @@ struct VexSignApp: App {
             }
             .task {
                 await selfUpdate.checkOnLaunch()
+                await EcosystemMaintenance.run()
                 StorageRules.warnIfOverLimit()
                 if !_onboardingCompleted {
                     _showOnboarding = true
@@ -442,6 +444,8 @@ class AppDelegate: NSObject, UIApplicationDelegate, DownloadManager.ErrorDelegat
 		InstallCleanup.flushOnLaunch()
 		_addDefaultCertificates()
 		_registerBackgroundTasks()
+        EcosystemMaintenance.register()
+        EcosystemMaintenance.schedule()
 		scheduleAutomationMaintenance()
 
 		// Idempotent, no-op after first run.

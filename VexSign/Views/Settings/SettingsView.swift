@@ -126,6 +126,9 @@ struct SettingsView: View {
                     NavigationLink(destination: WebManagerView()) {
                         Label(.localized("Web Manager"), systemImage: "externaldrive.badge.wifi")
                     }
+                    NavigationLink(destination: EcosystemView()) {
+                        Label("Ecosystem", systemImage: "square.stack.3d.up")
+                    }
                     NavigationLink(destination: IPAExplorerHomeView()) {
                         Label(.localized("IPA Explorer"), systemImage: "doc.text.magnifyingglass")
                     }

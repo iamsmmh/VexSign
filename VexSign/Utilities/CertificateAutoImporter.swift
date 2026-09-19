@@ -240,25 +240,34 @@ class CertificateAutoImporter {
 					throw CertificateUpdateError.directoryNotFound
 				}
 
-				let p12Dest = certDir.appendingPathComponent("cert.p12")
-				let provisionDest = certDir.appendingPathComponent("cert.mobileprovision")
-
-				try? FileManager.default.removeItem(at: p12Dest)
-				try? FileManager.default.removeItem(at: provisionDest)
-
-				try FileManager.default.copyItem(at: p12URL, to: p12Dest)
-				try FileManager.default.copyItem(at: provisionURL, to: provisionDest)
-
-				await MainActor.run {
-					cert.password = password
-					cert.ppQCheck = certPair.PPQCheck ?? false
-					cert.expiration = certPair.ExpirationDate ?? Date()
-					cert.revoked = false
-					cert.date = Date()
-
-					Storage.shared.saveContext()
-					Storage.shared.revokagedCertificate(for: cert)
-				}
+                let (p12Dest, provisionDest, previousPassword) = try await MainActor.run {
+                    (Storage.shared.getFile(.certificate, from: cert) ?? certDir.appendingPathComponent("cert.p12"),
+                     Storage.shared.getFile(.provision, from: cert) ?? certDir.appendingPathComponent("cert.mobileprovision"),
+                     try cert.requireSigningPassword())
+                }
+                let oldP12 = try Data(contentsOf: p12Dest)
+                let oldProvision = try Data(contentsOf: provisionDest)
+                let newP12 = try Data(contentsOf: p12URL)
+                let newProvision = try Data(contentsOf: provisionURL)
+                do {
+                    try newP12.write(to: p12Dest, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                    try newProvision.write(to: provisionDest, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                    try await MainActor.run {
+                        try cert.setSigningPassword(password)
+                        cert.ppQCheck = certPair.PPQCheck ?? false
+                        cert.expiration = certPair.ExpirationDate
+                        cert.revoked = false
+                        cert.date = Date()
+                        Storage.shared.saveContext()
+                        Storage.shared.revokagedCertificate(for: cert)
+                    }
+                } catch {
+                    // Preserve the previous working identity on a Keychain/file error.
+                    try oldP12.write(to: p12Dest, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                    try oldProvision.write(to: provisionDest, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+                    try await MainActor.run { try cert.setSigningPassword(previousPassword) }
+                    throw error
+                }
 
 				await MainActor.run {
 					completion(nil)

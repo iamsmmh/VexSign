@@ -44,7 +44,8 @@ extension Storage {
 		do {
 			if !deferSave {
 				try context.save()
-				generator.impactOccurred()
+                Task { await AnalyticsStore.shared.record(.repositoriesAdded) }
+                generator.impactOccurred()
 			}
 			completion(nil)
 		} catch {

@@ -29,6 +29,7 @@ final class SourcesViewModel: ObservableObject {
 	private var fetchGeneration = 0
 	/// Source URLs of the last completed load; skips re-fetching an identical set.
 	private var lastLoadedKey: Set<String>?
+    private var lastLoadedAt: Date?
 	private var backgroundTaskManager: BackgroundTaskManager?
 
 	private func key(for sources: [AltSource]) -> Set<String> {
@@ -65,7 +66,7 @@ final class SourcesViewModel: ObservableObject {
 		}
 
 		// Same source set already loaded — skip (pull-to-refresh bypasses this).
-		if !refresh, newKey == lastLoadedKey {
+		if !refresh, newKey == lastLoadedKey, let lastLoadedAt, Date().timeIntervalSince(lastLoadedAt) < RepositorySyncEngine.refreshInterval {
 			return
 		}
 
@@ -135,7 +136,9 @@ final class SourcesViewModel: ObservableObject {
 
 		let service = _dataService
 		// Publish into a working copy cumulatively so `sources` is never blanked mid-load.
-		var working: [AltSource: ASRepository] = [:]
+		let activeSources = Set(sourcesArray)
+        var working = self.sources.filter { activeSources.contains($0.key) }
+        var successes = 0
 
 		for startIndex in stride(from: 0, to: items.count, by: batchSize) {
 			let endIndex = min(startIndex + batchSize, items.count)
@@ -176,7 +179,8 @@ final class SourcesViewModel: ObservableObject {
 				let item = items[idx]
 				let id = item.source.identifier ?? item.url.absoluteString
 				if let repo {
-					working[item.source] = repo
+                    successes += 1
+                    working[item.source] = repo
 					SourcePreferences.recordFetch(id: id, error: nil)
 				} else {
 					SourcePreferences.recordFetch(id: id, error: .localized("Couldn't load this source"))
@@ -187,6 +191,8 @@ final class SourcesViewModel: ObservableObject {
 			self.sources = working
 		}
 
-		Logger.misc.info("fetchSources DONE: \(working.count, privacy: .public)/\(items.count, privacy: .public) loaded")
+        if successes == items.count { lastLoadedAt = Date() }
+        else { lastLoadedAt = nil }
+        Logger.misc.info("fetchSources DONE: \(working.count, privacy: .public)/\(items.count, privacy: .public) loaded")
 	}
 }

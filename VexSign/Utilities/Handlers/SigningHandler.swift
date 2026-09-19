@@ -156,10 +156,13 @@ final class SigningHandler: NSObject {
 		try await self.move()
 		try await self.addToDatabase()
 		
-		if let error = handler.hadError {
-			throw error
-		}
-	}
+        if let error = handler.hadError {
+            throw error
+        }
+        if _options.signingOption == .default { await AnalyticsStore.shared.record(.appsSigned) }
+        let injectedCount = _options.injectionFiles.count + (_options.tweakInjections ?? []).filter { $0.enabled }.count
+        if injectedCount > 0 { await AnalyticsStore.shared.record(.tweaksInjected, count: injectedCount) }
+    }
 	
 	func move() async throws {
 		guard let movedAppPath = _movedAppPath else {
