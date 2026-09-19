@@ -60,23 +60,8 @@ struct IPSWBrowserView: View {
 				}
 			}
 
-			ForEach(_filteredDevices, id: \.identifier) { device in
-				Button {
-					_select(device)
-				} label: {
-					HStack {
-						Label(device.name, systemImage: "iphone")
-							.foregroundStyle(.primary)
-						Spacer()
-						Text(device.identifier)
-							.font(.caption.monospaced())
-							.foregroundStyle(.secondary)
-						if _selectedDevice?.identifier == device.identifier {
-							Image(systemName: "checkmark")
-								.foregroundStyle(.accentColor)
-						}
-					}
-				}
+			ForEach(_filteredDevices) { device in
+				_deviceRow(device)
 			}
 		} footer: {
 			Text(.localized("Firmware comes from Apple's CDN through the ipsw.me catalog. Files are stored in Documents → Firmware."))
@@ -99,6 +84,26 @@ struct IPSWBrowserView: View {
 
 				ForEach(_firmwares) { firmware in
 					_firmwareRow(firmware)
+				}
+			}
+		}
+	}
+
+	@ViewBuilder
+	private func _deviceRow(_ device: IPSWDevice) -> some View {
+		Button {
+			_select(device)
+		} label: {
+			HStack {
+				Label(device.name, systemImage: "iphone")
+					.foregroundStyle(.primary)
+				Spacer()
+				Text(device.identifier)
+					.font(.caption.monospaced())
+					.foregroundStyle(.secondary)
+				if _selectedDevice?.identifier == device.identifier {
+					Image(systemName: "checkmark")
+						.foregroundStyle(.accentColor)
 				}
 			}
 		}
