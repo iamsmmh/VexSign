@@ -107,6 +107,8 @@ struct Options: Codable, Equatable {
 	var removeAppExtensions: Bool
 	/// Gives each signed app a keychain group derived from its bundle id so apps can't read each other's entries
 	var keychainIsolation: Bool
+	/// Signs with JIT entitlements (`dynamic-codesigning`). Only PPQ certificates can carry them.
+	var enableJIT: Bool
 	/// Injects the bundled fix that makes the document picker import files into the app's own container
 	var fixFilePicker: Bool
 	/// Resolved managed-tweak injections for this sign; per-sign working copy only. Optional so old saved options decode.
@@ -163,6 +165,7 @@ struct Options: Codable, Equatable {
 		injectIntoExtensions: false,
 		removeAppExtensions: false,
 		keychainIsolation: false,
+		enableJIT: false,
 		fixFilePicker: false,
 
 		// MARK: Experiments
@@ -292,6 +295,7 @@ extension Options {
 		injectIntoExtensions = try c.decodeIfPresent(Bool.self, forKey: .injectIntoExtensions) ?? d.injectIntoExtensions
 		removeAppExtensions = try c.decodeIfPresent(Bool.self, forKey: .removeAppExtensions) ?? d.removeAppExtensions
 		keychainIsolation = try c.decodeIfPresent(Bool.self, forKey: .keychainIsolation) ?? d.keychainIsolation
+		enableJIT = try c.decodeIfPresent(Bool.self, forKey: .enableJIT) ?? d.enableJIT
 		fixFilePicker = try c.decodeIfPresent(Bool.self, forKey: .fixFilePicker) ?? d.fixFilePicker
 		// try? so a stale per-sign blob drops instead of resetting the whole struct.
 		tweakInjections = try? c.decode([TweakInjectionSpec].self, forKey: .tweakInjections)

@@ -87,7 +87,8 @@ struct BatchSignView: View {
 					NavigationLink {
 						Form { SigningOptionsView(
 							options: $_options,
-							temporaryOptions: .batchBase
+							temporaryOptions: .batchBase,
+							certificate: _selectedCert()
 						)}
 						.navigationTitle(.localized("Properties"))
 					} label: {

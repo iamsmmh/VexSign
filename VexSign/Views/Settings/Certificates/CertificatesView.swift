@@ -25,6 +25,7 @@ struct CertificatesView: View {
 	@State private var _certToRename: CertificatePair?
 	@State private var _newNickname: String = ""
 	@State private var _isBatchChecking = false
+	@State private var _isBatchCheckPresenting = false
 
 	// MARK: Fetch
 	@FetchRequest(
@@ -94,6 +95,9 @@ struct CertificatesView: View {
 		}
 		.sheet(item: $_isSelectedInfoPresenting) { cert in
 			CertificatesInfoView(cert: cert)
+		}
+		.sheet(isPresented: $_isBatchCheckPresenting) {
+			BatchCertCheckView()
 		}
 		.sheet(item: $_addSheet) { sheet in
 			_addSheetView(for: sheet)
@@ -242,18 +246,21 @@ extension CertificatesView {
 		}
 	}
 
+	/// Runs the concurrent batch validation and shows the result table.
 	private func _batchCheckCertificates() {
 		guard !_isBatchChecking, !_certificates.isEmpty else { return }
 		_isBatchChecking = true
+		_isBatchCheckPresenting = true
 
 		Task {
-			for cert in _certificates {
-				CertificateStatusManager.shared.refreshStatus(for: cert, forceRemote: true)
-			}
-			try? await Task.sleep(nanoseconds: 1_500_000_000)
+			await BatchCertChecker.shared.checkAll()
+
+			let checked = BatchCertChecker.shared.results.count
+			let valid = BatchCertChecker.shared.summary.valid
 			_isBatchChecking = false
+
 			Toast.success(
-				String.localized("Checked %lld certificates", arguments: Int64(_certificates.count)),
+				String.localized("Checked %lld certificates — %lld valid", arguments: Int64(checked), Int64(valid)),
 				systemImage: "checkmark.seal"
 			)
 		}

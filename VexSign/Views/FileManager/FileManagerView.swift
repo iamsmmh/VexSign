@@ -34,6 +34,7 @@ struct FileManagerView: View {
 	@State private var _verifyURL: URL?
 	@State private var _showsVerifyAlert = false
 	@State private var _verifyText = ""
+	@State private var _isIPSWPresenting = false
 
 	/// The three things the "+" menu can create or bring in.
 	enum Prompt: Identifiable {
@@ -103,6 +104,9 @@ struct FileManagerView: View {
 			Button(.localized("Cancel"), role: .cancel) { _verifyText = "" }
 		} message: {
 			Text(.localized("Paste the SHA-256 the source published for this file. “sha256:” prefixes are ignored."))
+		}
+		.sheet(isPresented: $_isIPSWPresenting) {
+			IPSWBrowserView()
 		}
 		.alert(_prompt?.title ?? "", isPresented: _isPrompting) {
 			TextField(_prompt?.placeholder ?? "", text: $_promptText)
@@ -318,6 +322,12 @@ struct FileManagerView: View {
 				}
 				Button(.localized("Import from Files…"), systemImage: "square.and.arrow.down") {
 					_import()
+				}
+
+				Divider()
+
+				Button(.localized("Firmware Browser…"), systemImage: "opticaldisc") {
+					_isIPSWPresenting = true
 				}
 			} label: {
 				Image(systemName: "plus")

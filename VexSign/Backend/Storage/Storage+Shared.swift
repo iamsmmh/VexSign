@@ -40,6 +40,7 @@ extension Storage {
 		}
 
 		saveContext()
+		Task { @MainActor in WidgetStatusPublisher.publish() }
 	}
 	
 	func getCertificate(from app: AppInfoPresentable) -> CertificatePair? {

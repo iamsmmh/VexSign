@@ -14,6 +14,8 @@ import UIKit
 struct LibraryInfoView: View {
 	var app: AppInfoPresentable
 	@State private var _displayedDescription: String?
+	@State private var _isClonePresenting = false
+	@ObservedObject private var _appStoreTracker = AppStoreUpdateTracker.shared
 
 	// MARK: Body
     var body: some View {
@@ -30,6 +32,8 @@ struct LibraryInfoView: View {
 				_executableSection(for: app)
 
 				_resignSection()
+				_cloneSection()
+				_appStoreSection()
 
 				Section {
 					_linksSection(for: app)
@@ -44,6 +48,13 @@ struct LibraryInfoView: View {
 		}
 		.onAppear {
 			_displayedDescription = app.appDescription
+		}
+		.sheet(isPresented: $_isClonePresenting) {
+			AppCloneSheet(app: app)
+		}
+		.task {
+			guard AppStoreUpdateTracker.isEnabled else { return }
+			await _appStoreTracker.refresh(apps: [app])
 		}
     }
 }
@@ -85,6 +96,49 @@ extension LibraryInfoView {
 				Toast.success(.localized("Signed successfully"), systemImage: "checkmark.seal.fill")
 			case .failure(let error):
 				Toast.error(error.localizedDescription, duration: .sticky)
+			}
+		}
+	}
+
+	/// Duplicate this app under a new name and bundle ID.
+	@ViewBuilder
+	private func _cloneSection() -> some View {
+		NBSection(.localized("Clone")) {
+			Button {
+				_isClonePresenting = true
+			} label: {
+				Label(.localized("Clone App"), systemImage: "doc.on.doc")
+			}
+		} footer: {
+			Text(.localized("Creates a second copy with its own name and bundle identifier, so both can be installed side by side."))
+		}
+	}
+
+	/// Newer public version on the App Store, when tracking is enabled and the
+	/// bundle ID is listed there.
+	@ViewBuilder
+	private func _appStoreSection() -> some View {
+		if let info = _appStoreTracker.info(for: app.identifier) {
+			NBSection(.localized("App Store")) {
+				LabeledContent(.localized("Latest Version"), value: info.version)
+
+				if let date = info.releaseDate {
+					LabeledContent(.localized("Released"), value: date.formatted(date: .abbreviated, time: .omitted))
+				}
+
+				if _appStoreTracker.hasNewerVersion(than: app) {
+					Text(.localized("A newer version is available on the App Store."))
+						.font(.footnote)
+						.foregroundStyle(.orange)
+				}
+
+				if let storeURL = info.storeURL, let url = URL(string: storeURL) {
+					Button {
+						UIApplication.shared.open(url)
+					} label: {
+						Label(.localized("Open in App Store"), systemImage: "arrow.up.forward.app")
+					}
+				}
 			}
 		}
 	}

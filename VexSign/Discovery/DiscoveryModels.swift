@@ -47,11 +47,30 @@ actor DiscoveryIndex {
         self.apps = apps
         searchable = Dictionary(apps.map { ($0.id, $0.searchText) }, uniquingKeysWith: { first, _ in first })
     }
+    /// An empty query matches every app (allSatisfy over no words is true), which is
+    /// how the view lists everything before the user types.
+    ///
+    /// Written as separate steps on purpose: the chained filter/map/sorted/map with
+    /// inferred tuples blew past the type checker's expression budget.
     func search(_ query: String, signals: DiscoverySignals) -> [DiscoveryApp] {
-        let words = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current).split(whereSeparator: \.isWhitespace).map(String.init)
+        let folded = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: .current)
+        let words: [String] = folded.split(whereSeparator: \.isWhitespace).map(String.init)
+
+        let matched: [DiscoveryApp] = apps.filter { app in
+            let haystack: String = searchable[app.id, default: ""]
+            return words.allSatisfy { word in haystack.contains(word) }
+        }
+
         let now = Date()
-        return apps.filter { app in words.allSatisfy { searchable[app.id, default: ""].contains($0) } }
-            .map { ($0, DiscoveryRanking.score($0, signals: signals, now: now)) }
-            .sorted { $0.1 == $1.1 ? $0.0.id < $1.0.id : $0.1 > $1.1 }.map(\.0)
+        let ranked: [(app: DiscoveryApp, score: Double)] = matched.map { app in
+            (app, DiscoveryRanking.score(app, signals: signals, now: now))
+        }
+
+        let ordered: [(app: DiscoveryApp, score: Double)] = ranked.sorted { lhs, rhs in
+            if lhs.score == rhs.score { return lhs.app.id < rhs.app.id }
+            return lhs.score > rhs.score
+        }
+
+        return ordered.map { entry in entry.app }
     }
 }

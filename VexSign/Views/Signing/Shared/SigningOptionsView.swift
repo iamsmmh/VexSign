@@ -12,6 +12,8 @@ import NimbleViews
 struct SigningOptionsView: View {
 	@Binding var options: Options
 	var temporaryOptions: Options?
+	/// Selected certificate, used to gate options the profile can't grant (JIT).
+	var certificate: CertificatePair? = nil
 
 	@AppStorage(AutoSignManager.enabledKey) private var _autoSign: Bool = false
 	@AppStorage(InstallCleanup.deleteKey) private var _deleteAfterInstall: Bool = false
@@ -41,6 +43,8 @@ struct SigningOptionsView: View {
 		} footer: {
 			Text(.localized("Replaces wildcard keychain groups with the app's bundle identifier, preventing sideloaded apps from accessing each other's keychain entries."))
 		}
+
+		_jitSection
 
 		NBSection(.localized("General")) {
 			Self.picker(
@@ -247,6 +251,38 @@ struct SigningOptionsView: View {
 		}
 	}
 	
+	/// JIT is only carried by PPQ (development) profiles, so the toggle is disabled
+	/// with the reason when the selected certificate is PPQLess.
+	@ViewBuilder
+	private var _jitSection: some View {
+		NBSection(.localized("JIT")) {
+			_toggle(
+				.localized("Enable JIT"),
+				systemImage: "bolt.fill",
+				isOn: $options.enableJIT,
+				temporaryValue: temporaryOptions?.enableJIT
+			)
+			.disabled(_jitBlocked)
+		} footer: {
+			if let reason = _jitBlockReason {
+				Text(reason)
+			} else {
+				Text(.localized("Adds the `dynamic-codesigning` entitlement so emulators and JavaScript engines can allocate executable memory. Only apps built for JIT benefit; everything else is unaffected."))
+			}
+		}
+	}
+
+	/// True when a certificate is selected and it cannot carry JIT. Without a
+	/// certificate yet (batch pre-selection, Settings) the toggle stays editable.
+	private var _jitBlocked: Bool {
+		guard let certificate else { return false }
+		return !certificate.supportsJIT
+	}
+
+	private var _jitBlockReason: String? {
+		certificate?.jitBlockReason
+	}
+
 	@ViewBuilder
 	static func picker<SelectionValue: Hashable, T: Hashable & LocalizedDescribable>(
 		_ title: String,

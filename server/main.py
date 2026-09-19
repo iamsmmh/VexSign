@@ -43,11 +43,12 @@ import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
 import db
 import admin
+import repo_store
 from admin import router as admin_router
 
 # ---------------------------------------------------------------------------
@@ -256,6 +257,36 @@ def premium_repo(
     }
 
 
+# ---------------------------------------------------------------------------
+# Self-hosted source (public): add /repo/source.json as a source in VexSign or
+# any AltStore-family client. Fill it with `POST /api/admin/apps` (admin token).
+# ---------------------------------------------------------------------------
+
+@app.get("/repo/source.json")
+def self_hosted_source(request: Request) -> dict:
+    """AltStore v1 source built from the uploaded IPAs (see repo_store.py)."""
+    return repo_store.source_feed(_base_url(request))
+
+
+@app.get("/repo/appdata", include_in_schema=False)
+def self_hosted_appdata(request: Request) -> Response:
+    """Legacy AltServer XML feed, for clients that never moved to JSON."""
+    return Response(
+        content=repo_store.appdata_xml(_base_url(request)),
+        media_type="application/xml",
+    )
+
+
+@app.get("/static/apps/{filename}", include_in_schema=False)
+def self_hosted_ipa(filename: str) -> FileResponse:
+    """Streams one stored IPA. Only files inside the store are reachable."""
+    apps_root = repo_store.apps_dir().resolve()
+    candidate = (apps_root / filename).resolve()
+    if not str(candidate).startswith(str(apps_root) + os.sep) or not candidate.is_file():
+        raise HTTPException(status_code=404, detail="No such IPA.")
+    return FileResponse(candidate, media_type="application/octet-stream", filename=filename)
+
+
 @app.get("/static/icon.png", include_in_schema=False)
 def icon() -> FileResponse:
     return FileResponse(os.path.join(os.path.dirname(__file__), "static", "icon.png"))
@@ -268,6 +299,8 @@ def root(request: Request) -> dict:
         "GET /api/urls",
         "GET /api/health",
         "GET /repo/premium.json",
+        "GET /repo/source.json     (self-hosted source, add it in VexSign)",
+        "GET /repo/appdata         (legacy AltServer XML feed)",
     ]
     if bool(admin.ADMIN_TOKEN):
         endpoints += [
@@ -275,6 +308,9 @@ def root(request: Request) -> dict:
             "POST /api/admin/keys        (mint)",
             "GET /api/admin/keys         (list)",
             "POST /api/admin/keys/disable|enable|reset|revoke",
+            "POST /api/admin/apps        (upload an IPA into /repo/source.json)",
+            "GET /api/admin/apps         (list the self-hosted source)",
+            "DELETE /api/admin/apps/{bundle_identifier}",
         ]
     return {
         "service": "VexSign Premium API",

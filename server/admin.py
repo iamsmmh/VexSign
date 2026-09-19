@@ -21,10 +21,15 @@ surface is turned off unless the operator opts in.
 import os
 import secrets
 
-from fastapi import APIRouter, Header, HTTPException
+import tempfile
+from pathlib import Path
+
+from fastapi import APIRouter, File, Form, Header, HTTPException, UploadFile
 from pydantic import BaseModel
 
 import db
+import repo_store
+from repo_store import RepoError
 
 router = APIRouter(prefix="/api/admin")
 
@@ -153,3 +158,87 @@ def revoke_key(
     key = _return_key_or_404(str(body.get("key", "")).strip().upper())
     db.delete_key(key)
     return {"ok": True, "key": key, "revoked": True}
+
+
+# ---------------------------------------------------------------------------
+# Self-hosted source: upload IPAs, they show up in /repo/source.json
+# ---------------------------------------------------------------------------
+
+#: Reject anything that is obviously not an app package before it hits the disk.
+MAX_IPA_BYTES = int(os.environ.get("REPO_MAX_IPA_BYTES", str(4 * 1024 * 1024 * 1024)))
+
+
+def _write_upload(upload: UploadFile) -> Path:
+    """Streams the upload to a temp file so huge IPAs never sit in memory."""
+    handle = tempfile.NamedTemporaryFile(suffix=".ipa", delete=False)
+    written = 0
+    try:
+        while chunk := upload.file.read(1024 * 1024):
+            written += len(chunk)
+            if written > MAX_IPA_BYTES:
+                handle.close()
+                Path(handle.name).unlink(missing_ok=True)
+                raise HTTPException(status_code=413, detail="IPA is too large.")
+            handle.write(chunk)
+        handle.close()
+    except HTTPException:
+        raise
+    except OSError as exc:
+        Path(handle.name).unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail=f"Could not store the upload: {exc}") from exc
+
+    if written == 0:
+        Path(handle.name).unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail="Empty upload.")
+
+    return Path(handle.name)
+
+
+@router.get("/apps")
+def list_apps(x_admin_token: str | None = Header(default=None, alias="X-Admin-Token")):
+    _require_admin(x_admin_token)
+    return {"apps": [app.to_dict() for app in repo_store.store.apps()]}
+
+
+@router.post("/apps")
+def upload_app(
+    file: UploadFile = File(...),
+    developer: str | None = Form(default=None),
+    subtitle: str | None = Form(default=None),
+    description: str | None = Form(default=None),
+    category: str | None = Form(default=None),
+    x_admin_token: str | None = Header(default=None, alias="X-Admin-Token"),
+):
+    """Stores an IPA and adds/updates its entry in the self-hosted source.
+
+    Bundle id, name and version come from the IPA's own Info.plist, so the feed
+    can never disagree with the package it points at.
+    """
+    _require_admin(x_admin_token)
+
+    staged = _write_upload(file)
+    try:
+        app = repo_store.store.add(
+            staged,
+            developer=developer,
+            subtitle=subtitle,
+            description=description,
+            category=category,
+        )
+    except RepoError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    finally:
+        staged.unlink(missing_ok=True)
+
+    return {"status": "ok", "app": app.to_dict()}
+
+
+@router.delete("/apps/{bundle_identifier}")
+def delete_app(
+    bundle_identifier: str,
+    x_admin_token: str | None = Header(default=None, alias="X-Admin-Token"),
+):
+    _require_admin(x_admin_token)
+    if not repo_store.store.remove(bundle_identifier):
+        raise HTTPException(status_code=404, detail="No such app in the source.")
+    return {"status": "ok", "removed": bundle_identifier}

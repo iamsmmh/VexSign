@@ -39,6 +39,8 @@ final class AppInstaller: ObservableObject {
 	private var _hasFinished = false
 	private var _declineObserver: NSObjectProtocol?
 	private var _declineCheck: DispatchWorkItem?
+	/// One idevice retry per install, so a genuinely broken pair doesn't loop.
+	private var _didAttemptIdeviceFallback = false
 
 	var fallbackPageURL: URL? { _server?.pageEndpoint }
 
@@ -196,6 +198,9 @@ final class AppInstaller: ObservableObject {
 		case .broken(let error):
 			_progressTask?.cancel()
 			_progressTask = nil
+			// OTA got as far as serving and still failed: try installationproxy
+			// before reporting the error to the user.
+			if _attemptIdeviceFallback(after: error) { return }
 			_finish(.failure(error))
 		default:
 			break
@@ -225,6 +230,33 @@ final class AppInstaller: ObservableObject {
 				self?.isPresentingFallbackPage = true
 			}
 		}
+	}
+
+	/// Fallback for an OTA install that broke after the server was already up.
+	/// Needs a stored pairing (Settings → Tunnel & Pairing) and only runs once.
+	private func _attemptIdeviceFallback(after error: Error) -> Bool {
+		guard _installationMethod == 0, !_didAttemptIdeviceFallback else { return false }
+		guard FileManager.default.fileExists(atPath: HeartbeatManager.pairingFile()) else { return false }
+		guard let packageUrl = _server?.packageUrl else { return false }
+
+		_didAttemptIdeviceFallback = true
+
+		FileLogger.log("OTA install failed (\(error.localizedDescription)), falling back to idevice installation", category: "install")
+		SigningLog.shared.info(.localized("Install failed, falling back to idevice installation…"), category: "install")
+
+		viewModel.status = .installing
+
+		Task {
+			do {
+				try await InstallationProxy(viewModel: viewModel)
+					.install(at: packageUrl, suspend: app.identifier == Bundle.main.bundleIdentifier!)
+			} catch {
+				FileLogger.error("idevice fallback failed: \(error.localizedDescription)", category: "install")
+				_finish(.failure(error))
+			}
+		}
+
+		return true
 	}
 
 	/// Declining iOS's prompt never reports back, so focus returning with no payload request means cancelled.

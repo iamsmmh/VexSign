@@ -98,6 +98,7 @@ extension WebManagerServer {
 		_configureCertificates(app)
 		_configureApps(app)
 		_configureTweaks(app)
+		_configureAPI(app)
 	}
 
 	// MARK: - Tweaks

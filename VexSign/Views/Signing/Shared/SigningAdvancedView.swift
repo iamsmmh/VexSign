@@ -101,7 +101,8 @@ struct SigningAdvancedView: View {
 				NavigationLink {
 					Form { SigningOptionsView(
 						options: $options,
-						temporaryOptions: OptionsManager.shared.options
+						temporaryOptions: OptionsManager.shared.options,
+						certificate: certificate
 					)}
 					.navigationTitle(.localized("Properties"))
 				} label: {
