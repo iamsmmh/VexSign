@@ -11,8 +11,11 @@ services:
     healthCheckPath: /api/health
     autoDeploy: false
     envVars:
-      - key: VEXSIGN_DB
-        value: /data/vexsign.db
+      # Set VEXSIGN_DB=/data/vexsign.db in the dashboard ONLY on paid plans
+      # where you've mounted a persistent disk at /data. On free tier the
+      # directory doesn't exist and isn't writable, so leaving it unset uses
+      # a SQLite file next to the app (ephemeral but bootable; SEED_KEYS
+      # below re-mints keys on every boot so nothing is lost).
       - key: SEED_KEYS
         sync: false
       - key: ADMIN_TOKEN

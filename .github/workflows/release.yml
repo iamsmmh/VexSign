@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  # Manual build (specify Xcode version if needed).
   workflow_dispatch:
     inputs:
       xcode:
@@ -9,16 +10,29 @@ on:
           the newest Xcode installed on the runner image.
         required: false
         default: ''
-  # Compile-check every PR the same way a release builds, so `main` never
-  # merges red again. The release itself still only publishes from `main`.
+      prerelease:
+        description: "Mark as prerelease?"
+        required: false
+        type: boolean
+        default: false
+      draft:
+        description: "Create as draft?"
+        required: false
+        type: boolean
+        default: false
+  # Push a tag like v1.2.0 to publish automatically.
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+  # Compile-check every PR so `main` never merges red. PR runs do NOT publish.
   pull_request:
     branches: [main]
 
 permissions:
   contents: write
 
-# Only one release build at a time; never cancel a run that is already
-# uploading assets.
+# Only one release build at a time; never cancel a run already uploading.
 concurrency:
   group: create-release
   cancel-in-progress: false
@@ -30,9 +44,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
-          # Zsign and IDeviceKitten are git submodules and are required to build.
           submodules: recursive
-          # agvtool and `git rev-parse HEAD` both need the real git history.
+          # Full history is required for agvtool and for changelog generation
+          # (we diff against the previous release tag).
           fetch-depth: 0
 
       - name: Select Xcode
@@ -41,8 +55,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Runner images ship several Xcodes side by side and rotate them over
-          # time, so resolve a bundle instead of hardcoding an absolute path.
           shopt -s nullglob
           if [ -n "${REQUESTED_XCODE}" ]; then
             candidates=(/Applications/Xcode_"${REQUESTED_XCODE}"*.app)
@@ -57,8 +69,6 @@ jobs:
             exit 1
           fi
 
-          # Highest version wins when we auto-select. Plain lexicographic sort
-          # is used because BSD sort on macOS has no portable `-V`.
           if [ -n "${REQUESTED_XCODE}" ]; then
             XCODE_APP="${candidates[0]}"
           else
@@ -79,8 +89,6 @@ jobs:
             echo "::warning::agvtool could not stamp the build number (${BUILD_NUMBER}); continuing with the committed CURRENT_PROJECT_VERSION."
           fi
 
-          # Tee the build log so a later step can surface the compiler errors as
-          # annotations (and we keep a copy if the log CDN is unreachable).
           make 2>&1 | tee "$RUNNER_TEMP/xcodebuild.log"
 
           if ! ls packages/*.ipa >/dev/null 2>&1; then
@@ -97,9 +105,7 @@ jobs:
           set +e
           LOG="$RUNNER_TEMP/xcodebuild.log"
           if [ -f "$LOG" ]; then
-            # File-scoped compiler errors → annotations with location.
             grep -nE "error:" "$LOG" | sed -E 's/^([0-9]+):[[:space:]]*([^:]+):([0-9]+):([0-9]+):[^:]*:[[:space:]]*(.*)$/::error file=\2,line=\3,col=\4::\5/' | head -150
-            # Anything the first pass missed (linker, subsystem) → plain error.
             grep -E "error:" "$LOG" | grep -vE ":[0-9]+:[0-9]+:[[:space:]]*error:" | sed -E 's/^[[:space:]]*(.*)$/::error::\1/' | head -30
           fi
           exit 0
@@ -109,8 +115,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          # `make` leaves a Payload -> <build dir>/Payload symlink next to the
-          # project so the staged .app can be inspected after the build.
           shopt -s nullglob
           plists=(Payload/*.app/Info.plist)
           if [ "${#plists[@]}" -eq 0 ]; then
@@ -128,18 +132,33 @@ jobs:
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
+      - name: Generate Changelog
+        id: changelog
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          bash tools/generate-changelog.sh > "$RUNNER_TEMP/CHANGELOG.md"
+          echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
+          cat "$RUNNER_TEMP/CHANGELOG.md" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+          echo "--- Changelog preview ---"
+          cat "$RUNNER_TEMP/CHANGELOG.md"
+          echo "--- end ---"
+
       - name: Create Release
-        # PR runs are compile checks only — only a manual dispatch on `main`
-        # publishes a release.
-        if: github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v3
         with:
           name: VexSign v${{ env.VERSION }}
           tag_name: v${{ env.VERSION }}
+          # On a tag push, the ref is refs/tags/vX.Y.Z; create the release
+          # against that tag. On manual dispatch from main, target main.
+          target_commitish: ${{ github.ref_type == 'tag' && github.ref_name || github.event.repository.default_branch }}
+          body: ${{ steps.changelog.outputs.changelog }}
           files: |
             upload/*.ipa
-          generate_release_notes: true
           fail_on_unmatched_files: true
-          draft: false
+          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
+          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || contains(github.ref_name, '-') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
