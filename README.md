@@ -1,9 +1,5 @@
 <p align="center">
-  <img src="icon.png" width="150" alt="VexSign app icon" />
-</p>
-
-<p align="center">
-  <img src="Images/banner.png" width="100%" alt="VexSign — sign · tweak · install — on device" />
+  <img src="icon.png" width="100%" alt="VexSign — sign · tweak · install — on device" />
 </p>
 
 <p align="center">
