@@ -21,7 +21,7 @@ enum VexSignAPI {
 
 	// MARK: - API
 
-	static let apiBaseURL = "https://vexsign-premium.onrender.com/api"
+	static let apiBaseURL = "https://vexsign.onrender.com/api"
 	/// Key validation (POST, consumes key).
 	static let apiValidateEndpoint = "\(apiBaseURL)/validate"
 	/// URL preview (GET, doesn't consume key).

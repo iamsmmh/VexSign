@@ -1,21 +1,5 @@
-# Render Blueprint — one-click deploy of the VexSign premium server.
-#
-# Render dashboard -> New -> Blueprint -> pick this repo (any branch), done.
-# After the first deploy, set these private env vars in the dashboard:
-#   SEED_KEYS          comma-separated VEX-... keys, (re)created on every boot
-#   ADMIN_TOKEN        distributor secret that unlocks /api/admin/* (mint &
-#                      manage keys remotely). Leave UNSET until you want the
-#                      admin surface live; unset = fully disabled. Generate one
-#                      with `openssl rand -hex 24`.
-#   PREMIUM_REPO_URLS  comma-separated real feed URLs (optional)
-#   PUBLIC_BASE_URL    https://<your-render-service>.onrender.com (optional,
-#                      the proxy already forwards headers correctly)
-# Then: `static let apiBaseURL = "https://<service>.onrender.com/api"` in the app.
-#
-# Free-tier notes: instance sleeps after 15 min idle (first request ~30-60 s —
-# the app's 30 s timeout may need one retry) and there is no persistent disk,
-# which is exactly why SEED_KEYS exists: after any redeploy the keys come back
-# automatically, and a device just re-redeems its (still valid) key once.
+# Render Blueprint for the VexSign backend. Private environment variables are
+# configured in the Render dashboard and are never committed to this repo.
 services:
   - type: web
     name: vexsign-premium
@@ -27,8 +11,6 @@ services:
     healthCheckPath: /api/health
     autoDeploy: false
     envVars:
-      # /data is where Render mounts a persistent disk (paid add-on). Without
-      # one it's still a valid (ephemeral) path — see db.py.
       - key: VEXSIGN_DB
         value: /data/vexsign.db
       - key: SEED_KEYS
