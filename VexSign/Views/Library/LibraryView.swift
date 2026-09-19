@@ -230,6 +230,14 @@ struct LibraryView: View {
             .onAppear {
                 scrollProxy = proxy
             }
+            .task {
+                // Opt-in (Settings → Updates): badge apps whose App Store release
+                // is newer than the installed copy. Lookups are cached per session.
+                guard AppStoreUpdateTracker.isEnabled else { return }
+                let apps: [AppInfoPresentable] = _signedApps.map { $0 as AppInfoPresentable }
+                    + _importedApps.map { $0 as AppInfoPresentable }
+                await AppStoreUpdateTracker.shared.refresh(apps: apps)
+            }
             .onChange(of: tabSelection.highlightedAppUUID) { newUUID in
                 if let uuid = newUUID {
                     withAnimation(.easeInOut(duration: 0.5)) {

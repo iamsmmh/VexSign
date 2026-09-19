@@ -29,6 +29,7 @@ struct FileManagerView: View {
 	@State private var _query = ""
 	@State private var _prompt: Prompt?
 	@State private var _promptText = ""
+	@State private var _isIPSWPresenting = false
 
 	/// The three things the "+" menu can create or bring in.
 	enum Prompt: Identifiable {
@@ -89,6 +90,9 @@ struct FileManagerView: View {
 		.searchable(text: $_query, placement: .navigationBarDrawer(displayMode: .automatic))
 		.toolbar { _toolbar }
 		.refreshable { _load() }
+		.sheet(isPresented: $_isIPSWPresenting) {
+			IPSWBrowserView()
+		}
 		.alert(_prompt?.title ?? "", isPresented: _isPrompting) {
 			TextField(_prompt?.placeholder ?? "", text: $_promptText)
 				.textInputAutocapitalization(.never)
@@ -256,6 +260,12 @@ struct FileManagerView: View {
 				}
 				Button(.localized("Import from Files…"), systemImage: "square.and.arrow.down") {
 					_import()
+				}
+
+				Divider()
+
+				Button(.localized("Firmware Browser…"), systemImage: "opticaldisc") {
+					_isIPSWPresenting = true
 				}
 			} label: {
 				Image(systemName: "plus")

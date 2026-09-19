@@ -8,7 +8,18 @@ STAGE := $(TMP)/stage
 APP := $(TMP)/Build/Products/Release-$(PLATFORM)
 CERT_JSON_URL := https://vexsign-install.vexsign.workers.dev/pack.json
 
-.PHONY: all deps clean $(SCHEMES)
+.PHONY: all deps clean deploy-server $(SCHEMES)
+
+# Self-hosted backend (server/): builds the Linux image you run on a VPS with
+#   docker run -p 8080:8080 -e ADMIN_TOKEN=... -v vexsign-repo:/app/repo-store \
+#     -e REPO_STORE_DIR=/app/repo-store vexsign-server
+# Serve /repo/source.json and add it as a source in the app.
+IMAGE ?= vexsign-server
+deploy-server:
+	docker build --platform linux/amd64 -t $(IMAGE) server
+	@echo "Built $(IMAGE). Run it with:"
+	@echo "  docker run -p 8080:8080 -e ADMIN_TOKEN=<secret> -e REPO_STORE_DIR=/data \"
+	@echo "    -v vexsign-repo:/data $(IMAGE)"
 
 all: $(SCHEMES)
 

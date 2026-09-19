@@ -44,6 +44,7 @@ extension Storage {
 
         saveContext()
         generator.impactOccurred()
+        Task { @MainActor in WidgetStatusPublisher.publish() }
         completion(new)
     }
 

@@ -66,9 +66,17 @@ extension CertificatesInfoView {
 			
 			_info(.localized("Revoked"), description: cert.revoked ? "✓" : "✗")
 			
-			if let ppq = data.PPQCheck {
-				_info(.localized("PPQCheck"), description: ppq ? "✓" : "✗")
-			}
+			_info(.localized("Profile Type"), description: data.profileType.title)
+
+			// Green PPQLess / orange PPQ, matching the badge in the certificate list.
+			_info(.localized("PPQ Status"), description: cert.ppqBadge.title)
+				.foregroundStyle(cert.ppqBadge.color)
+
+			_info(.localized("JIT Support"), description: cert.supportsJIT
+				? String.localized("Supported")
+				: String.localized("Not supported (PPQLess)"))
+		} footer: {
+			Text(.localized("PPQLess profiles are distribution profiles Apple can't revoke through the provisioning-profile query. JIT needs `get-task-allow`, which only PPQ (development) profiles grant."))
 		}
 	}
 	

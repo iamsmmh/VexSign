@@ -13,5 +13,6 @@ struct VexSignWidgetExtensionBundle: WidgetBundle {
     var body: some Widget {
         DownloadLiveActivity()
         SigningLiveActivity()
+        VexSignStatusWidget()
     }
 }
