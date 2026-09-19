@@ -49,7 +49,7 @@ struct IPSWFirmware: Codable, Identifiable, Sendable, Hashable {
 
 	var formattedSize: String {
 		guard let filesize, filesize > 0 else { return String.localized("Unknown size") }
-		return Int(filesize).formattedFileSize
+		return filesize.formattedFileSize
 	}
 
 	var filename: String {

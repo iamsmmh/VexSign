@@ -9,6 +9,7 @@
 //
 
 import SwiftUI
+import NimbleExtensions
 import NimbleViews
 
 struct AppCloneSheet: View {
