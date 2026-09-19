@@ -16,6 +16,9 @@ on:
 
 permissions:
   contents: write
+  # Only so a failing build can comment its own log tail on the PR (the Actions
+  # log CDN is not reachable from every reviewer environment).
+  pull-requests: write
 
 # Only one release build at a time; never cancel a run that is already
 # uploading assets.
@@ -93,6 +96,8 @@ jobs:
 
       - name: Surface build errors
         if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set +e
           LOG="$RUNNER_TEMP/xcodebuild.log"
@@ -102,6 +107,12 @@ jobs:
             # Anything the first pass missed (linker, subsystem) → plain error.
             grep -E "error:" "$LOG" | grep -vE ":[0-9]+:[0-9]+:[[:space:]]*error:" | sed -E 's/^[[:space:]]*(.*)$/::error::\1/' | head -30
           fi
+
+          # A failure with no Swift diagnostics (bad project file, broken build
+          # phase, packaging) leaves nothing readable behind, and the log CDN
+          # is unreachable from some reviewer environments — post the tail.
+          python3 tools/post_build_log.py "$LOG" "${{ github.repository }}" \
+            "${{ github.event.pull_request.number }}"
           exit 0
 
       - name: Get Version
