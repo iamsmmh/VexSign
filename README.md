@@ -1,82 +1,80 @@
-# VexSign
-
-[![Release](https://img.shields.io/github/v/release/iamsmmh/VexSign?color=C96FAD&label=Release)](https://github.com/iamsmmh/VexSign/releases)
-[![Downloads](https://img.shields.io/github/downloads/iamsmmh/VexSign/total?color=black&label=Downloads)](https://github.com/iamsmmh/VexSign/releases)
-[![License](https://img.shields.io/badge/License-GPLv3-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-iOS%2015%2B-black)]()
-
-**The most powerful on-device iOS signer. No PC. No revoke fear. Just sign and install.**
-
-Built and maintained by **[@iamsmmh](https://github.com/iamsmmh)** · Based on **[Feather](https://github.com/claration/Feather) by [@claration](https://github.com/claration)** (GPL-3.0) — without Feather, VexSign wouldn't exist.
-
 <p align="center">
-  <img src="repo-icon.png" width="140" alt="VexSign Icon" />
-  <br><br>
-  <img src="Images/Image-light.png" width="780" alt="VexSign Screenshot" />
+  <img src="repo-icon.png" width="112" alt="VexSign icon" />
 </p>
 
----
+<h1 align="center">VexSign</h1>
 
-### ✨ Features
+<p align="center">
+  <a href="https://github.com/iamsmmh/VexSign/releases"><img src="https://img.shields.io/github/v/release/iamsmmh/VexSign?color=C96FAD&label=Release" alt="Release" /></a>
+  <a href="https://github.com/iamsmmh/VexSign/releases"><img src="https://img.shields.io/github/downloads/iamsmmh/VexSign/total?color=black&label=Downloads" alt="Downloads" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License" /></a>
+  <img src="https://img.shields.io/badge/Platform-iOS%2015%2B-black" alt="Platform" />
+</p>
 
-Everything Feather does — native SwiftUI + Liquid Glass UI, sign & install with `.p12`/`.mobileprovision` via Zsign, AltStore sources, certificate health checks — plus:
+<p align="center">
+  <b>Sign, tweak and install iOS apps entirely on-device — no computer required.</b><br>
+  Based on <a href="https://github.com/claration/Feather">Feather</a> by <a href="https://github.com/claration">claration</a> (GPL-3.0).
+</p>
 
-| | | |
-| :--- | :--- | :--- |
-| 🧹 **Auto Cleanup** — import → sign → install → clean, zero leftovers | 📂 **IPA Explorer** — edit `Info.plist`, files and images inside any IPA | 🔧 **Tweak Manager** — `.dylib`/`.deb`/`.framework`/`.bundle`/`.appex` injection (ElleKit) |
-| 📡 **File Transfer** — HTTP + WebDAV server, no cable | ⬇️ **Smart Downloads** — Live Activities & Dynamic Island progress | 🔄 **Update All** — one-tap re-sign of every source update |
-| 📦 **Batch Signing** — queue many apps at once | 💾 **Backup & Restore** — encrypted `.vexbackup` archives | 🛡️ **Anti-Revoke** — DoH profile pinning Apple's hosts |
-| 📝 **Logs & File Manager** — full console + document browser | 🎮 **Game Mode** — pause everything while you play | 🤖 **Automation** — scheduled updates, cleanup, summaries |
+<p align="center">
+  <img src="Images/Image-light.png#gh-light-mode-only" width="760" alt="VexSign screenshot (light)" />
+  <img src="Images/Image-dark.png#gh-dark-mode-only" width="760" alt="VexSign screenshot (dark)" />
+</p>
 
----
+## Features
 
-### 📲 Install
+Native SwiftUI interface with Liquid Glass support. Signs and installs IPAs with `.p12` / `.mobileprovision` via Zsign, with AltStore source support and certificate health monitoring.
 
-Grab the latest `.ipa` from **[Releases](https://github.com/iamsmmh/VexSign/releases)**, or add the repo to your current signer:
+On top of the Feather base:
+
+| | |
+| :--- | :--- |
+| **Auto Cleanup** — import, sign, install and sweep in one pass | **IPA Explorer** — edit `Info.plist`, files and images inside any IPA |
+| **Tweak injection** — `.dylib`, `.deb`, `.framework`, `.bundle`, `.appex` via ElleKit | **File transfer** — HTTP and WebDAV server, no cable |
+| **Background downloads** — Live Activities and Dynamic Island progress | **Update All** — one-tap re-sign of every source update |
+| **Batch signing** — queue multiple apps with per-app settings | **Backup & restore** — encrypted `.vexbackup` archives |
+| **Anti-revoke** — DoH profile pinning Apple's verification hosts | **Automation** — scheduled update checks, cleanup and summaries |
+| **Logs and file manager** — full console and document browser | **Game Mode** — pauses downloads and background work |
+
+## Install
+
+Download the latest `.ipa` from [Releases](https://github.com/iamsmmh/VexSign/releases), or add this repository to any AltStore-compatible signer:
 
 ```
 https://raw.githubusercontent.com/iamsmmh/VexSign/main/app-repo.json
 ```
 
-Installs work two ways: **Server** (local HTTPS + `itms-services://`, recommended) or **Pairing** (direct `installd` install via AFC, like ideviceinstaller but on-device).
+Installation runs over a local HTTPS server (`itms-services://`) or directly via AFC pairing.
 
----
+## Build from Source
 
-### 🔨 Build from Source
-
-Requirements: Xcode 16+, iOS 15+ SDK, Swift 6.0
+Requires Xcode 16+, iOS 15+ SDK, Swift 6.0.
 
 ```bash
 git clone --recursive https://github.com/iamsmmh/VexSign.git
 cd VexSign
-make deps                    # fetches SSL certs for the local server
-open VexSign.xcworkspace     # set your team, or build unsigned via `make`
+make deps                    # fetch SSL certificates for the local server
+open VexSign.xcworkspace     # set your team, or build unsigned with `make`
 ```
 
-The optional self-hosted **Premium server** (key validation, gated repos) lives in [`server/`](server/README.md) — deployable with one click via [`render.yaml`](render.yaml).
+An optional self-hosted premium server (key validation, gated sources) is available in [`server/`](server/README.md), deployable via [`render.yaml`](render.yaml).
 
----
+## Credits
 
-### 🙏 Credits
-
-| Project | By | Role |
-| ------- | -- | ---- |
-| [Feather](https://github.com/claration/Feather) | @claration (Samara) | **Base** — signing engine, CoreData, UI architecture, AltSourceKit, NimbleKit (GPL-3.0) |
+| Project | Author | Role |
+| ------- | ------ | ---- |
+| [Feather](https://github.com/claration/Feather) | claration | Base — signing engine, storage layer, UI architecture, AltSourceKit, NimbleKit (GPL-3.0) |
 | [Zsign](https://github.com/zhlynn/zsign) | zhlynn | On-device IPA signing (MIT) |
-| [idevice](https://github.com/jkcoxson/idevice) | jkcoxson | AFC/`installd` backend for Pairing install (MIT) |
+| [idevice](https://github.com/jkcoxson/idevice) | jkcoxson | AFC / `installd` backend for pairing installs (MIT) |
 | [ElleKit](https://github.com/everythingappletech/ElleKit) | tealbathingsuit | Tweak injection (BSD-3) |
 | [Vapor](https://github.com/vapor/vapor) | Vapor Team | Local HTTPS install server (MIT) |
-| [Nuke](https://github.com/kean/Nuke) · [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) · [SWCompression](https://github.com/tsolomko/SWCompression) · [LiveContainer](https://github.com/LiveContainer/LiveContainer) | kean · Weichsel · Tsolomko · LCTeam | Images, archives, sideload fixes |
+| [Nuke](https://github.com/kean/Nuke) · [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) · [SWCompression](https://github.com/tsolomko/SWCompression) | kean · weichsel · tsolomko | Image loading and archive handling (MIT) |
 | [backloop.dev](https://backloop.dev/) | — | Public-CA-signed SSL for localhost |
 
-Full details in [LICENSE](LICENSE) and `license_plist.yml`. Thanks to every contributor, translator and tester — and to **you** for starring both repos. ⭐
+Maintained by [@iamsmmh](https://github.com/iamsmmh). See [LICENSE](LICENSE) and `license_plist.yml` for full attribution.
 
----
+## License
 
-### 📄 License & Disclaimer
+GPL-3.0, matching the Feather base. © 2026 iamsmmh (VexSign additions) · © 2024 Samara / claration (Feather).
 
-**GPL-3.0** — same as Feather. © 2026 [@iamsmmh](https://github.com/iamsmmh) & VexSign Team (exclusive features) · © 2024 Samara / @claration (base). By contributing you agree to GPL-3.0.
-
-Releases are published **only** on [GitHub](https://github.com/iamsmmh/VexSign/releases) — other sites may be malicious. Sideloading may violate Apple Developer Program terms; use at your own risk. Not affiliated with Apple Inc.
-
-<p align="center"><b>Made with ❤️ by <a href="https://github.com/iamsmmh">@iamsmmh</a> · Based on <a href="https://github.com/claration/Feather">Feather by @claration</a></b></p>
+Releases are published only on [GitHub](https://github.com/iamsmmh/VexSign/releases). Sideloading may conflict with Apple Developer Program terms; use at your own risk. Not affiliated with Apple Inc.
