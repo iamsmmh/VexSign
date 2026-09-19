@@ -205,6 +205,13 @@ extension SigningEntitlementsEditorView {
 		Button(.localized("Add Array"), systemImage: "list.bullet") {
 			_present(.array)
 		}
+		Menu(.localized("Add Preset")) {
+			ForEach(EntitlementsPreset.allCases) { preset in
+				Button(preset.name) {
+					_merge(preset.values)
+				}
+			}
+		}
 		if !_otherFiles.isEmpty {
 			Menu(.localized("Merge From Library")) {
 				ForEach(_otherFiles) { other in
@@ -387,5 +394,73 @@ extension SigningEntitlementsEditorView {
 
 	private func _save() {
 		_manager.save(entry, dict: _dict)
+	}
+}
+
+// MARK: - Entitlements Presets
+/// Curated entitlement bundles people add over and over when signing. Each merges
+/// its keys into the current entitlements dict; existing keys win over preset ones.
+enum EntitlementsPreset: String, CaseIterable, Identifiable {
+	case performance
+	case appGroups
+	case siri
+	case pushDevelopment
+	case gameCenter
+	case networkInfo
+	case timeSensitiveNotifications
+	case deviceName
+
+	var id: String { rawValue }
+
+	var name: String {
+		switch self {
+		case .performance: .localized("Memory & Performance")
+		case .appGroups: .localized("App Groups")
+		case .siri: .localized("Siri")
+		case .pushDevelopment: .localized("Push Notifications (Development)")
+		case .gameCenter: .localized("Game Center")
+		case .networkInfo: .localized("Network & Wi-Fi Info")
+		case .timeSensitiveNotifications: .localized("Time-Sensitive Notifications")
+		case .deviceName: .localized("Device Name Access")
+		}
+	}
+
+	var values: [String: Any] {
+		switch self {
+		case .performance:
+			return [
+				"com.apple.developer.kernel.extended-virtual-addressing": true,
+				"com.apple.developer.kernel.increased-memory-limit": true
+			]
+		case .appGroups:
+			return [
+				"com.apple.security.application-groups": ["group.com.vexsign.shared"]
+			]
+		case .siri:
+			return [
+				"com.apple.developer.siri": true
+			]
+		case .pushDevelopment:
+			return [
+				"aps-environment": "development"
+			]
+		case .gameCenter:
+			return [
+				"com.apple.developer.game-center": true
+			]
+		case .networkInfo:
+			return [
+				"com.apple.developer.networking.wifi-info": true,
+				"com.apple.external-accessory.wireless-configuration": true
+			]
+		case .timeSensitiveNotifications:
+			return [
+				"com.apple.developer.usernotifications.time-sensitive": true
+			]
+		case .deviceName:
+			return [
+				"com.apple.developer.device-information.user-assigned-device-name": true
+			]
+		}
 	}
 }

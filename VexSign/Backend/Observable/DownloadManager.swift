@@ -531,6 +531,13 @@ class DownloadManager: NSObject, ObservableObject {
 			return Download(id: id, url: url, appName: appName, appDescription: appDescription)
 		}
 
+		if DownloadPreferences.chargeOnly, !DownloadPreferences.isCharging {
+			Task { @MainActor in
+				Toast.error(.localized("Charge only is on. Plug in your device or turn the setting off."), duration: .long)
+			}
+			return Download(id: id, url: url, appName: appName, appDescription: appDescription)
+		}
+
 		let running = downloads.filter { !$0.onlyArchiving && ($0.isActive || $0.progress > 0) && $0.progress < 1.0 && !$0.isPaused }.count
 		if running >= DownloadPreferences.maxParallel {
 			Task { @MainActor in
@@ -775,6 +782,15 @@ class DownloadManager: NSObject, ObservableObject {
 
 	func handlePackageFile(url: URL, dl: Download) throws {
 		guard !dl.isImporting else { return }
+
+		// Integrity audit: record the SHA-256 of every downloaded package in the Logs
+		// tab, so it can be compared later against a hash the source published.
+		let label = dl.appName ?? url.lastPathComponent
+		DispatchQueue.global(qos: .utility).async {
+			if let hash = FileIntegrity.sha256(of: url) {
+				SigningLog.shared.info(.localized("SHA-256 of %@: %@", arguments: label, hash), category: "download")
+			}
+		}
 
 		DispatchQueue.main.async {
 			self.objectWillChange.send()

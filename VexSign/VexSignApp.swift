@@ -21,6 +21,7 @@ struct VexSignApp: App {
     @StateObject var downloadManager = DownloadManager.shared
     @StateObject private var tabSelection = TabSelectionObserver.shared
     @StateObject private var selfUpdate = SelfUpdateManager.shared
+    @StateObject private var appLock = AppLockManager.shared
     @AppStorage("VexSign.onboardingCompleted") private var _onboardingCompleted = false
     @State private var _showOnboarding = false
     let storage = Storage.shared
@@ -123,6 +124,15 @@ struct VexSignApp: App {
             .overlay(alignment: .bottom) {
                 InstallQueuePill()
             }
+            .overlay {
+                // App Lock: covers everything, including the download bubble, while locked.
+                if appLock.isLocked {
+                    AppLockScreenView()
+                        .transition(.opacity)
+                        .zIndex(99)
+                }
+            }
+            .animation(.easeInOut(duration: 0.18), value: appLock.isLocked)
             .onReceive(NotificationCenter.default.publisher(for: .heartbeatInvalidHost)) { _ in
                 DispatchQueue.main.async {
                     UIAlertController.showAlertWithOk(
@@ -139,16 +149,21 @@ struct VexSignApp: App {
                 UIApplication.topViewController()?.view.window?.tintColor = UIColor(Color.userTint)
             }
             .onChange(of: scenePhase) { newPhase in
-                if newPhase == .background { EcosystemMaintenance.schedule() }
+                if newPhase == .background {
+                    EcosystemMaintenance.schedule()
+                    appLock.lockIfNeeded()
+                }
                 if newPhase == .active {
                     Task { @MainActor in
                         SourcesViewModel.shared.resetLoadingState()
                     }
+                    appLock.authenticateIfNeeded()
                 }
             }
             .task {
                 await selfUpdate.checkOnLaunch()
                 await EcosystemMaintenance.run()
+                await CertificateExpiryMonitor.checkOnLaunch()
                 StorageRules.warnIfOverLimit()
                 if !_onboardingCompleted {
                     _showOnboarding = true

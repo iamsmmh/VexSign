@@ -36,8 +36,10 @@ struct SettingsView: View {
         return _certificates[_storedSelectedCert]
     }
 
-    private let _donationsUrl = "https://buymeacoffee.com/axvex"
     private let _githubUrl = "https://github.com/iamsmmh/VexSign"
+    // If you set up a tip jar later, point this at it. For now the star card
+    // routes to the GitHub repo where users can support by starring/sharing.
+    private let _donationsUrl = "https://github.com/iamsmmh/VexSign"
     
     // MARK: Body
     var body: some View {
@@ -74,6 +76,17 @@ struct SettingsView: View {
 					NavigationLink(destination: AutomationView()) {
 						Label(.localized("Automation"), systemImage: "bolt.badge.clock")
 					}
+                }
+
+                NBSection(.localized("Security")) {
+                    NavigationLink(destination: AppLockSettingsView()) {
+                        Label(.localized("App Lock"), systemImage: "lock.iphone")
+                    }
+                    NavigationLink(destination: CertificateExpirySettingsView()) {
+                        Label(.localized("Expiry Reminders"), systemImage: "bell.badge")
+                    }
+                } footer: {
+                    Text(.localized("Lock the app behind Face ID or a passcode, and get notified before your certificates expire."))
                 }
 
                 NBSection(.localized("Game Mode"), systemName: "gamecontroller") {
