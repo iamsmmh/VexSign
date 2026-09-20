@@ -46,6 +46,10 @@ struct HomeView: View {
         return signed + imported
     }
 
+    private var isFlareWebTheme: Bool {
+        UserDefaults.standard.string(forKey: VexSignStylePreferences.visualThemeKey) == VexSignVisualTheme.flareWeb.rawValue
+    }
+
     private var updateCount: Int { updateChecker.updateCount }
 
     private var updateTitle: String {
@@ -69,6 +73,7 @@ struct HomeView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         header
+                        if isFlareWebTheme { flareWebHero }
                         statistics
                         updatesCard
                         importCard
@@ -82,7 +87,6 @@ struct HomeView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
-            .preferredColorScheme(.dark)
             .task {
                 if updateChecker.availableUpdates.isEmpty {
                     await updateChecker.checkNow()
@@ -103,12 +107,64 @@ struct HomeView: View {
         HStack {
             Text("VexSign")
                 .font(.system(size: 36, weight: .bold, design: .default))
-                .foregroundStyle(.white)
+                .foregroundStyle(FlarePalette.text)
                 .tracking(-1.2)
             Spacer()
         }
         .padding(.top, 6)
         .accessibilityAddTraits(.isHeader)
+    }
+
+    private var flareWebHero: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Theme.websiteAccent.opacity(0.18))
+                        .frame(width: 42, height: 42)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Theme.websiteAccent)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(.localized("iOS App Signing Tools"))
+                        .font(.system(size: 19, weight: .bold, design: .rounded))
+                        .foregroundStyle(FlarePalette.text)
+                    Text(.localized("Sign, install, and manage your apps on-device."))
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(FlarePalette.muted)
+                }
+                Spacer(minLength: 0)
+            }
+
+            Text(.localized("A native VexSign workspace for certificates, app sources, signing and installation — no Mac required."))
+                .font(.system(size: 14, weight: .regular, design: .rounded))
+                .foregroundStyle(FlarePalette.muted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                flareWebBadge(.localized("On device"), icon: "iphone")
+                flareWebBadge(.localized("Private"), icon: "lock.fill")
+                flareWebBadge(.localized("Fast"), icon: "bolt.fill")
+            }
+        }
+        .padding(17)
+        .background(Theme.cardElevated, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Theme.websiteAccent.opacity(0.34), lineWidth: 1)
+        }
+        .shadow(color: Theme.websiteGlow, radius: 20, y: 8)
+    }
+
+    private func flareWebBadge(_ title: String, icon: String) -> some View {
+        Label(title, systemImage: icon)
+            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .foregroundStyle(Theme.websiteAccentSecondary)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
+            .background(Theme.websiteAccentSecondary.opacity(0.12), in: Capsule())
     }
 
     // MARK: - Summary cards
@@ -159,14 +215,14 @@ struct HomeView: View {
                     HStack(spacing: 8) {
                         Text(updateTitle)
                             .font(.system(size: 19, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(FlarePalette.text)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
 
                         if updateCount > 0 {
                             Text("\(updateCount)")
                                 .font(.system(size: 14, weight: .bold, design: .monospaced))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(FlarePalette.text)
                                 .frame(minWidth: 30, minHeight: 30)
                                 .background(FlarePalette.pink, in: Circle())
                         }
@@ -220,7 +276,7 @@ struct HomeView: View {
 
                 Text(.localized("Import IPA / TIPA"))
                     .font(.system(size: 20, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(FlarePalette.text)
 
                 Text(.localized("Tap to browse or drag & drop files"))
                     .font(.system(size: 14, weight: .medium, design: .monospaced))
@@ -456,14 +512,40 @@ struct HomeView: View {
 // MARK: - Original Flare-inspired presentation tokens
 
 private enum FlarePalette {
-    static let background = Color(red: 0.025, green: 0.022, blue: 0.045)
-    static let card = Color(red: 0.065, green: 0.065, blue: 0.095)
-    static let border = Color.white.opacity(0.10)
-    static let grid = Color(red: 0.42, green: 0.025, blue: 0.19).opacity(0.52)
-    static let muted = Color(red: 0.49, green: 0.47, blue: 0.55)
-    static let pink = Color(red: 1.0, green: 0.12, blue: 0.34)
-    static let purple = Color(red: 0.62, green: 0.20, blue: 1.0)
-    static let green = Color(red: 0.03, green: 0.76, blue: 0.50)
+    private static var visualTheme: VexSignVisualTheme {
+        VexSignVisualTheme(rawValue: UserDefaults.standard.string(forKey: VexSignStylePreferences.visualThemeKey) ?? "") ?? .system
+    }
+
+    private static var isBase: Bool { visualTheme == .system }
+    private static var isWeb: Bool { visualTheme == .flareWeb }
+
+    static var background: Color {
+        isBase ? Theme.background : Color(red: 0.025, green: 0.022, blue: 0.045)
+    }
+    static var card: Color {
+        isBase ? Theme.card : (isWeb ? Theme.card : Color(red: 0.065, green: 0.065, blue: 0.095))
+    }
+    static var border: Color {
+        isBase ? Theme.separator : (isWeb ? Theme.separator : Color.white.opacity(0.10))
+    }
+    static var grid: Color {
+        if isBase { return .clear }
+        if isWeb { return Theme.separator.opacity(0.8) }
+        return Color(red: 0.42, green: 0.025, blue: 0.19).opacity(0.52)
+    }
+    static var muted: Color {
+        isBase ? Theme.secondary : Color(red: 0.49, green: 0.47, blue: 0.55)
+    }
+    static var text: Color {
+        isBase ? Theme.primary : .white
+    }
+    static var pink: Color {
+        isWeb ? Theme.websiteAccent : Color(red: 1.0, green: 0.12, blue: 0.34)
+    }
+    static var purple: Color {
+        isWeb ? Theme.websiteAccentSecondary : Color(red: 0.62, green: 0.20, blue: 1.0)
+    }
+    static var green: Color { Color(red: 0.03, green: 0.76, blue: 0.50) }
 }
 
 private struct FlareGridBackground: View {
@@ -526,7 +608,7 @@ private struct HomeMetricCard: View {
 
                 Text(value)
                     .font(.system(size: 24, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(FlarePalette.text)
                     .monospacedDigit()
 
                 Text(title)
@@ -559,7 +641,7 @@ private struct HomeFeatureRow: View {
             VStack(alignment: .leading, spacing: 5) {
                 Text(title)
                     .font(.system(size: 20, weight: .bold, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(FlarePalette.text)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
                 Text(subtitle)

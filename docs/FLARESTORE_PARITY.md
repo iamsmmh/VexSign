@@ -56,6 +56,7 @@ The complete public history was read from **v0.0.1 through v1.3.0**. The changel
 - Exportable signing/install logs and certificate inspection, including certificate-vs-profile expiry.
 - Dynamic Island download controls, strict app hiding/privacy behavior, widgets and Live Activities.
 - Original VexSign Luna visual theme and Flare-inspired touch treatment.
+- Optional Flare Web visual theme with dark glass surfaces, violet/cyan web accents, native font sizing, animated highlight motion and spring press feedback. Base/Ksign-style surfaces and Luna remain selectable.
 - Screenshot-matched Home dashboard presentation: dark magenta grid, repository/certificate/app metrics, update card, IPA/TIPA drag-and-drop import, direct URL downloads, Quick Sign, certificate management, repository creation and IPSW Browser actions.
 
 ### Deliberately excluded

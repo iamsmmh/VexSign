@@ -129,8 +129,13 @@ struct VexSignApp: App {
                 }
             }
             .environment(\.font, VexSignStylePreferences.font(familyRawValue: fontFamily, scale: fontScale))
-            .preferredColorScheme(visualTheme == VexSignVisualTheme.luna.rawValue ? .dark : nil)
+            .preferredColorScheme(
+                visualTheme == VexSignVisualTheme.luna.rawValue || visualTheme == VexSignVisualTheme.flareWeb.rawValue
+                    ? .dark
+                    : nil
+            )
             .buttonStyle(VexSignFlareButtonStyle(enabled: flareAnimations))
+            .vexSignWebMotion()
             .overlay(alignment: .bottom) {
                 InstallQueuePill()
             }
@@ -156,7 +161,10 @@ struct VexSignApp: App {
                     UIApplication.topViewController()?.view.window?.overrideUserInterfaceStyle = style
                 }
 
-                UIApplication.topViewController()?.view.window?.tintColor = UIColor(Color.userTint)
+                UIApplication.topViewController()?.view.window?.tintColor = UIColor(Theme.tint)
+            }
+            .onChange(of: visualTheme) { _ in
+                UIApplication.topViewController()?.view.window?.tintColor = UIColor(Theme.tint)
             }
             .onChange(of: scenePhase) { newPhase in
                 if newPhase == .background {

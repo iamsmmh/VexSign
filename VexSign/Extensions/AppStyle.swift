@@ -10,22 +10,28 @@
 import SwiftUI
 
 enum VexSignVisualTheme: String, CaseIterable, Identifiable {
+    /// The original VexSign/Ksign-style iOS surfaces.
     case system
+    /// The existing VexSign indigo presentation.
     case luna
+    /// Optional website-inspired Flare presentation for the native app.
+    case flareWeb
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
-        case .system: return "System"
+        case .system: return "Base / Ksign"
         case .luna: return "Luna"
+        case .flareWeb: return "Flare Web"
         }
     }
 
     var description: String {
         switch self {
-        case .system: return "Use the standard grouped iOS surfaces."
+        case .system: return "Keep the original grouped iOS and Ksign-style surfaces."
         case .luna: return "A soft indigo, glassy VexSign theme inspired by moonlight."
+        case .flareWeb: return "A dark, glassy native presentation inspired by the FlareStore website."
         }
     }
 }
@@ -76,14 +82,20 @@ enum VexSignStylePreferences {
 struct VexSignFlareButtonStyle: ButtonStyle {
     var enabled = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage(VexSignStylePreferences.visualThemeKey) private var visualTheme = VexSignVisualTheme.system.rawValue
 
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed && enabled && !reduceMotion ? 0.97 : 1)
-            .opacity(configuration.isPressed && enabled ? 0.86 : 1)
+        let isWebTheme = visualTheme == VexSignVisualTheme.flareWeb.rawValue
+        let pressedScale: CGFloat = isWebTheme ? 0.965 : 0.97
+        let response: Double = isWebTheme ? 0.30 : 0.24
+        let damping: Double = isWebTheme ? 0.68 : 0.72
+
+        return configuration.label
+            .scaleEffect(configuration.isPressed && enabled && !reduceMotion ? pressedScale : 1)
+            .opacity(configuration.isPressed && enabled ? (isWebTheme ? 0.82 : 0.86) : 1)
             .animation(
                 enabled && !reduceMotion
-                    ? .spring(response: 0.24, dampingFraction: 0.72)
+                    ? .spring(response: response, dampingFraction: damping)
                     : .linear(duration: 0),
                 value: configuration.isPressed
             )
