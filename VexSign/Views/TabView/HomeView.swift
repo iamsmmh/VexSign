@@ -47,7 +47,7 @@ struct HomeView: View {
     }
 
     private var isFlareWebTheme: Bool {
-        UserDefaults.standard.string(forKey: VexSignStylePreferences.visualThemeKey) == VexSignVisualTheme.flareWeb.rawValue
+        UserDefaults.standard.string(forKey: VexSignStylePreferences.visualThemeKey) == VexSignVisualTheme.flare.rawValue
     }
 
     private var updateCount: Int { updateChecker.updateCount }
@@ -73,7 +73,7 @@ struct HomeView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 16) {
                         header
-                        if isFlareWebTheme { flareWebHero }
+                        if isFlareWebTheme { flareHero }
                         statistics
                         updatesCard
                         importCard
@@ -115,7 +115,7 @@ struct HomeView: View {
         .accessibilityAddTraits(.isHeader)
     }
 
-    private var flareWebHero: some View {
+    private var flareHero: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 ZStack {
@@ -144,9 +144,9 @@ struct HomeView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 8) {
-                flareWebBadge(.localized("On device"), icon: "iphone")
-                flareWebBadge(.localized("Private"), icon: "lock.fill")
-                flareWebBadge(.localized("Fast"), icon: "bolt.fill")
+                flareBadge(.localized("On device"), icon: "iphone")
+                flareBadge(.localized("Private"), icon: "lock.fill")
+                flareBadge(.localized("Fast"), icon: "bolt.fill")
             }
         }
         .padding(17)
@@ -158,7 +158,7 @@ struct HomeView: View {
         .shadow(color: Theme.websiteGlow, radius: 20, y: 8)
     }
 
-    private func flareWebBadge(_ title: String, icon: String) -> some View {
+    private func flareBadge(_ title: String, icon: String) -> some View {
         Label(title, systemImage: icon)
             .font(.system(size: 11, weight: .semibold, design: .rounded))
             .foregroundStyle(Theme.websiteAccentSecondary)
@@ -517,7 +517,7 @@ private enum FlarePalette {
     }
 
     private static var isBase: Bool { visualTheme == .system }
-    private static var isWeb: Bool { visualTheme == .flareWeb }
+    private static var isWeb: Bool { visualTheme == .flare }
 
     static var background: Color {
         isBase ? Theme.background : Color(red: 0.025, green: 0.022, blue: 0.045)

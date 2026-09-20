@@ -130,7 +130,7 @@ struct VexSignApp: App {
             }
             .environment(\.font, VexSignStylePreferences.font(familyRawValue: fontFamily, scale: fontScale))
             .preferredColorScheme(
-                visualTheme == VexSignVisualTheme.luna.rawValue || visualTheme == VexSignVisualTheme.flareWeb.rawValue
+                visualTheme == VexSignVisualTheme.luna.rawValue || visualTheme == VexSignVisualTheme.flare.rawValue
                     ? .dark
                     : nil
             )

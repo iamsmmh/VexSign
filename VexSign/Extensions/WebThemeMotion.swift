@@ -2,7 +2,7 @@
 //  WebThemeMotion.swift
 //  VexSign
 //
-//  Small native motion treatment for the optional Flare Web presentation.
+//  Small native motion treatment for the optional Flare presentation.
 //  It uses no website JavaScript or assets and respects Reduce Motion plus the
 //  existing Flare Touch Animations preference.
 //
@@ -16,7 +16,7 @@ struct VexSignWebMotionModifier: ViewModifier {
     @State private var highlightPhase = false
 
     private var isEnabled: Bool {
-        visualTheme == VexSignVisualTheme.flareWeb.rawValue && animationsEnabled && !reduceMotion
+        visualTheme == VexSignVisualTheme.flare.rawValue && animationsEnabled && !reduceMotion
     }
 
     func body(content: Content) -> some View {

@@ -13,7 +13,7 @@ enum Theme {
     }
 
     private static var isLuna: Bool { visualTheme == .luna }
-    private static var isFlareWeb: Bool { visualTheme == .flareWeb }
+    private static var isFlareWeb: Bool { visualTheme == .flare }
 
     // MARK: - Website-inspired palette
     // These are original native tokens, not copied website CSS or assets.
