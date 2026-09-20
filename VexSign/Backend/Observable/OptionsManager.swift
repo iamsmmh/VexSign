@@ -117,6 +117,8 @@ struct Options: Codable, Equatable {
 	var infoPlistOverrides: Data? = nil
 	/// Info.plist keys stripped from the bundle for this sign.
 	var infoPlistRemovals: [String]? = nil
+	/// Removes the legacy MinimumOSVersion gate from the signed bundle.
+	var removeMinimumOSVersion: Bool
 
 	/// Strips non-target architectures (armv7, x86_64, etc.) from Mach-O binaries down to ARM64
 	var thinMachOBinaries: Bool
@@ -170,6 +172,7 @@ struct Options: Codable, Equatable {
 		keychainIsolation: false,
 		enableJIT: false,
 		fixFilePicker: false,
+		removeMinimumOSVersion: false,
 
 		// MARK: Experiments
 		
@@ -305,6 +308,7 @@ extension Options {
 		tweakInjections = try? c.decode([TweakInjectionSpec].self, forKey: .tweakInjections)
 		infoPlistOverrides = try? c.decode(Data.self, forKey: .infoPlistOverrides)
 		infoPlistRemovals = try? c.decode([String].self, forKey: .infoPlistRemovals)
+		removeMinimumOSVersion = try c.decodeIfPresent(Bool.self, forKey: .removeMinimumOSVersion) ?? d.removeMinimumOSVersion
 		thinMachOBinaries = try c.decodeIfPresent(Bool.self, forKey: .thinMachOBinaries) ?? d.thinMachOBinaries
 		experiment_supportLiquidGlass = try c.decodeIfPresent(Bool.self, forKey: .experiment_supportLiquidGlass) ?? d.experiment_supportLiquidGlass
 		experiment_disableLiquidGlass = try c.decodeIfPresent(Bool.self, forKey: .experiment_disableLiquidGlass) ?? d.experiment_disableLiquidGlass

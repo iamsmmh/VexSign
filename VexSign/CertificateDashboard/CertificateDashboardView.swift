@@ -53,6 +53,10 @@ struct CertificateDashboardView: View {
                     row("OCSP", cert.revocation.rawValue.capitalized)
                     row("Team ID", cert.teamID); row("Team Name", cert.teamName)
                     row("Profile Expiry", cert.expires.formatted())
+                    row("Certificate Expiry", cert.certificateExpires?.formatted() ?? "Unavailable")
+                    if let certificateExpires = cert.certificateExpires {
+                        row("Certificate Days Remaining", String(Int(floor(certificateExpires.timeIntervalSinceNow / 86_400))))
+                    }
                     row("Days Remaining", String(cert.daysRemaining))
                     row("Devices", cert.allDevices ? "All devices (enterprise profile)" : String(cert.deviceCount))
                     row("Bundle Scope", cert.applicationIdentifier)

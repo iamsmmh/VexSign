@@ -7,8 +7,11 @@ struct CertificateHealth: Identifiable, Sendable {
     let name: String
     let teamID: String
     let teamName: String
-    let expires: Date
-    let deviceCount: Int
+	let expires: Date
+	/// The leaf certificate can expire before the provisioning profile and is the
+	/// date that most directly explains a signing failure.
+	let certificateExpires: Date?
+	let deviceCount: Int
     let allDevices: Bool
     let applicationIdentifier: String
     let push: Bool
@@ -17,10 +20,11 @@ struct CertificateHealth: Identifiable, Sendable {
     let provision: String
     let revocation: Revocation
     let checkedAt: Date
-    let detail: String
-    var daysRemaining: Int { Int(floor(expires.timeIntervalSinceNow / 86_400)) }
+	let detail: String
+    var effectiveExpiry: Date { min(expires, certificateExpires ?? expires) }
+    var daysRemaining: Int { Int(floor(effectiveExpiry.timeIntervalSinceNow / 86_400)) }
     var score: Int {
-        guard expires > Date(), revocation != .revoked else { return 0 }
+        guard effectiveExpiry > Date(), revocation != .revoked else { return 0 }
         let base = revocation == .good ? 100 : 60
         return max(0, base - (daysRemaining < 7 ? 40 : daysRemaining < 30 ? 20 : 0))
     }
@@ -40,19 +44,27 @@ enum CertificateInspector {
             let plistData = data.subdata(in: start.lowerBound..<end.upperBound)
             guard let plist = try PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
                   let expiry = plist["ExpirationDate"] as? Date else { throw RepositoryError.invalid("Profile has no expiration date.") }
-            let entitlements = (plist["Entitlements"] as? [String: Any]) ?? [:]
-            let entitlementData = try PropertyListSerialization.data(fromPropertyList: entitlements, format: .xml, options: 0)
-            var status: CertificateHealth.Revocation = .unknown
-            var detail = "OCSP has not been checked. Profile metadata is not signature verification."
-            if online {
-                let keyData = try Data(contentsOf: p12)
-                var imported: CFArray?
-                let result = SecPKCS12Import(keyData as CFData, [kSecImportExportPassphrase as String: password] as CFDictionary, &imported)
-                guard result == errSecSuccess, let items = imported as? [[String: Any]], let item = items.first,
-                      let chain = item[kSecImportItemCertChain as String] as? [SecCertificate], !chain.isEmpty else {
-                    throw SecureSecretStore.Failure(status: result == errSecSuccess ? errSecDecode : result)
-                }
-                let requestedPolicy: SecPolicy? = SecPolicyCreateRevocation(CFOptionFlags(kSecRevocationOCSPMethod | kSecRevocationRequirePositiveResponse))
+			let entitlements = (plist["Entitlements"] as? [String: Any]) ?? [:]
+			let entitlementData = try PropertyListSerialization.data(fromPropertyList: entitlements, format: .xml, options: 0)
+
+			// Import the P12 even for an offline inspection. This validates the saved
+			// password and lets the UI distinguish certificate expiry from profile expiry.
+			let keyData = try Data(contentsOf: p12)
+			var imported: CFArray?
+			let importResult = SecPKCS12Import(keyData as CFData, [kSecImportExportPassphrase as String: password] as CFDictionary, &imported)
+			guard importResult == errSecSuccess,
+				  let items = imported as? [[String: Any]],
+				  let item = items.first,
+				  let chain = item[kSecImportItemCertChain as String] as? [SecCertificate],
+				  !chain.isEmpty else {
+				throw SecureSecretStore.Failure(status: importResult == errSecSuccess ? errSecDecode : importResult)
+			}
+			let certificateExpires = Self.notAfter(chain[0])
+
+			var status: CertificateHealth.Revocation = .unknown
+			var detail = "OCSP has not been checked. Profile metadata is not signature verification."
+			if online {
+				let requestedPolicy: SecPolicy? = SecPolicyCreateRevocation(CFOptionFlags(kSecRevocationOCSPMethod | kSecRevocationRequirePositiveResponse))
                 guard let revocationPolicy = requestedPolicy else {
                     throw RepositoryError.invalid("Unable to create OCSP policy.")
                 }
@@ -70,8 +82,9 @@ enum CertificateInspector {
                     detail = CFErrorCopyDescription(error) as String
                 }
             }
-            return CertificateHealth(id: id, name: name,
-                                     teamID: (plist["TeamIdentifier"] as? [String])?.joined(separator: ", ") ?? "Unknown",
+			return CertificateHealth(id: id, name: name,
+									 certificateExpires: certificateExpires,
+									 teamID: (plist["TeamIdentifier"] as? [String])?.joined(separator: ", ") ?? "Unknown",
                                      teamName: plist["TeamName"] as? String ?? "Unknown", expires: expiry,
                                      deviceCount: (plist["ProvisionedDevices"] as? [String])?.count ?? 0,
                                      allDevices: (plist["ProvisionsAllDevices"] as? Bool) ?? false,
@@ -82,4 +95,14 @@ enum CertificateInspector {
                                      provision: String(decoding: plistData, as: UTF8.self), revocation: status, checkedAt: Date(), detail: detail)
         }.value
     }
+
+	private static func notAfter(_ certificate: SecCertificate) -> Date? {
+		let key = kSecOIDX509V1ValidityNotAfter as String
+		guard let values = SecCertificateCopyValues(certificate, [key] as CFArray, nil) as? [String: Any],
+			  let validity = values[key] as? [String: Any],
+			  let value = validity[kSecPropertyKeyValue as String] as? Date else {
+			return nil
+		}
+		return value
+	}
 }

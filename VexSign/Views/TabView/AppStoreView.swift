@@ -82,14 +82,23 @@ struct AppStoreView: View {
     }
 
     private var nonExcludedSources: [AltSource] {
-        sources.filter { !VexSignAPI.isSourceExcluded($0.identifier ?? $0.sourceURL?.absoluteString ?? "") }
+        let visible = sources.filter { !VexSignAPI.isSourceExcluded($0.identifier ?? $0.sourceURL?.absoluteString ?? "") }
+        let ids = visible.map { $0.identifier ?? $0.sourceURL?.absoluteString ?? "" }
+        let order = SourcePreferences.order(for: ids).enumerated().reduce(into: [String: Int]()) { result, item in
+            result[item.element] = item.offset
+        }
+        return visible.sorted {
+            let lhs = order[$0.identifier ?? $0.sourceURL?.absoluteString ?? ""] ?? Int.max
+            let rhs = order[$1.identifier ?? $1.sourceURL?.absoluteString ?? ""] ?? Int.max
+            if lhs != rhs { return lhs < rhs }
+            return ($0.name ?? "").localizedCaseInsensitiveCompare($1.name ?? "") == .orderedAscending
+        }
     }
 
     private var filteredSources: [AltSource] {
         let base = nonExcludedSources
-        guard !searchText.isEmpty else { return base.sorted { ($0.name ?? "") < ($1.name ?? "") } }
+        guard !searchText.isEmpty else { return base }
         return base.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
-            .sorted { ($0.name ?? "") < ($1.name ?? "") }
     }
 
     // All loaded apps from active repositories
@@ -230,6 +239,14 @@ struct AppStoreView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 12) {
+                NavigationLink {
+                    SourcePriorityView(sources: Array(sources))
+                } label: {
+                    Image(systemName: "list.number")
+                        .font(.body.weight(.semibold))
+                }
+                .accessibilityLabel(Text(.localized("Repository Priority")))
+
                 Button {
                     isAddingPresenting = true
                 } label: {
@@ -1189,6 +1206,11 @@ private struct RepositoryRow: View {
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(Color.orange.opacity(0.15), in: Capsule())
                             .foregroundStyle(.orange)
+                    }
+                    if SourcePreferences.isTrusted(source.identifier ?? source.sourceURL?.absoluteString ?? "") {
+                        Label(.localized("Trusted"), systemImage: "checkmark.seal.fill")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.green)
                     }
                     let count = repository?.apps.count ?? source.appsCount
                     Text("\(count) apps")

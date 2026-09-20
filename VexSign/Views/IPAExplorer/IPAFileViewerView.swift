@@ -23,6 +23,8 @@ struct IPAFileViewerView: View {
 	@State private var _plist: [String: Any]?
 	@State private var _image: UIImage?
 	@State private var _hex: String = ""
+	@State private var _strings: String = ""
+	@State private var _binaryMode = 0
 	@State private var _dylibs: [String] = []
 	@State private var _attributes: [FileAttributeKey: Any] = [:]
 	@State private var _didLoad = false
@@ -158,14 +160,20 @@ extension IPAFileViewerView {
 	@ViewBuilder
 	private var _binaryContent: some View {
 		Section {
-			Text(_hex)
+			Picker(.localized("View"), selection: $_binaryMode) {
+				Text(.localized("Hex")).tag(0)
+				Text(.localized("Strings")).tag(1)
+			}
+			.pickerStyle(.segmented)
+
+			Text(_binaryMode == 0 ? _hex : _strings)
 				.font(.system(size: 11, design: .monospaced))
-				.lineLimit(80)
+				.lineLimit(_binaryMode == 0 ? 80 : 240)
 				.textSelection(.enabled)
 		} header: {
-			Text(.localized("Preview"))
+			Text(.localized("Binary Browser"))
 		} footer: {
-			Text(.localized("First bytes of the file. Binary content cannot be edited here, but it can be replaced."))
+			Text(.localized("Hex shows the first bytes; Strings extracts printable runs from a bounded preview. Binary content cannot be edited here, but it can be replaced."))
 		}
 	}
 
@@ -319,6 +327,9 @@ extension IPAFileViewerView {
 		_text = nil
 		_plist = nil
 		_image = nil
+		_hex = ""
+		_strings = ""
+		_binaryMode = 0
 		_dylibs = []
 
 		switch _kind {
@@ -332,6 +343,7 @@ extension IPAFileViewerView {
 			if let data = try? Data(contentsOf: entry.url) { _image = UIImage(data: data) }
 		case .executable, .binary, .database, .archive:
 			_hex = Self.hexPreview(of: entry.url)
+			_strings = Self.stringPreview(of: entry.url)
 			if _kind == .executable {
 				_dylibs = MachOReader.dylibs(forExecutableAt: entry.url)
 			}
@@ -413,6 +425,27 @@ extension IPAFileViewerView {
 		}
 
 		return lines.joined(separator: "\n")
+	}
+
+	/// Extracts printable UTF-8/ASCII runs without loading a potentially huge executable.
+	private static func stringPreview(of url: URL, bytes: Int = 64 * 1024) -> String {
+		guard let data = IPAFileLoader.head(of: url, count: bytes), !data.isEmpty else {
+			return .localized("Unreadable")
+		}
+		var result: [String] = []
+		var current: [UInt8] = []
+		for byte in data {
+			if byte >= 32 && byte < 127 {
+				current.append(byte)
+			} else if current.count >= 4 {
+				result.append(String(decoding: current, as: UTF8.self))
+				current.removeAll(keepingCapacity: true)
+			} else {
+				current.removeAll(keepingCapacity: true)
+			}
+		}
+		if current.count >= 4 { result.append(String(decoding: current, as: UTF8.self)) }
+		return result.isEmpty ? .localized("No printable strings found in the preview.") : result.joined(separator: "\n")
 	}
 }
 

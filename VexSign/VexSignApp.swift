@@ -285,6 +285,23 @@ struct VexSignApp: App {
 
 				FR.exportCertificateAndOpenUrl(using: callbackTemplate)
 			}
+			/// vexsign://tweak-repository/<url> or vexsign://tweak-repository?url=<url>
+			if url.host == "tweak-repository" || url.path.hasPrefix("/tweak-repository") {
+				let queryURL = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
+					.first(where: { $0.name.lowercased() == "url" })?.value
+				let raw = queryURL ?? url.validatedScheme(after: "/tweak-repository/")
+				if let raw, let repositoryURL = URL(string: raw), repositoryURL.scheme?.lowercased() == "https" {
+					Task {
+						do {
+							let count = try await TweakManager.shared.addRepository(repositoryURL)
+							Toast.success(String.localized("Imported %lld tweaks", arguments: count), systemImage: "wrench.and.screwdriver.fill")
+						} catch {
+							Toast.error(error.localizedDescription, duration: .sticky)
+						}
+					}
+				}
+				return
+			}
 			/// vexsign://source/<url>
 			if let fullPath = url.validatedScheme(after: "/source/") {
 				FR.handleSource(fullPath) { _ in }

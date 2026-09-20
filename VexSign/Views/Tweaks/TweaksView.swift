@@ -42,12 +42,14 @@ struct TweakLibraryList: View {
 		case ipaExtract(URL)
 		case extractLibrary
 		case move(Set<UUID>)
+		case repository
 
 		var id: String {
 			switch self {
 			case .ipaExtract: 		return "ipaExtract"
 			case .extractLibrary: 	return "extractLibrary"
 			case .move: 			return "move"
+			case .repository: 		return "repository"
 			}
 		}
 	}
@@ -194,6 +196,8 @@ struct TweakLibraryList: View {
 				_isEditing = false
 				_selection.removeAll()
 			}
+		case .repository:
+			TweakRepositoryView()
 		}
 	}
 
@@ -326,6 +330,11 @@ extension TweakLibraryList {
 						_show(.extractLibrary)
 					} label: {
 						Label(.localized("Extract from Library App"), systemImage: "square.grid.2x2")
+					}
+					Button {
+						_show(.repository)
+					} label: {
+						Label(.localized("Add Tweak Repository"), systemImage: "globe.badge.chevron.backward")
 					}
 					Divider()
 					Button {
