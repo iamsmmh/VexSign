@@ -144,7 +144,9 @@ final class PremiumManager: ObservableObject {
 
 	private func _requestURLs(_ request: URLRequest, missingAccess: String) async throws -> [URL] {
 		var request = request
-		request.timeoutInterval = 30
+		// Render's free tier sleeps after 15 min idle and cold-starts in
+		// 30-60s; 30s turned every first-after-idle redeem into a timeout.
+		request.timeoutInterval = 90
 
 		let data: Data
 		let response: URLResponse

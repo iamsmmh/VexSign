@@ -38,12 +38,14 @@ Run:
     uvicorn main:app --host 0.0.0.0 --port 8000
 """
 
+import html
 import json
 import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import FileResponse, Response
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 
 import db
@@ -100,8 +102,42 @@ app = FastAPI(
 app.include_router(admin_router)
 
 
+@app.exception_handler(RequestValidationError)
+async def _validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+    """Return a plain-string `detail` like every other error from this API.
+
+    FastAPI's default 422 body is `{"detail": [...]}` (a list), which the app's
+    `VexSignAPI.ErrorResponse` (string `detail`) cannot decode — the user would
+    only ever see the generic fallback message. Join the complaints into one
+    readable string instead.
+    """
+    parts = []
+    for error in exc.errors():
+        where = ".".join(str(bit) for bit in error.get("loc", []) if bit != "body")
+        message = error.get("msg", "invalid value")
+        parts.append(f"{where}: {message}" if where else message)
+    # Lowercase "detail" matches FastAPI's HTTPException shape used by every
+    # other error from this API (and what the app decodes).
+    return JSONResponse(
+        status_code=422, content={"detail": "; ".join(parts) or "Request validation failed."}
+    )
+
+
 class ValidateBody(BaseModel):
     device_uuid: str
+
+
+def _first_forwarded(value: str | None, default: str) -> str:
+    """First entry of a (possibly chained) forwarding header.
+
+    Proxies append to `X-Forwarded-Proto` / `X-Forwarded-Host`, so behind two
+    proxies the value looks like `"https, http"` — using it verbatim produced
+    broken feed URLs such as `https,http://host/repo/premium.json`. The first
+    entry is the client-facing one.
+    """
+    if not value:
+        return default
+    return value.split(",")[0].strip() or default
 
 
 def _base_url(request: Request) -> str:
@@ -112,15 +148,18 @@ def _base_url(request: Request) -> str:
     sandbox previews), so the URLs handed to the app are always the public
     ones it can actually reach.
     """
-    override = os.environ.get("PUBLIC_BASE_URL")
+    override = (os.environ.get("PUBLIC_BASE_URL") or "").strip()
     if override:
         return override.rstrip("/")
 
-    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-    host = request.headers.get("x-forwarded-host", request.headers.get("host", "localhost"))
-    # e2b preview proxies terminate TLS; if they omit X-Forwarded-Proto we'd
+    proto = _first_forwarded(request.headers.get("x-forwarded-proto"), request.url.scheme)
+    proto = proto.strip().lower() or request.url.scheme
+    host = _first_forwarded(
+        request.headers.get("x-forwarded-host"), request.headers.get("host", "localhost")
+    )
+    # Render / e2b proxies terminate TLS; if they omit X-Forwarded-Proto we'd
     # otherwise hand the app a cleartext URL that iOS (ATS) rejects.
-    if host.endswith(".e2b.app") and proto == "http":
+    if host.endswith((".e2b.app", ".onrender.com")) and proto == "http":
         proto = "https"
     return f"{proto}://{host}".rstrip("/")
 
@@ -146,10 +185,17 @@ def validate(
     request: Request,
     x_api_key: str | None = Header(default=None, alias="X-API-Key"),
 ) -> dict:
-    if not x_api_key:
+    # Keys are stored upper-cased (see keygen/admin minting); normalise here so a
+    # key typed in lower case or with stray whitespace still redeems.
+    key = (x_api_key or "").strip().upper()
+    if not key:
         raise HTTPException(status_code=401, detail=INVALID_KEY_DETAIL)
 
-    row = db.get_key(x_api_key)
+    device_uuid = (body.device_uuid or "").strip()
+    if not device_uuid:
+        raise HTTPException(status_code=422, detail="device_uuid is required.")
+
+    row = db.get_key(key)
 
     if row is None:
         raise HTTPException(status_code=401, detail=INVALID_KEY_DETAIL)
@@ -161,13 +207,14 @@ def validate(
     # is allowed (idempotent) so reinstall/restore flows stay smooth; a
     # different device gets the exact message the app shows for burned keys.
     if row["used"]:
-        if row["device_uuid"] != body.device_uuid:
+        if row["device_uuid"] != device_uuid:
             raise HTTPException(status_code=401, detail=INVALID_KEY_DETAIL)
         return _urls_payload(request, count=25)
 
-    # Atomically claim the key to prevent double-spending / race conditions.
-    if not db.consume_key(x_api_key, body.device_uuid):
-        raise HTTPException(status_code=401, detail=INVALID_KEY_DETAIL)
+    if not row["used"]:
+        # Atomically claim the key to prevent double-spending / race conditions.
+        if not db.consume_key(key, device_uuid):
+            raise HTTPException(status_code=401, detail=INVALID_KEY_DETAIL)
 
     return _urls_payload(request, count=25)
 
@@ -177,6 +224,7 @@ def urls(
     request: Request,
     vexsign_uuid: str | None = Header(default=None, alias="vexSignUUID"),
 ) -> dict:
+    vexsign_uuid = (vexsign_uuid or "").strip()
     if not vexsign_uuid or not db.device_has_activation(vexsign_uuid):
         raise HTTPException(status_code=401, detail=NO_ACTIVATION_DETAIL)
 
@@ -193,9 +241,9 @@ def _require_premium_access(
 ) -> None:
     """The app attaches `vexSignUUID` (always) and `X-API-Key` (once the key
     is persisted) when fetching URLs on premium hosts — mirror that here."""
-    if vexsign_uuid and db.device_has_activation(vexsign_uuid):
+    if vexsign_uuid and db.device_has_activation(vexsign_uuid.strip()):
         return
-    if x_api_key and db.key_allows_downloads(x_api_key):
+    if x_api_key and db.key_allows_downloads(x_api_key.strip().upper()):
         return
     raise HTTPException(status_code=401, detail=NO_ACTIVATION_DETAIL)
 
@@ -295,9 +343,8 @@ def icon() -> FileResponse:
     return FileResponse(os.path.join(os.path.dirname(__file__), "static", "icon.png"))
 
 
-@app.get("/")
-def root(request: Request) -> dict:
-    endpoints = [
+def _public_endpoints() -> list[str]:
+    return [
         "POST /api/validate",
         "GET /api/urls",
         "GET /api/health",
@@ -305,18 +352,119 @@ def root(request: Request) -> dict:
         "GET /repo/source.json     (self-hosted source, add it in VexSign)",
         "GET /repo/appdata         (legacy AltServer XML feed)",
     ]
-    if bool(admin.ADMIN_TOKEN):
-        endpoints += [
-            "GET /api/admin/health",
-            "POST /api/admin/keys        (mint)",
-            "GET /api/admin/keys         (list)",
-            "POST /api/admin/keys/disable|enable|reset|revoke",
-            "POST /api/admin/apps        (upload an IPA into /repo/source.json)",
-            "GET /api/admin/apps         (list the self-hosted source)",
-            "DELETE /api/admin/apps/{bundle_identifier}",
-        ]
+
+
+def _admin_endpoints() -> list[str]:
+    return [
+        "GET /api/admin/health",
+        "POST /api/admin/keys        (mint)",
+        "GET /api/admin/keys         (list)",
+        "POST /api/admin/keys/disable|enable|reset|revoke",
+        "POST /api/admin/apps        (upload an IPA into /repo/source.json)",
+        "GET /api/admin/apps         (list the self-hosted source)",
+        "DELETE /api/admin/apps/{bundle_identifier}",
+    ]
+
+
+def _landing_page(base: str, endpoints: list[str], show_admin: bool) -> str:
+    """Human-friendly status page for browsers (API clients keep the JSON).
+
+    `base` is derived from request headers, so everything interpolated is
+    escaped — a malicious Host header must not become stored XSS here.
+    """
+    safe_base = html.escape(base, quote=True)
+    items = "\n".join(f"      <li><code>{html.escape(e)}</code></li>" for e in endpoints)
+    admin_note = (
+        "<p class=\"muted\">Admin endpoints are hidden without a valid "
+        "<code>X-Admin-Token</code>.</p>"
+        if not show_admin
+        else ""
+    )
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VexSign Premium API</title>
+<style>
+  :root {{ color-scheme: light dark; }}
+  body {{ font-family: -apple-system, system-ui, sans-serif; margin: 0; padding: 2rem 1rem;
+         background: #0f0f14; color: #f2f2f5; }}
+  @media (prefers-color-scheme: light) {{
+    body {{ background: #fafafa; color: #1c1c1e; }}
+    code {{ background: #eeeef2 !important; }}
+    .card {{ background: #fff !important; border-color: #e5e5ea !important; }}
+  }}
+  main {{ max-width: 640px; margin: 0 auto; }}
+  h1 {{ font-size: 1.6rem; margin-bottom: 0.25rem; }}
+  .card {{ background: #17171d; border: 1px solid #2c2c34; border-radius: 12px;
+          padding: 1rem 1.25rem; margin: 1rem 0; }}
+  code {{ background: #26262e; padding: 0.15rem 0.4rem; border-radius: 6px;
+         font-size: 0.85em; word-break: break-all; }}
+  ul {{ padding-left: 1.1rem; }} li {{ margin: 0.35rem 0; }}
+  .status {{ display: flex; align-items: center; gap: 0.5rem; font-weight: 600; }}
+  #dot {{ width: 10px; height: 10px; border-radius: 50%; background: #999; }}
+  #dot.ok {{ background: #30d158; }} #dot.bad {{ background: #ff453a; }}
+  .muted {{ color: #98989f; font-size: 0.9em; }}
+  a {{ color: #c96fad; }}
+</style>
+</head>
+<body>
+<main>
+  <h1>VexSign Premium API</h1>
+  <p class="status"><span id="dot"></span><span id="status">Checking status&hellip;</span></p>
+  <div class="card">
+    <strong>Add the source in VexSign</strong> (Sources &rarr; Add):
+    <p><code>{safe_base}/repo/source.json</code><br>
+    <span class="muted">Public self-hosted source. Empty until the first IPA is uploaded.</span></p>
+    <p><code>{safe_base}/repo/premium.json</code><br>
+    <span class="muted">Gated premium feed &mdash; redeem a key in the app first.</span></p>
+  </div>
+  <div class="card">
+    <strong>Endpoints</strong>
+    <ul>
+{items}
+    </ul>
+    {admin_note}
+  </div>
+  <p class="muted">VexSign is open source:
+  <a href="https://github.com/iamsmmh/VexSign">github.com/iamsmmh/VexSign</a>.
+  Keys: @iamSMMH on Telegram.</p>
+</main>
+<script>
+fetch('/api/health').then(r => {{
+  const ok = r.ok;
+  document.getElementById('dot').className = ok ? 'ok' : 'bad';
+  document.getElementById('status').textContent = ok ? 'Online' : 'Degraded';
+}}).catch(() => {{
+  document.getElementById('dot').className = 'bad';
+  document.getElementById('status').textContent = 'Unreachable';
+}});
+</script>
+</body>
+</html>
+"""
+
+
+@app.get("/")
+def root(
+    request: Request,
+    x_admin_token: str | None = Header(default=None, alias="X-Admin-Token"),
+):
+    base = _base_url(request)
+    # Only an authenticated admin sees the admin surface here; every visitor
+    # used to learn it exists (and that ADMIN_TOKEN is set) from this page.
+    show_admin = admin.is_valid_admin_token(x_admin_token)
+    endpoints = _public_endpoints() + (_admin_endpoints() if show_admin else [])
+
+    # Browsers get a readable status page; API clients (curl, URLSession,
+    # uptime monitors — anything not asking for HTML) keep the exact JSON
+    # contract this route always returned.
+    if "text/html" in request.headers.get("accept", ""):
+        return HTMLResponse(_landing_page(base, endpoints, show_admin))
+
     return {
         "service": "VexSign Premium API",
         "endpoints": endpoints,
-        "appSetting": f'static let apiBaseURL = "{_base_url(request)}/api"  // VexSign/Utilities/VexSignAPI.swift',
+        "appSetting": f'static let apiBaseURL = "{base}/api"  // VexSign/Utilities/VexSignAPI.swift',
     }
