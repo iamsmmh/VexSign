@@ -17,6 +17,7 @@ struct TabbarView: View {
     @ObservedObject private var tweakManager = TweakManager.shared
     @ObservedObject private var tabPrefs = TabBarPreferences.shared
     @AppStorage("VexSign.showSourcesUpdateBadge") private var showSourcesUpdateBadge = true
+    @Namespace private var tabSelectionAnimation
 
     private var visibleTabs: [TabEnum] {
         tabPrefs.visibleTabs
@@ -90,6 +91,13 @@ struct TabbarView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 48)
                     .contentShape(Rectangle())
+                    .background {
+                        if currentTab == tab {
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Theme.tintSoft)
+                                .matchedGeometryEffect(id: "selected-tab", in: tabSelectionAnimation)
+                        }
+                    }
                 }
                 .buttonStyle(VexSignFlareButtonStyle())
                 .accessibilityLabel(Text(tab.title))
@@ -99,6 +107,7 @@ struct TabbarView: View {
         .padding(.horizontal, 4)
         .padding(.top, 5)
         .padding(.bottom, 2)
+        .animation(.snappy(duration: 0.28), value: currentTab)
         .background(.ultraThinMaterial)
         .overlay(alignment: .top) {
             Rectangle()

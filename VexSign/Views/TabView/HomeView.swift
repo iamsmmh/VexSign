@@ -12,6 +12,7 @@ struct HomeView: View {
     @ObservedObject private var lockManager = AppLockManager.shared
     @State private var isAddingCertificate = false
     @State private var showIPAExplorer = false
+    @State private var heroPulse = false
     @AppStorage("VexSign.migrationBannerDismissed_v2") private var bannerDismissed = false
 
     // Live counts for the overview cards
@@ -136,6 +137,8 @@ struct HomeView: View {
                         )
                     )
                     .frame(width: 112, height: 112)
+                    .scaleEffect(heroPulse ? 1.08 : 0.94)
+                    .opacity(heroPulse ? 0.82 : 0.58)
                     .blur(radius: 8)
 
                 Image("AppLogo")
@@ -209,6 +212,11 @@ struct HomeView: View {
                 .frame(height: 1.2)
                 .clipShape(RoundedRectangle(cornerRadius: NBRadius.large, style: .continuous))
                 .padding(.horizontal, 1)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
+                heroPulse = true
+            }
         }
     }
 
