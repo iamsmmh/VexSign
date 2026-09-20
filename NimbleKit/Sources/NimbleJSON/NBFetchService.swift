@@ -92,6 +92,14 @@ extension NBFetchService {
 		headers: [String: String] = [:],
 		completion: @escaping (Result<Data, Error>) -> Void
 	) {
+		// The completion runs on the URLSession callback queue; boxing it
+		// keeps the @Sendable dispatch-queue closure Sendable-clean.
+		final class CompletionBox: @unchecked Sendable {
+			let handler: (Result<Data, Error>) -> Void
+			init(_ handler: @escaping (Result<Data, Error>) -> Void) { self.handler = handler }
+		}
+		let box = CompletionBox(completion)
+
 		DispatchQueue.global(qos: .userInitiated).async {
 			// Create URLRequest with gzip support
 			var request = URLRequest(url: url)
@@ -118,7 +126,7 @@ extension NBFetchService {
 			let task = URLSession.shared.dataTask(with: request) { data, response, error in
 				if let error = error {
 					Self.log.error("Request FAILED \(url.absoluteString, privacy: .public): \(error.localizedDescription, privacy: .public)")
-					completion(.failure(NBFetchServiceError.networkError(error)))
+					box.handler(.failure(NBFetchServiceError.networkError(error)))
 					return
 				}
 
@@ -126,7 +134,7 @@ extension NBFetchService {
 
 				guard let data = data else {
 					Self.log.error("Request NO DATA \(url.absoluteString, privacy: .public) (HTTP \(statusCode, privacy: .public))")
-					completion(.failure(NBFetchServiceError.noData))
+					box.handler(.failure(NBFetchServiceError.noData))
 					return
 				}
 
@@ -136,12 +144,12 @@ extension NBFetchService {
 				if !(200..<300).contains(statusCode) {
 					let snippet = String(data: data.prefix(512), encoding: .utf8) ?? "<non-utf8 \(data.count) bytes>"
 					Self.log.error("Request HTTP \(statusCode, privacy: .public) \(url.absoluteString, privacy: .public)\nBody: \(snippet, privacy: .public)")
-					completion(.failure(NBFetchServiceError.httpError(statusCode)))
+					box.handler(.failure(NBFetchServiceError.httpError(statusCode)))
 					return
 				}
 
 				Self.log.debug("Request OK (HTTP \(statusCode, privacy: .public)) \(url.absoluteString, privacy: .public)")
-				completion(.success(data))
+				box.handler(.success(data))
 			}
 
 			task.resume()
