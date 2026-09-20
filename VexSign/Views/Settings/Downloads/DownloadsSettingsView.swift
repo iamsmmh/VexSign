@@ -102,7 +102,7 @@ struct DownloadsSettingsView: View {
 					.labelsHidden()
 					.pickerStyle(.inline)
 
-					Toggle(.localized("Show in Sources Tab"), isOn: $_showDownloadHeaderInSourcesTab)
+					Toggle(.localized("Show in App Store"), isOn: $_showDownloadHeaderInSourcesTab)
 				} footer: {
 					Text(.localized("These settings control how background downloads from sources appear. Manual downloads will always show with their own header."))
 				}

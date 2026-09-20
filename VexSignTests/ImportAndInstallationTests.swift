@@ -84,8 +84,8 @@ final class ImportAndInstallationTests: XCTestCase {
         }
     }
 
-    func testHomeIsAvailableInDefaultNavigation() {
-        XCTAssertEqual(TabEnum.defaultTabs.first, .home)
+    func testPrimaryNavigationUsesTheRequiredOrder() {
+        XCTAssertEqual(TabEnum.defaultTabs, [.files, .library, .home, .appStore, .downloads, .settings])
         XCTAssertFalse(TabBarPreferences.hideableTabs.contains(.home))
         XCTAssertFalse(TabBarPreferences.hideableTabs.contains(.settings))
     }

@@ -53,7 +53,7 @@ final class UpdateAllManager: ObservableObject {
 
 	// MARK: Building the queue
 
-	/// Builds the task list from the distributed `[ASRepository]` the Sources tab holds. Apps that
+	/// Builds the task list from the distributed `[ASRepository]` the App Store holds. Apps that
 	/// are ignored, already matching, or lack a download URL are dropped.
 	static func makeTasks(
 		from repositories: [ASRepository],
