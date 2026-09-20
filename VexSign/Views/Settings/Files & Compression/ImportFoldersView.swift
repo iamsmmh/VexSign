@@ -73,7 +73,7 @@ private struct ImportFolderCellView: View {
 			HStack {
 				Label(folder.title, systemImage: folder.icon)
 				Spacer()
-				Text(name ?? .localized("Last Used"))
+				Text(verbatim: name ?? String.localized("Last Used"))
 					.foregroundStyle(.secondary)
 					.lineLimit(1)
 					.truncationMode(.middle)

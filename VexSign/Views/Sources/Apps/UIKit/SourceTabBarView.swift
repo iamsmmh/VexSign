@@ -21,7 +21,7 @@ struct SourceTabBarView: View {
             set: { onTabSelected($0) }
         )) {
             Text(.localized("All")).tag(SourceAppsView.SourceTab.all)
-            Text(.localized("Updates") + " (\(updateCount))").tag(SourceAppsView.SourceTab.updates)
+            Text(verbatim: String.localized("Updates") + " (\(updateCount))").tag(SourceAppsView.SourceTab.updates)
         }
         .pickerStyle(.segmented)
         .padding(.horizontal, 16)

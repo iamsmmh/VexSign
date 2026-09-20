@@ -109,7 +109,7 @@ struct SigningCustomizationView: View {
 				)
 			} label: {
 				LabeledContent(.localized("Description")) {
-					Text(_displayedDescription ?? .localized("None"))
+					Text(verbatim: _displayedDescription ?? String.localized("None"))
 						.lineLimit(1)
 				}
 			}
@@ -123,7 +123,7 @@ struct SigningCustomizationView: View {
 			destination()
 		} label: {
 			LabeledContent(title) {
-				Text(desc ?? .localized("Unknown"))
+				Text(verbatim: desc ?? String.localized("Unknown"))
 			}
 		}
 	}

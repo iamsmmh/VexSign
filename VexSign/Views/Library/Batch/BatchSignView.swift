@@ -101,7 +101,7 @@ struct BatchSignView: View {
 				if _offersPassthrough {
 					NBSection(.localized("Already Signed")) {
 						Picker(.localized("Already Signed"), selection: $_resignsSigned) {
-							Text(mode.installs ? .localized("Install Only") : .localized("Skip")).tag(false)
+							Text(verbatim: mode.installs ? String.localized("Install Only") : String.localized("Skip")).tag(false)
 							Text(.localized("Sign Again")).tag(true)
 						}
 						.pickerStyle(.segmented)
@@ -196,7 +196,7 @@ struct BatchSignView: View {
 			}
 
 			VStack(alignment: .leading, spacing: 2) {
-				Text((passthrough ? app.name : resolved.appName ?? app.name) ?? .localized("Unknown"))
+				Text(verbatim: (passthrough ? app.name : resolved.appName ?? app.name) ?? String.localized("Unknown"))
 					.font(.headline)
 
 				if isRenamed, let original = app.identifier {
@@ -207,7 +207,7 @@ struct BatchSignView: View {
 						.lineLimit(1)
 				}
 
-				Text(identifier ?? .localized("Unknown"))
+				Text(verbatim: identifier ?? String.localized("Unknown"))
 					.font(.caption)
 					.foregroundStyle(isRenamed ? Color.accentColor : .secondary)
 					.lineLimit(1)
@@ -215,7 +215,7 @@ struct BatchSignView: View {
 			.frame(maxWidth: .infinity, alignment: .leading)
 
 			if passthrough {
-				Text(mode.installs ? .localized("Install Only") : .localized("Skipped"))
+				Text(verbatim: mode.installs ? String.localized("Install Only") : String.localized("Skipped"))
 					.font(.caption.weight(.medium))
 					.foregroundStyle(.secondary)
 					.padding(.horizontal, 8)

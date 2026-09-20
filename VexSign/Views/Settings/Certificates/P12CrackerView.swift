@@ -52,7 +52,7 @@ struct P12CrackerView: View {
 								Text(.localized("Testing:"))
 									.font(.footnote)
 									.foregroundColor(.secondary)
-								Text(cracker.currentCandidate.isEmpty ? .localized("(blank)") : cracker.currentCandidate)
+								Text(verbatim: cracker.currentCandidate.isEmpty ? String.localized("(blank)") : cracker.currentCandidate)
 									.font(.footnote.monospaced())
 								Spacer()
 								Text("\(cracker.testedCount) / \(cracker.totalCount)")
@@ -87,7 +87,7 @@ struct P12CrackerView: View {
 							Text(.localized("Password Found!"))
 								.font(.headline)
 
-							Text(found.isEmpty ? .localized("(No password required)") : found)
+							Text(verbatim: found.isEmpty ? String.localized("(No password required)") : found)
 								.font(.title3.monospaced().bold())
 								.padding(.horizontal, 16)
 								.padding(.vertical, 8)

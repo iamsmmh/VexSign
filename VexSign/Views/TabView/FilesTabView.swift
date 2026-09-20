@@ -95,8 +95,8 @@ struct FilesTabView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(.localized("On My iPhone — VexSign")).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.85)
                         if let total = storage.report?.total {
-                            Text(total.formattedFileSize + " " + .localized("used")).font(.caption).foregroundStyle(.secondary)
-                                .accessibilityLabel(Text("\(total.formattedFileSize) used"))
+                            Text(verbatim: total.formattedFileSize + " " + String.localized("used")).font(.caption).foregroundStyle(.secondary)
+                                .accessibilityLabel(Text(verbatim: "\(total.formattedFileSize) \(String.localized("used"))"))
                         } else {
                             Text(.localized("Documents & data")).font(.caption).foregroundStyle(.secondary)
                         }
@@ -104,9 +104,9 @@ struct FilesTabView: View {
                     Spacer()
                     if let report = storage.report {
                         VStack(alignment: .trailing, spacing: 2) {
-                            Text(report.total.formattedFileSize).font(.caption.weight(.semibold)).foregroundStyle(Theme.tint).monospacedDigit()
+                            Text(verbatim: report.total.formattedFileSize).font(.caption.weight(.semibold)).foregroundStyle(Theme.tint).monospacedDigit()
                             if let free = FileManager.default.availableImportantCapacity(at: URL.documentsDirectory) {
-                                Text(free.formattedFileSize + " free").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                                Text(verbatim: free.formattedFileSize + " " + String.localized("free")).font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                             }
                         }
                     }
@@ -143,6 +143,9 @@ struct FilesTabView: View {
         Section {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(quickFolders) { folder in
+                    // Declared here so both the card label and its accessibility label see them.
+                    let count = vm.count(at: folder.url)
+                    let size = vm.size(at: folder.url)
                     NavigationLink(destination: FileManagerView(directory: folder.url)) {
                         VStack(spacing: 6) {
                             ZStack {
@@ -150,16 +153,13 @@ struct FilesTabView: View {
                                 Image(systemName: folder.icon).font(.system(size: 20, weight: .semibold)).foregroundStyle(folder.color)
                             }
                             Text(folder.title).font(.caption.weight(.medium)).lineLimit(1).foregroundStyle(.primary).minimumScaleFactor(0.7)
-                            // count + size per folder (ViewModel)
-                            let count = vm.count(at: folder.url)
-                            let size = vm.size(at: folder.url)
-                            Text("\(count) • \(size)").font(.caption2).foregroundStyle(.secondary).lineLimit(1).monospacedDigit()
+                            Text(verbatim: "\(count) • \(size)").font(.caption2).foregroundStyle(.secondary).lineLimit(1).monospacedDigit()
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 10)
                         .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.06), lineWidth: 1))
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel(Text("\(folder.title), \(count) items, \(size)"))
+                        .accessibilityLabel(Text(verbatim: "\(folder.title), \(count) \(String.localized("items")), \(size)"))
                         .accessibilityAddTraits(.isButton)
                     }
                     .buttonStyle(.plain)
@@ -225,7 +225,7 @@ struct FilesTabView: View {
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(entry.name).font(.subheadline).lineLimit(1).minimumScaleFactor(0.7)
-                            Text(entry.size.formattedFileSize + " • " + entry.date.formatted(date: .abbreviated, time: .omitted)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            Text(verbatim: entry.size.formattedFileSize + " • " + entry.date.formatted(date: .abbreviated, time: .omitted)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                         }
                         Spacer()
                         Image(systemName: "chevron.right").font(.caption2.weight(.bold)).foregroundStyle(.tertiary)

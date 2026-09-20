@@ -155,7 +155,7 @@ struct HomeView: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Text("•").foregroundStyle(.tertiary)
-                    Text(certificates.isEmpty ? .localized("No Certificate") : .localized("Certificate Ready"))
+                    Text(verbatim: certificates.isEmpty ? String.localized("No Certificate") : String.localized("Certificate Ready"))
                         .font(.caption.weight(.medium))
                         .foregroundStyle(certificates.isEmpty ? .orange : .secondary)
                         .lineLimit(1)
@@ -411,7 +411,7 @@ struct HomeView: View {
 
     private var footer: some View {
         VStack(spacing: 6) {
-            Text("VexSign • " + Bundle.main.version + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—") + ")")
+            Text(verbatim: "VexSign • " + Bundle.main.version + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—") + ")")
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(.secondary)
             Text(.localized("On-device signing • No data leaves your device"))

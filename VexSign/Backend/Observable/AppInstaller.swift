@@ -33,6 +33,10 @@ final class AppInstaller: ObservableObject {
 	private let _useNovaDNSDynamic = UserDefaults.standard.bool(forKey: "VexSign.useNovaDNSDynamic")
 
 	private var _server: ServerInstaller?
+	/// Kept when the server object could not even be constructed (missing/invalid
+	/// SSL certificates in Fully Local) so the user sees the real cause and the
+	/// idevice fallback still gets a chance, instead of a generic link failure.
+	private var _serverStartupError: Error?
 	private var _progressTask: Task<Void, Never>?
 	private var _statusObserver: AnyCancellable?
 	private var _completion: ((Result<Outcome, Error>) -> Void)?
@@ -53,10 +57,14 @@ final class AppInstaller: ObservableObject {
 		self.viewModel = InstallerStatusViewModel(isIdevice: _installationMethod == 1)
 
 		if !isSharing, _installationMethod == 0 {
-			_server = try? ServerInstaller(
-				app: app, viewModel: viewModel,
-				serverMethod: _serverMethod, localhostOnly: useLocalhost ? true : nil
-			)
+			do {
+				_server = try ServerInstaller(
+					app: app, viewModel: viewModel,
+					serverMethod: _serverMethod, localhostOnly: useLocalhost ? true : nil
+				)
+			} catch {
+				_serverStartupError = error
+			}
 		}
 	}
 
@@ -143,7 +151,11 @@ final class AppInstaller: ObservableObject {
 
 	private func _serveForOTA(_ packageUrl: URL) async {
 		guard let server = _server else {
-			_finish(.failure(Self.error(.localized("Could not build the installation link, check your connection and try again."))))
+			_handleServerFailure(
+				packageUrl: packageUrl,
+				_serverStartupError
+					?? Self.error(.localized("Could not build the installation link, check your connection and try again."))
+			)
 			return
 		}
 
@@ -160,22 +172,33 @@ final class AppInstaller: ObservableObject {
 		}
 
 		if let failure {
-			let pairingExists = FileManager.default.fileExists(atPath: HeartbeatManager.pairingFile())
-			if pairingExists {
-				FileLogger.log("Server setup failed (\(failure.localizedDescription)), falling back to idevice installation", category: "install")
-				SigningLog.shared.info(.localized("Server failed, falling back to idevice installation…"), category: "install")
-				do {
-					try await InstallationProxy(viewModel: viewModel)
-						.install(at: packageUrl, suspend: app.identifier == Bundle.main.bundleIdentifier!)
-					return
-				} catch {
-					FileLogger.error("idevice fallback failed: \(error.localizedDescription)", category: "install")
-				}
-			}
-			viewModel.status = .broken(_serverMethod == 0 ? ServerInstaller.LocalInstallError.unavailable(failure) : failure)
+			_handleServerFailure(packageUrl: packageUrl, failure)
 		} else {
 			viewModel.status = .ready
 		}
+	}
+
+	/// One path for every local-server failure (server object failed to build,
+	/// failed startup, failed self check): try a wired idevice install when a
+	/// pairing exists, otherwise surface the cause with the actionable wording
+	/// and the Semi Local retry.
+	private func _handleServerFailure(packageUrl: URL, _ failure: Error) {
+		let pairingExists = FileManager.default.fileExists(atPath: HeartbeatManager.pairingFile())
+		if pairingExists {
+			FileLogger.log("Server setup failed (\(failure.localizedDescription)), falling back to idevice installation", category: "install")
+			SigningLog.shared.info(.localized("Server failed, falling back to idevice installation…"), category: "install")
+			Task {
+				do {
+					try await InstallationProxy(viewModel: viewModel)
+						.install(at: packageUrl, suspend: app.identifier == Bundle.main.bundleIdentifier!)
+				} catch {
+					FileLogger.error("idevice fallback failed: \(error.localizedDescription)", category: "install")
+					_finish(.failure(error))
+				}
+			}
+			return
+		}
+		viewModel.status = .broken(_serverMethod == 0 ? ServerInstaller.LocalInstallError.unavailable(failure) : failure)
 	}
 
 	// MARK: Status

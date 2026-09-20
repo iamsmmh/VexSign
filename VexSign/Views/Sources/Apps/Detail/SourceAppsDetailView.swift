@@ -53,7 +53,7 @@ struct SourceAppsDetailView: View {
 							.font(.title2)
 							.fontWeight(.semibold)
 							.foregroundColor(.primary)
-						Text(app.currentDescription ?? .localized("An awesome application"))
+						Text(verbatim: app.currentDescription ?? String.localized("An awesome application"))
 							.font(.subheadline)
 							.foregroundColor(.secondary)
 
