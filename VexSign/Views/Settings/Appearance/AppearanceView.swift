@@ -20,10 +20,38 @@ struct AppearanceView: View {
     @AppStorage("VexSign.shouldTintIcons") private var _shouldTintIcons: Bool = false
     @AppStorage("VexSign.shouldChangeIconsBasedOffStyle") private var _shouldChangeIconsBasedOffStyle: Bool = false
     @AppStorage("VexSign.userTintColor") private var _selectedColorHex: String = "#848ef9"
-    @AppStorage(VexSignStylePreferences.visualThemeKey) private var _visualTheme = VexSignVisualTheme.system.rawValue
-    @AppStorage(VexSignStylePreferences.fontFamilyKey) private var _fontFamily = VexSignFontFamily.system.rawValue
-    @AppStorage(VexSignStylePreferences.fontScaleKey) private var _fontScale = 1.0
-    @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var _flareAnimations = true
+
+    /// Theme/font/animation preferences go through the shared appearance store
+    /// so every observer (app root, tab bar, motion modifiers) updates at once.
+    @ObservedObject private var _appearance = AppearanceStore.shared
+
+    private var _visualThemeBinding: Binding<String> {
+        Binding(
+            get: { _appearance.visualTheme.rawValue },
+            set: { _appearance.setVisualTheme(VexSignVisualTheme(rawValue: $0) ?? .system) }
+        )
+    }
+
+    private var _fontFamilyBinding: Binding<String> {
+        Binding(
+            get: { _appearance.fontFamily.rawValue },
+            set: { _appearance.setFontFamily(VexSignFontFamily(rawValue: $0) ?? .system) }
+        )
+    }
+
+    private var _fontScaleBinding: Binding<Double> {
+        Binding(
+            get: { _appearance.fontScale },
+            set: { _appearance.setFontScale($0) }
+        )
+    }
+
+    private var _flareAnimationsBinding: Binding<Bool> {
+        Binding(
+            get: { _appearance.animationsEnabled },
+            set: { _appearance.setAnimationsEnabled($0) }
+        )
+    }
 
     private var _tintColorBinding: Binding<Color> {
         Binding(
@@ -57,7 +85,7 @@ struct AppearanceView: View {
             }
 
             NBSection(.localized("Visual Theme"), systemName: "sparkles") {
-                Picker(.localized("Theme"), selection: $_visualTheme) {
+                Picker(.localized("Theme"), selection: _visualThemeBinding) {
                     ForEach(VexSignVisualTheme.allCases) { theme in
                         NBTitleWithSubtitleView(title: theme.title, subtitle: theme.description)
                             .tag(theme.rawValue)

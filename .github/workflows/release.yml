@@ -10,6 +10,14 @@ name: Release
 #   therefore always means the same source and the same version - and the
 #   Update Repository workflow syncs app-repo.json automatically afterwards.
 #
+# * Synthetic compatibility tags: the history contains milestone tags whose
+#   annotation says "synthetic tag" (e.g. "VexSign v0.0.18 FlareStore parity
+#   milestone (synthetic tag)"). Their versions deliberately do not match
+#   MARKETING_VERSION, so pushing (or re-pushing) one never publishes a
+#   release: the workflow detects the annotation, runs the full build +
+#   validation and attaches the IPA to the run as an artifact, marking the
+#   run as a compatibility milestone in its summary.
+#
 # * Testing changes: run the workflow manually with `build_only` left at
 #   `true` (the default). It compiles, packages and validates the IPA from
 #   whatever branch you picked and attaches it to the run as a workflow
@@ -118,6 +126,20 @@ jobs:
             PROJECT_VERSION=""
           fi
 
+          # Compatibility (synthetic) tags: the repository history carries
+          # synthetic milestone tags (e.g. v0.0.1 … v0.0.18, v1.0.0 - FlareStore
+          # parity milestones) whose versions do NOT match MARKETING_VERSION
+          # and which must never be published as releases. They are detected
+          # by their annotation, downgraded to a validation-only run and
+          # marked as compatibility milestones in the summary.
+          SYNTHETIC=false
+          if [ "${EVENT_NAME}" = "push" ] && [ "$(git cat-file -t "${REF_NAME}" 2>/dev/null || true)" = "tag" ]; then
+            TAG_MESSAGE="$(git tag -l --format='%(contents)' "${REF_NAME}" 2>/dev/null || true)"
+            if printf '%s' "${TAG_MESSAGE}" | grep -qi 'synthetic tag'; then
+              SYNTHETIC=true
+            fi
+          fi
+
           MODE="build-only"
           case "${EVENT_NAME}" in
             push)          MODE="tag" ;;
@@ -139,7 +161,13 @@ jobs:
                 echo "::error::'${RELEASE_TAG}' is not a release tag. Release tags are v<MARKETING_VERSION>, e.g. v1.2.0 or v1.2.0-beta.1."
                 exit 1
               fi
-              PUBLISH=true
+              if [ "${SYNTHETIC}" = "true" ]; then
+                # Compatibility milestone: validate the build, publish nothing.
+                echo "::notice::${RELEASE_TAG} is a synthetic compatibility tag (see its annotation) - running validation only, nothing will be published."
+                MODE="synthetic-tag"
+              else
+                PUBLISH=true
+              fi
               ;;
             manual)
               if [ -z "${PROJECT_VERSION}" ]; then
@@ -165,7 +193,11 @@ jobs:
               PRERELEASE=true
             fi
 
-            if [ -n "${PROJECT_VERSION}" ] && [ "${PROJECT_VERSION}" != "${EXPECTED_VERSION}" ]; then
+            # Synthetic compatibility tags intentionally carry versions that
+            # do not match MARKETING_VERSION; the mismatch is expected and
+            # must not fail their validation run. Every real release tag
+            # still has to match exactly.
+            if [ -n "${PROJECT_VERSION}" ] && [ "${PROJECT_VERSION}" != "${EXPECTED_VERSION}" ] && [ "${SYNTHETIC}" != "true" ]; then
               echo "::error::${RELEASE_TAG} does not match the project's MARKETING_VERSION (${PROJECT_VERSION}). A release tag must be v<MARKETING_VERSION>, optionally followed by -<pre-release>. Bump the version (Xcode > VexSign target > General > Version, or: agvtool new-marketing-version ${EXPECTED_VERSION}), commit, and move the tag onto that commit: git tag -f ${RELEASE_TAG} && git push -f origin ${RELEASE_TAG}"
               exit 1
             fi
@@ -173,6 +205,7 @@ jobs:
 
           case "${MODE}" in
             tag)          echo "Mode: publish release ${RELEASE_TAG} from tag (commit ${GITHUB_SHA})" ;;
+            synthetic-tag) echo "Mode: compatibility milestone ${RELEASE_TAG} - validation only, nothing will be published" ;;
             manual)       echo "Mode: MANUAL publish of ${RELEASE_TAG} from ${REF_NAME} (commit ${GITHUB_SHA}) - prefer pushing a tag for real releases" ;;
             pull-request) echo "Mode: pull request build - nothing will be published" ;;
             *)            echo "Mode: build only (${REF_NAME}) - nothing will be published" ;;
@@ -185,6 +218,7 @@ jobs:
             echo "release_version=${RELEASE_TAG#v}"
             echo "expected_version=${EXPECTED_VERSION}"
             echo "prerelease=${PRERELEASE}"
+            echo "synthetic=${SYNTHETIC}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Select Xcode
@@ -261,12 +295,15 @@ jobs:
           exit 0
 
       # Authoritative version check: what the packaged app actually reports
-      # must be what the release tag promises.
+      # must be what the release tag promises. Synthetic compatibility tags
+      # make no version promise, so for them the check only asserts that the
+      # bundle reports a version at all.
       - name: Verify built version
         id: get_version
         env:
           RELEASE_TAG: ${{ steps.mode.outputs.release_tag }}
           EXPECTED_VERSION: ${{ steps.mode.outputs.expected_version }}
+          MODE: ${{ steps.mode.outputs.mode }}
         run: |
           set -euo pipefail
 
@@ -284,9 +321,13 @@ jobs:
           fi
           BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "${plists[0]}" 2>/dev/null || true)"
 
-          if [ -n "${EXPECTED_VERSION}" ] && [ "${VERSION}" != "${EXPECTED_VERSION}" ]; then
+          if [ -n "${EXPECTED_VERSION}" ] && [ "${VERSION}" != "${EXPECTED_VERSION}" ] && [ "${MODE}" != "synthetic-tag" ]; then
             echo "::error::The built app reports CFBundleShortVersionString ${VERSION}, but ${RELEASE_TAG} promises ${EXPECTED_VERSION}. Bump MARKETING_VERSION to ${EXPECTED_VERSION}, commit, and move the tag onto that commit."
             exit 1
+          fi
+
+          if [ "${MODE}" = "synthetic-tag" ]; then
+            echo "::notice::Compatibility milestone ${RELEASE_TAG}: built VexSign ${VERSION} - version mismatch with the synthetic tag is expected and does not fail validation."
           fi
 
           echo "Built VexSign ${VERSION} (build ${BUILD:-?}) from ${GITHUB_SHA}"
@@ -360,6 +401,7 @@ jobs:
             echo
             case "${MODE}" in
               tag)          echo "**Release from tag** \`${RELEASE_TAG}\`" ;;
+              synthetic-tag) echo "**Compatibility milestone** \`${RELEASE_TAG}\` - synthetic tag, validation only, nothing published" ;;
               manual)       echo "**Manual publish** of \`${RELEASE_TAG}\` - for real releases, push a tag instead" ;;
               pull-request) echo "**Pull request build** - nothing published" ;;
               *)            echo "**Build only** - nothing published" ;;

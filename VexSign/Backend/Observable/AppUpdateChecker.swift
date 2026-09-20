@@ -45,15 +45,34 @@ final class AppUpdateChecker: ObservableObject {
             var sourcedList: [SourcedUpdate] = []
 
             let ignored = SkippedUpdatesManager.persisted
+            let perAppRules = PerAppUpdateRulesStore.persisted
 
             for source in sources {
                 for app in source.apps {
-                    let hasUpdate = self.computeUpdate(
+                    var hasUpdate = self.computeUpdate(
                         app: app,
                         source: source,
                         signedApps: signedApps,
                         importedApps: importedApps
                     ) && !ignored.contains(app.id ?? "")
+
+                    // Per-app update rules: disable updates, ignore a specific
+                    // version, or ignore this source for this bundle id.
+                    if hasUpdate, let bundleID = app.id {
+                        let rule = perAppRules[bundleID] ?? PerAppUpdateRule()
+                        if rule.disableUpdates {
+                            hasUpdate = false
+                        }
+                        if let ignoredVersion = rule.ignoredVersion, !ignoredVersion.isEmpty,
+                           let sourceVersion = app.currentVersion,
+                           sourceVersion.compare(ignoredVersion, options: .caseInsensitive) == .orderedSame {
+                            hasUpdate = false
+                        }
+                        if let ignoredSource = rule.ignoredSourceID, !ignoredSource.isEmpty,
+                           let sourceID = source.id, sourceID == ignoredSource {
+                            hasUpdate = false
+                        }
+                    }
 
                     newCache[app.currentUniqueId] = hasUpdate
 
@@ -79,6 +98,33 @@ final class AppUpdateChecker: ObservableObject {
                             ))
                         }
                     }
+                }
+            }
+
+            // Preferred-source resolution: when an app has a preferred
+            // repository rule, keep only the update from that source (if it
+            // published one); duplicates from other sources are dropped.
+            if !sourcedList.isEmpty {
+                var byInstalledApp: [String: [Int]] = [:]
+                for (index, update) in sourcedList.enumerated() {
+                    byInstalledApp[update.installedAppUUID, default: []].append(index)
+                }
+                var dropIndices = Set<Int>()
+                for (_, indices) in byInstalledApp where indices.count > 1 {
+                    guard let bundleID = sourcedList[indices[0]].installedAppIdentifier,
+                          let preferred = PerAppUpdateRulesStore.preferredSourceID(forBundleID: bundleID) else { continue }
+                    // The update entries don't carry source identifiers, only
+                    // names/URLs; match by name against the preferred source.
+                    let preferredName = sources.first { $0.id == preferred }?.name
+                    let keep = indices.first { sourcedList[$0].sourceName == (preferredName ?? "") } ?? indices[0]
+                    for index in indices where index != keep {
+                        dropIndices.insert(index)
+                    }
+                }
+                if !dropIndices.isEmpty {
+                    sourcedList = sourcedList.enumerated()
+                        .filter { !dropIndices.contains($0.offset) }
+                        .map { $0.element }
                 }
             }
             
@@ -446,10 +492,10 @@ final class AppUpdateChecker: ObservableObject {
         let sourceName: String
         let installedVersion: String?
         let sourceVersion: String?
-        var installedAppUUID: String? = nil
-        var installedAppName: String? = nil
-        var installedAppIdentifier: String? = nil
-        var sourceURL: URL? = nil
+        var installedAppUUID: String?
+        var installedAppName: String?
+        var installedAppIdentifier: String?
+        var sourceURL: URL?
 
         var displayName: String { app.currentName }
         var downloadURL: URL? { app.currentDownloadUrl }

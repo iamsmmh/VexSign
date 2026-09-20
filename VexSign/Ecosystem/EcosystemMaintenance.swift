@@ -21,11 +21,13 @@ enum EcosystemMaintenance {
         }
         let request = BGAppRefreshTaskRequest(identifier: identifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: 6 * 60 * 60)
-        do { try BGTaskScheduler.shared.submit(request) }
-        catch { FileLogger.log("Ecosystem refresh could not be scheduled: \(error.localizedDescription)", category: "update") }
+        do { try BGTaskScheduler.shared.submit(request) } catch { FileLogger.log("Ecosystem refresh could not be scheduled: \(error.localizedDescription)", category: "update") }
     }
     static func run() async {
         guard !GameMode.isEnabled else { return }
+        // Housekeeping: drop leftover signing/backup temp working directories
+        // from interrupted runs so app bundles don't linger in temp storage.
+        TempStorageSweeper.sweep()
         let defaults = UserDefaults.standard
         let lastRefresh = defaults.object(forKey: "VexSign.ecosystem.lastRepositoryRefresh") as? Date ?? .distantPast
         if defaults.bool(forKey: "VexSign.ecosystem.repositoryAutoRefresh"), Date().timeIntervalSince(lastRefresh) >= RepositorySyncEngine.refreshInterval {

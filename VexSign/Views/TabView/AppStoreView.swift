@@ -273,6 +273,12 @@ struct AppStoreView: View {
                     // Apple official header styling
                     headerTodayDate
 
+                    // Offline / stale-data notice: repositories that could not
+                    // be refreshed keep their last saved catalog, clearly marked.
+                    if !viewModel.staleSourceIDs.isEmpty {
+                        offlineBanner
+                    }
+
                     // Apple-style Segmented Pills
                     segmentPills
 
@@ -315,6 +321,12 @@ struct AppStoreView: View {
             }
             .onChange(of: premiumFilter.stamp) { _ in
                 Task { await viewModel.fetchSources(sources, refresh: true) }
+            }
+            // Deleting a repository (swipe, context menu, Sources tab) while a
+            // refresh runs must not leave faulted managed objects behind in
+            // the catalog dictionary — that was an App Store crash path.
+            .onChange(of: sources.count) { _ in
+                viewModel.evictDeletedSources(valid: Array(sources))
             }
         }
     }
@@ -369,6 +381,14 @@ struct AppStoreView: View {
                             Task { await viewModel.fetchSources(sources, refresh: true) }
                         } label: {
                             Label(.localized("Refresh All Sources"), systemImage: "arrow.clockwise")
+                        }
+                        Button {
+                            withAnimation(.snappy) {
+                                selectedSegment = .repositories
+                                searchText = ""
+                            }
+                        } label: {
+                            Label(.localized("Source Health"), systemImage: "heart.text.clipboard")
                         }
                     }
                 } label: {
@@ -433,6 +453,36 @@ struct AppStoreView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "EEEE, MMMM d"
         return formatter.string(from: Date())
+    }
+
+    /// Banner shown while some repositories are being served from the offline
+    /// snapshot cache. Browsing keeps working; data may be outdated.
+    private var offlineBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(.localized("Showing Saved Copies"))
+                    .font(.subheadline.weight(.semibold))
+                Text(.localized("Some repositories couldn't be refreshed. You're browsing the last saved copy."))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 0)
+            Button {
+                Task { await viewModel.fetchSources(sources, refresh: true) }
+            } label: {
+                Text(.localized("Retry"))
+                    .font(.caption.weight(.semibold))
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(12)
+        .background(Color.orange.opacity(0.10), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.orange.opacity(0.25), lineWidth: 1))
+        .accessibilityElement(children: .combine)
     }
 
     // MARK: - Apple Style Segmented Filter Pills
@@ -971,6 +1021,16 @@ struct AppStoreView: View {
                         .background(Color.userTint, in: Capsule())
                         .foregroundStyle(.white)
                 }
+                .accessibilityLabel(Text(.localized("Add Source")))
+
+                NavigationLink {
+                    SourceHealthDashboardView()
+                } label: {
+                    Image(systemName: "heart.text.clipboard")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.userTint)
+                }
+                .accessibilityLabel(Text(.localized("Source Health")))
             }
             .padding(.horizontal, 4)
 
@@ -995,7 +1055,7 @@ struct AppStoreView: View {
                                 await viewModel.fetchSources(sources, refresh: true)
                             })
                         } label: {
-                            RepositoryRow(source: source, repository: viewModel.sources[source])
+                            RepositoryRow(source: source, repository: viewModel.sources[source], isStale: viewModel.isStale(source))
                         }
                         .buttonStyle(.plain)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -1244,7 +1304,7 @@ struct AppStoreView: View {
                                 await viewModel.fetchSources(sources, refresh: true)
                             })
                         } label: {
-                            RepositoryRow(source: source, repository: viewModel.sources[source])
+                            RepositoryRow(source: source, repository: viewModel.sources[source], isStale: viewModel.isStale(source))
                         }
                         .buttonStyle(.plain)
 
@@ -1330,6 +1390,13 @@ struct AppStoreView: View {
 private struct RepositoryRow: View {
     let source: AltSource
     let repository: ASRepository?
+    /// True when the catalog comes from the offline snapshot cache rather
+    /// than a fresh load (repository failing/offline, last-known-good shown).
+    var isStale: Bool = false
+
+    private var sourceID: String {
+        source.identifier ?? source.sourceURL?.absoluteString ?? ""
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -1359,13 +1426,24 @@ private struct RepositoryRow: View {
                             .background(Color.orange.opacity(0.15), in: Capsule())
                             .foregroundStyle(.orange)
                     }
-                    if SourcePreferences.isTrusted(source.identifier ?? source.sourceURL?.absoluteString ?? "") {
+                    if SourcePreferences.isTrusted(sourceID) {
                         Label(.localized("Trusted"), systemImage: "checkmark.seal.fill")
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(.green)
                     }
+                    // Status is always icon + text, never color alone, so it
+                    // stays distinguishable for every kind of color vision.
+                    if isStale {
+                        Label(.localized("Saved Copy"), systemImage: "clock.badge.exclamationmark")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.blue)
+                    } else if let error = SourcePreferences.lastError(for: sourceID), !error.isEmpty {
+                        Label(.localized("Failing"), systemImage: "exclamationmark.triangle.fill")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.orange)
+                    }
                     let count = repository?.apps.count ?? source.appsCount
-                    Text("\(count) apps")
+                    Text(verbatim: count == 1 ? .localized("1 app") : String.localized("%lld apps", arguments: count))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }
@@ -1384,6 +1462,7 @@ private struct RepositoryRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
         .contextMenu {
             if let url = source.sourceURL {
                 Button(.localized("Copy URL"), systemImage: "doc.on.doc") {

@@ -6,17 +6,20 @@
 //  It uses no website JavaScript or assets and respects Reduce Motion plus the
 //  existing Flare Touch Animations preference.
 //
+//  The modifier observes the shared `AppearanceStore` (injected through the
+//  environment at the app root) so a theme switch updates it immediately
+//  without re-reading UserDefaults from every view.
+//
 
 import SwiftUI
 
 struct VexSignWebMotionModifier: ViewModifier {
-    @AppStorage(VexSignStylePreferences.visualThemeKey) private var visualTheme = VexSignVisualTheme.system.rawValue
-    @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var animationsEnabled = true
+    @ObservedObject private var appearance = AppearanceStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var highlightPhase = false
 
     private var isEnabled: Bool {
-        visualTheme == VexSignVisualTheme.flare.rawValue && animationsEnabled && !reduceMotion
+        appearance.isFlare && appearance.animationsEnabled && !reduceMotion
     }
 
     func body(content: Content) -> some View {
@@ -40,6 +43,7 @@ struct VexSignWebMotionModifier: ViewModifier {
                     .frame(height: 2)
                     .clipped()
                     .allowsHitTesting(false)
+                    .accessibilityHidden(true)
                     .onAppear { highlightPhase = true }
                 }
             }

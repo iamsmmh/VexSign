@@ -1,36 +1,29 @@
 //
 //  TabBarSettingsView.swift
-//  VexSign — fixed six-tab navigation shell
+//  VexSign — six fixed primary tabs + customizable legacy tabs
 //
 
 import SwiftUI
 import NimbleViews
 
 struct TabBarSettingsView: View {
-    @ObservedObject private var preferences = TabBarPreferences.shared
+    @ObservedObject private var _prefs = TabBarPreferences.shared
 
     var body: some View {
         NBList(.localized("Tab Bar"), type: .list) {
+            // Live preview — Files·Library·Home·App Store·Downloads·Settings
             NBSection(.localized("Preview")) {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
-                        ForEach(TabEnum.defaultTabs, id: \.self) { tab in
+                        ForEach(_prefs.visibleTabs, id: \.self) { tab in
                             VStack(spacing: 4) {
-                                Image(systemName: tab.icon)
-                                    .font(.system(size: 20, weight: .semibold))
-                                    .foregroundStyle(Theme.tint)
-                                Text(tab.title)
-                                    .font(.caption2.weight(.medium))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.6)
+                                Image(systemName: tab.icon).font(.system(size: 20, weight: .semibold)).foregroundStyle(Theme.tint)
+                                Text(tab.title).font(.caption2.weight(.medium)).lineLimit(1).minimumScaleFactor(0.6)
                             }
-                            .frame(width: 64)
+                            .frame(width: 56)
                             .padding(.vertical, 8)
                             .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .overlay {
-                                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                    .strokeBorder(Theme.separator, lineWidth: 1)
-                            }
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.06), lineWidth: 1))
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel(Text(tab.title))
                         }
@@ -40,42 +33,57 @@ struct TabBarSettingsView: View {
                 .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
                 .listRowBackground(Color.clear)
             } footer: {
-                Text(.localized("The primary navigation order is fixed so Files, Library, Home, App Store, Downloads and Settings are always available."))
+                Text(verbatim: String.localized("Your current order: %@.", arguments: _prefs.visibleTabs.map { $0.title }.joined(separator: " • ")))
             }
 
             NBSection(.localized("Default Launch Tab")) {
-                Picker(selection: $preferences.defaultLaunch) {
-                    ForEach(TabEnum.defaultTabs, id: \.self) { tab in
+                Picker(selection: $_prefs.defaultLaunch) {
+                    ForEach(_prefs.visibleTabs, id: \.self) { tab in
                         Label(tab.title, systemImage: tab.icon).tag(tab)
                     }
                 } label: {
                     Label(.localized("Open On Launch"), systemImage: "house.fill")
                 }
                 .pickerStyle(.menu)
-                .tint(Theme.tint)
+                .tint(Color.userTint)
             } footer: {
-                Text(.localized("Choose which primary tab opens when VexSign starts. Every tab remains visible in the shell."))
+                Text(.localized("Which tab the app opens to."))
             }
 
-            NBSection(.localized("Primary Tabs")) {
-                ForEach(Array(TabEnum.defaultTabs.enumerated()), id: \.element) { index, tab in
-                    HStack(spacing: 12) {
-                        Text("\(index + 1)")
-                            .font(.caption.weight(.bold))
-                            .foregroundStyle(Theme.tint)
-                            .frame(width: 22, height: 22)
-                            .background(Theme.tintSoft, in: Circle())
+            NBSection(.localized("Primary Tabs"), systemName: "square.grid.2x2.fill") {
+                ForEach(TabBarPreferences.primaryTabs, id: \.self) { tab in
+                    HStack {
                         Label(tab.title, systemImage: tab.icon)
                         Spacer()
-                        Image(systemName: "lock.fill")
-                            .font(.caption2)
+                        Label(.localized("Locked"), systemImage: "lock.fill")
+                            .font(.caption)
                             .foregroundStyle(.secondary)
-                            .accessibilityLabel(Text(.localized("Always visible")))
+                            .labelStyle(.titleAndIcon)
                     }
                 }
             } footer: {
-                Text(.localized("These six tabs are part of VexSign's stable navigation contract and cannot be hidden or reordered."))
+                Text(.localized("Files, Library, Home, App Store, Downloads and Settings are the app's fixed navigation structure. They are always visible, in this order, and cannot be hidden or reordered."))
             }
+
+            NBSection(.localized("Legacy Tabs"), systemName: "square.stack.3d.up.fill") {
+                ForEach(_prefs.order, id: \.self) { tab in
+                    Toggle(isOn: Binding(
+                        get: { !_prefs.isHidden(tab) },
+                        set: { _prefs.setHidden(tab, !$0) }
+                    )) {
+                        Label(tab.title, systemImage: tab.icon)
+                    }
+                    .tint(Color.userTint)
+                }
+                .onMove { source, destination in
+                    _prefs.moveSecondary(from: source, to: destination)
+                }
+            } footer: {
+                Text(.localized("Optional destinations carried over from older versions. Show, hide and reorder them freely — they appear after the six primary tabs."))
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { EditButton().tint(Color.userTint) }
         }
     }
 }

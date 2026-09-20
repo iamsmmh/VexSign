@@ -84,8 +84,12 @@ final class ImportAndInstallationTests: XCTestCase {
         }
     }
 
-    func testPrimaryNavigationUsesTheRequiredOrder() {
+    func testHomeIsAvailableInDefaultNavigation() {
+        // The required six-tab order is Files → Library → Home →
+        // App Store → Downloads → Settings; Home is always present and
+        // never hideable, along with the other primary tabs.
         XCTAssertEqual(TabEnum.defaultTabs, [.files, .library, .home, .appStore, .downloads, .settings])
+        XCTAssertTrue(TabEnum.defaultTabs.contains(.home))
         XCTAssertFalse(TabBarPreferences.hideableTabs.contains(.home))
         XCTAssertFalse(TabBarPreferences.hideableTabs.contains(.settings))
     }

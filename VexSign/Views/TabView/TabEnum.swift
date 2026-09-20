@@ -88,8 +88,10 @@ enum TabEnum: String, CaseIterable, Hashable, Codable {
         [.files, .library, .home, .appStore, .downloads, .settings]
     }
 
-    /// Legacy compatibility list. The fixed shell does not expose secondary tabs.
+    /// Legacy/secondary destinations: the only customizable tabs. They appear
+    /// after the six primary tabs when the user surfaces them in
+    /// Settings → Tab Bar (deep links and migration also rely on this list).
     static var customizableTabs: [TabEnum] {
-        []
+        [.sources, .logs, .tweaks, .certificates]
     }
 }

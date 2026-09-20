@@ -27,6 +27,9 @@ final class InstallQueue: ObservableObject {
 	/// Per-entry outcome, keyed by the entry's id, so the queue list view can show what happened.
 	@Published private(set) var outcomes: [String: InstallOutcome] = [:]
 
+	/// The unified-task record for the current queue run (nil when idle).
+	private var unifiedTask: UnifiedTask?
+
 	enum InstallOutcome: Equatable {
 		case pending
 		case succeeded
@@ -88,6 +91,19 @@ final class InstallQueue: ObservableObject {
 			return
 		}
 
+		// Unified task pipeline: one record per queue run.
+		if unifiedTask == nil {
+			let title = apps.count > 1
+				? String.localized("%lld apps", arguments: apps.count)
+				: (current.base.name ?? .localized("App"))
+			unifiedTask = UnifiedTaskCenter.shared.begin(
+				kind: current.archive ? .export : .install,
+				title: title,
+				subtitle: current.archive ? .localized("Exporting") : .localized("Installing"),
+				phase: .installing
+			)
+		}
+
 		let installer = AppInstaller(app: current.base, isSharing: current.archive, useLocalhost: useLocalhost)
 		self.installer = installer
 		installer.start { [weak self] result in self?._handle(result) }
@@ -136,9 +152,11 @@ final class InstallQueue: ObservableObject {
 		switch result {
 		case .success(.cancelled):
 			if let current { outcomes[current.id] = .skipped }
+			_syncUnifiedTaskProgress()
 			_abandon()
 		case .success(.exported(let package)):
 			if let current { outcomes[current.id] = .succeeded }
+			_syncUnifiedTaskProgress()
 			_abandon()
 
 			guard let package else { return }
@@ -149,11 +167,20 @@ final class InstallQueue: ObservableObject {
 		case .success:
 			if let current { outcomes[current.id] = .succeeded }
 			if let app = installer?.app { InstallCleanup.stage(app) }
+			_syncUnifiedTaskProgress()
 			// Let the finished ring land before the next app takes over.
 			DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in self?._advance() }
 		case .failure(let error):
 			if let current {
 				outcomes[current.id] = .failed(String(describing: error))
+			}
+			if let task = unifiedTask {
+				UnifiedTaskCenter.shared.transition(task, to: .failed, error: error.localizedDescription)
+				// The queue may continue with other apps — reopen the record.
+				UnifiedTaskCenter.shared.registerRetry(task) { [weak self] in
+					self?.retryCurrent()
+				}
+				unifiedTask = nil
 			}
 			var actions: [(String, UIAlertAction.Style, (() -> Void)?)] = [
 				(.localized("Retry"), .default, { [weak self] in
@@ -182,12 +209,20 @@ final class InstallQueue: ObservableObject {
 		}
 	}
 
+	/// Keeps the unified task's progress in step with the queue (index of the
+	/// app being installed out of the total).
+	private func _syncUnifiedTaskProgress() {
+		guard let task = unifiedTask, !apps.isEmpty else { return }
+		UnifiedTaskCenter.shared.update(task, progress: Double(index + 1) / Double(apps.count))
+	}
+
 	/// Keeps the last app on screen so its finished state and Open button survive.
 	private func _advance() {
 		_teardownInstaller()
 
 		guard index + 1 < apps.count else {
 			isFinished = true
+			_finishUnifiedTask()
 			if !isSheetPresented { clear() }
 			return
 		}
@@ -200,12 +235,14 @@ final class InstallQueue: ObservableObject {
 	private func _abandon() {
 		guard index + 1 < apps.count else {
 			guard isSheetPresented else {
+				_finishUnifiedTask()
 				clear()
 				return
 			}
 
 			_teardownInstaller()
 			isFinished = true
+			_finishUnifiedTask()
 			isSheetPresented = false
 			return
 		}
@@ -220,7 +257,30 @@ final class InstallQueue: ObservableObject {
 		}
 		_teardownInstaller()
 		isFinished = true
+		_finishUnifiedTask(cancelled: true)
 		isSheetPresented = false
+	}
+
+	/// Closes the unified task record for this queue run.
+	private func _finishUnifiedTask(cancelled: Bool = false) {
+		guard let task = unifiedTask else { return }
+		unifiedTask = nil
+		if cancelled {
+			UnifiedTaskCenter.shared.transition(task, to: .cancelled)
+		} else {
+			let failedCount = outcomes.values.filter {
+				if case .failed = $0 { return true }
+				return false
+			}
+			UnifiedTaskCenter.shared.transition(
+				task,
+				to: failedCount > 0 ? .failed : .completed,
+				progress: 1,
+				error: failedCount > 0
+					? String.localized("%lld install(s) failed", arguments: failedCount)
+					: nil
+			)
+		}
 	}
 
 	private func _reset() {
@@ -230,6 +290,7 @@ final class InstallQueue: ObservableObject {
 		isFinished = false
 		isPaused = false
 		outcomes.removeAll()
+		unifiedTask = nil
 
 		InstallCleanup.flush()
 	}
