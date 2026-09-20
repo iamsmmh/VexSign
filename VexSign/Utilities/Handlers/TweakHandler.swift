@@ -92,10 +92,14 @@ class TweakHandler {
 		return nil
 	}
 
-	private func _requiresSubstrateHooking() -> Bool {
+	private func _requiresSubstrateHooking() async -> Bool {
 		let allTweakURLs = _options.injectionFiles + _enabledSpecs.flatMap { $0.files.filter(\.enabled).map(\.fileURL) }
 		for url in allTweakURLs {
-			let analysis = TweakAnalyzer.analyze(url: url)
+			let analysis = await TweakAnalyzer.analyze(
+				fileURL: url,
+				type: TweakFileType(fileExtension: url.pathExtension),
+				appURL: _app
+			)
 			if analysis.needsSubstrate {
 				return true
 			}
@@ -129,7 +133,7 @@ class TweakHandler {
 				return
 			}
 		} else {
-			let needsSubstrate = _requiresSubstrateHooking()
+			let needsSubstrate = await _requiresSubstrateHooking()
 			if needsSubstrate {
 				try await addEllekit(reason: "detected Substrate/Substitute dependency")
 			} else if _hasAnyInjection {

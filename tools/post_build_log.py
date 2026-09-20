@@ -41,8 +41,9 @@ def tail(path: str) -> str:
         lines = [head_note.rstrip("\n")] + lines[-MAX_LINES:]
 
     text = "\n".join(lines)
-    if len(text.encode()) > MAX_BYTES:
-        text = text[-MAX_BYTES:].decode(errors="replace")
+    encoded = text.encode()
+    if len(encoded) > MAX_BYTES:
+        text = encoded[-MAX_BYTES:].decode(errors="replace")
     return text
 
 

@@ -785,7 +785,7 @@ class DownloadManager: NSObject, ObservableObject {
 
 		// Integrity audit: record the SHA-256 of every downloaded package in the Logs
 		// tab, so it can be compared later against a hash the source published.
-		let label = dl.appName ?? url.lastPathComponent
+		let label = dl.fileName
 		DispatchQueue.global(qos: .utility).async {
 			if let hash = FileIntegrity.sha256(of: url) {
 				SigningLog.shared.info(.localized("SHA-256 of %@: %@", arguments: label, hash), category: "download")

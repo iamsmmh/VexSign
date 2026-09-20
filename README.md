@@ -136,15 +136,18 @@ For detailed feature boundaries, security caveats and remaining device/release t
 ---
 
 <a id="install"></a>
-## 📦 Get VexSign
+## 📦 Download
 
-### Download the app
+Visit [releases](https://github.com/iamsmmh/VexSign/releases) and get the latest `.ipa`.
 
-Get the latest `.ipa` from **[GitHub Releases](https://github.com/iamsmmh/VexSign/releases)** and install it with your preferred compatible signing workflow.
+<a href="https://celloserenity.github.io/altdirect/?url=https://raw.githubusercontent.com/iamsmmh/VexSign/refs/heads/main/app-repo.json" target="_blank">
+   <img src="https://github.com/CelloSerenity/altdirect/blob/main/assets/png/AltSource_Blue.png?raw=true" alt="Add AltSource" width="200">
+</a>
+<a href="https://github.com/iamsmmh/VexSign/releases/latest/download/VexSign.ipa" target="_blank">
+   <img src="https://github.com/CelloSerenity/altdirect/blob/main/assets/png/Download_Blue.png?raw=true" alt="Download .ipa" width="200">
+</a>
 
-### Add the app source
-
-Copy this URL into an AltStore-compatible signer such as SideStore, ESign, Scarlet or Feather:
+Prefer to add the source manually? Paste this URL into any AltStore-compatible signer such as SideStore, ESign, Scarlet or Feather:
 
 ```text
 https://raw.githubusercontent.com/iamsmmh/VexSign/main/app-repo.json

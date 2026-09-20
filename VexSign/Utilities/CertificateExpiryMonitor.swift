@@ -40,8 +40,8 @@ enum CertificateExpiryMonitor {
 		let expiring: [ExpiringCertificate] = await MainActor.run {
 			let pairs = (try? Storage.shared.context.fetch(CertificatePair.fetchRequest())) ?? []
 			return pairs.compactMap { pair -> ExpiringCertificate? in
-				guard let uuid = pair.uuid else { return nil }
-				let days = Calendar.current.dateComponents([.day], from: Date(), to: pair.expiration).day ?? 0
+				guard let uuid = pair.uuid, let expiration = pair.expiration else { return nil }
+				let days = Calendar.current.dateComponents([.day], from: Date(), to: expiration).day ?? 0
 				guard days <= threshold else { return nil }
 				return ExpiringCertificate(uuid: uuid, nickname: pair.nickname, days: days)
 			}

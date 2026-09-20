@@ -23,7 +23,7 @@ enum LocalCAProfile {
 			return nil
 		}
 
-		let host = ServerInstaller().readCommonName() ?? "127.0.0.1"
+		let host = ServerInstaller.readCommonName() ?? "127.0.0.1"
 		let displayName = "VexSign Local Root CA (\(host))"
 
 		guard let profileData = buildMobileConfig(caCertificateDER: derData, displayName: displayName) else {

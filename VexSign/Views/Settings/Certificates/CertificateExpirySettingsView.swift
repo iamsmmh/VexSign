@@ -35,7 +35,7 @@ struct CertificateExpirySettingsView: View {
 				if _enabled {
 					Picker(.localized("Warn Me"), selection: $_days) {
 						ForEach(_dayOptions, id: \.self) { days in
-							Text(.localized("%lld Days Before Expiry", arguments: days)).tag(days)
+							Text(verbatim: .localized("%lld Days Before Expiry", arguments: days)).tag(days)
 						}
 					}
 
