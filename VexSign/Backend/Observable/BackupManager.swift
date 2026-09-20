@@ -157,7 +157,7 @@ final class BackupManager {
 		"VexSign.defaultImportFolderName",
 		"VexSign.defaultImportFolderBookmark", // security-scoped, dead on another install
 		"VexSign.downloadBubblePositionX",
-		"VexSign.downloadBubblePositionY",
+		"VexSign.downloadBubblePositionY"
 	]
 
 	static func isBackupableSettingKey(_ key: String) -> Bool {
@@ -172,7 +172,7 @@ final class BackupManager {
 			.certificates: Storage.shared.getAllCertificates().count,
 			.sources: Storage.shared.getSources().count,
 			.tweaks: TweakManager.shared.tweaks.count,
-			.settings: UserDefaults.standard.dictionaryRepresentation().keys.filter(Self.isBackupableSettingKey).count,
+			.settings: UserDefaults.standard.dictionaryRepresentation().keys.filter(Self.isBackupableSettingKey).count
 		]
 		var components: BackupComponents = []
 		for (component, count) in counts where count > 0 { components.insert(component) }
@@ -340,8 +340,7 @@ final class BackupManager {
 
 			if
 				let uuid = manifest.selectedCertUUID,
-				let index = Storage.shared.getAllCertificates().firstIndex(where: { $0.uuid == uuid })
-			{
+				let index = Storage.shared.getAllCertificates().firstIndex(where: { $0.uuid == uuid }) {
 				UserDefaults.standard.set(index, forKey: "vexsign.selectedCert")
 			}
 		}
@@ -370,8 +369,7 @@ final class BackupManager {
 		if
 			wanted.contains(.settings),
 			let data = try? Data(contentsOf: root.appendingPathComponent("settings.plist")),
-			let dict = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
-		{
+			let dict = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] {
 			var added = 0
 			for (key, value) in dict where Self.isBackupableSettingKey(key) {
 				UserDefaults.standard.set(value, forKey: key)

@@ -23,7 +23,7 @@ public class NBFetchService {
 	/// assigned exactly once — on the main thread at launch, via
 	/// `FR.registerRepositoryKeyProvider()` — before any fetch runs; afterwards
 	/// the background queues in `fetch(from:headers:completion:)` only read it.
-	nonisolated(unsafe) public static var apiKeyProvider: (() -> String)? = nil
+	nonisolated(unsafe) public static var apiKeyProvider: (() -> String)?
 
 	public enum NBFetchServiceError: Error, LocalizedError {
 		case invalidURL
@@ -111,8 +111,7 @@ extension NBFetchService {
 			if
 				request.value(forHTTPHeaderField: "X-API-Key") == nil,
 				let key = Self.apiKeyProvider?(),
-				!key.isEmpty
-			{
+				!key.isEmpty {
 				request.setValue(key, forHTTPHeaderField: "X-API-Key")
 			}
 

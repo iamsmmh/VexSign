@@ -22,7 +22,7 @@ enum TempStorageSweeper {
 	private static let ownedPrefixes = [
 		"VexSigning_",   // SigningHandler per-sign work dir
 		"VexBackup",     // BackupManager staging/pack/output dirs
-		"DiagnosticBundle", // Diagnostics export staging
+		"DiagnosticBundle" // Diagnostics export staging
 	]
 
 	static let defaultMaxAge: TimeInterval = 24 * 60 * 60

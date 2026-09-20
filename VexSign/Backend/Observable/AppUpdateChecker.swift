@@ -492,10 +492,10 @@ final class AppUpdateChecker: ObservableObject {
         let sourceName: String
         let installedVersion: String?
         let sourceVersion: String?
-        var installedAppUUID: String? = nil
-        var installedAppName: String? = nil
-        var installedAppIdentifier: String? = nil
-        var sourceURL: URL? = nil
+        var installedAppUUID: String?
+        var installedAppName: String?
+        var installedAppIdentifier: String?
+        var sourceURL: URL?
 
         var displayName: String { app.currentName }
         var downloadURL: URL? { app.currentDownloadUrl }

@@ -21,8 +21,7 @@ enum EcosystemMaintenance {
         }
         let request = BGAppRefreshTaskRequest(identifier: identifier)
         request.earliestBeginDate = Date(timeIntervalSinceNow: 6 * 60 * 60)
-        do { try BGTaskScheduler.shared.submit(request) }
-        catch { FileLogger.log("Ecosystem refresh could not be scheduled: \(error.localizedDescription)", category: "update") }
+        do { try BGTaskScheduler.shared.submit(request) } catch { FileLogger.log("Ecosystem refresh could not be scheduled: \(error.localizedDescription)", category: "update") }
     }
     static func run() async {
         guard !GameMode.isEnabled else { return }

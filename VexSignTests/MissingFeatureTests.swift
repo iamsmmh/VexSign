@@ -34,7 +34,7 @@ final class MissingFeatureTests: XCTestCase {
 			"TeamName": "Test Team",
 			"TimeToLive": 365,
 			"UUID": "test-profile",
-			"Version": 1,
+			"Version": 1
 		]
 		if let entitlements { payload["Entitlements"] = entitlements }
 		if let ppqCheck { payload["PPQCheck"] = ppqCheck }
@@ -111,7 +111,7 @@ final class MissingFeatureTests: XCTestCase {
 	func testSpecialAccessEntitlementMarksProfileAsPPQ() throws {
 		let certificate = try profile(entitlements: [
 			"application-identifier": "TESTTEAM.com.example.app",
-			"com.apple.developer.ios-special-access": true,
+			"com.apple.developer.ios-special-access": true
 		])
 
 		XCTAssertTrue(certificate.hasSpecialAccessEntitlement)
@@ -427,6 +427,6 @@ final class MissingFeatureTests: XCTestCase {
 		let icon: String? = nil
 		let uuid: String? = "test-uuid"
 		let isSigned: Bool = false
-		var appDescription: String? = nil
+		var appDescription: String?
 	}
 }

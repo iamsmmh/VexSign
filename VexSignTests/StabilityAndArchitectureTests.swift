@@ -281,7 +281,7 @@ final class StabilityAndArchitectureTests: XCTestCase {
 			"resign-reinstall",
 			"asset-modification",
 			"dynamic-island",
-			"strict-hiding",
+			"strict-hiding"
 		]
 		for id in critical {
 			XCTAssertTrue(ids.contains(id), "The registry must track \(id) end-to-end")

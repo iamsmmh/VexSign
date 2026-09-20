@@ -318,7 +318,7 @@ struct VexSignApp: App {
 			}
 			/// vexsign://direct-install?url=<url>&sign=<true|false> or vexsign://direct-install/<url>
 			if url.host == "direct-install" || url.path.hasPrefix("/direct-install") {
-				var targetURLString: String? = nil
+				var targetURLString: String?
 
 				if let components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
 					if let urlParam = components.queryItems?.first(where: { $0.name.lowercased() == "url" })?.value {
@@ -339,8 +339,7 @@ struct VexSignApp: App {
 			/// vexsign://install/<url.ipa>
 			if
 				let fullPath = url.validatedScheme(after: "/install/"),
-				let downloadURL = URL(string: fullPath)
-			{
+				let downloadURL = URL(string: fullPath) {
 				_ = DownloadManager.shared.startDownload(from: downloadURL)
 			}
 		} else {
@@ -487,7 +486,6 @@ struct VexSignApp: App {
 		}
 	}
 }
-
 
 class AppDelegate: NSObject, UIApplicationDelegate, DownloadManager.ErrorDelegate {
 	func application(

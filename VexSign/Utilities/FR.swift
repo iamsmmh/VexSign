@@ -201,7 +201,7 @@ enum FR {
 				} catch {
 					completion(false)
 				}
-			case .failure(_):
+			case .failure:
 				completion(false)
 			}
 		}

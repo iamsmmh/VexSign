@@ -189,7 +189,7 @@ enum FeatureStatusRegistry {
 			persistedAs: ".vexbackup (AES-GCM, PBKDF2 200k)",
 			consumer: "BackupManager + BackupCrypto",
 			status: .implemented
-		),
+		)
 	]
 
 	static var implementedCount: Int { entries.filter { $0.status == .implemented }.count }
