@@ -39,7 +39,9 @@ struct AppVersionInfo: View {
             }
             .padding(.vertical, 4)
             
-            ExpandableText(text: description, lineLimit: 3)
+            MarkdownView(text: description)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -23,6 +23,7 @@ struct VexSignApp: App {
     @StateObject private var selfUpdate = SelfUpdateManager.shared
     @StateObject private var appLock = AppLockManager.shared
     @AppStorage("VexSign.onboardingCompleted") private var _onboardingCompleted = false
+    @AppStorage(VexSignStylePreferences.visualThemeKey) private var visualTheme = VexSignVisualTheme.system.rawValue
     @AppStorage(VexSignStylePreferences.fontFamilyKey) private var fontFamily = VexSignFontFamily.system.rawValue
     @AppStorage(VexSignStylePreferences.fontScaleKey) private var fontScale = 1.0
     @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var flareAnimations = true
@@ -128,6 +129,7 @@ struct VexSignApp: App {
                 }
             }
             .environment(\.font, VexSignStylePreferences.font(familyRawValue: fontFamily, scale: fontScale))
+            .preferredColorScheme(visualTheme == VexSignVisualTheme.luna.rawValue ? .dark : nil)
             .buttonStyle(VexSignFlareButtonStyle(enabled: flareAnimations))
             .overlay(alignment: .bottom) {
                 InstallQueuePill()

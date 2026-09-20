@@ -9,6 +9,27 @@
 
 import SwiftUI
 
+enum VexSignVisualTheme: String, CaseIterable, Identifiable {
+    case system
+    case luna
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .system: return "System"
+        case .luna: return "Luna"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .system: return "Use the standard grouped iOS surfaces."
+        case .luna: return "A soft indigo, glassy VexSign theme inspired by moonlight."
+        }
+    }
+}
+
 enum VexSignFontFamily: String, CaseIterable, Identifiable {
     case system
     case rounded
@@ -37,6 +58,7 @@ enum VexSignFontFamily: String, CaseIterable, Identifiable {
 }
 
 enum VexSignStylePreferences {
+    static let visualThemeKey = "VexSign.visualTheme"
     static let fontFamilyKey = "VexSign.fontFamily"
     static let fontScaleKey = "VexSign.fontScale"
     static let flareAnimationsKey = "VexSign.flareAnimations"

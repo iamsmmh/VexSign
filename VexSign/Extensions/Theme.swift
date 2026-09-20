@@ -8,12 +8,26 @@ import SwiftUI
 import NimbleViews
 
 enum Theme {
+    private static var visualTheme: VexSignVisualTheme {
+        VexSignVisualTheme(rawValue: UserDefaults.standard.string(forKey: VexSignStylePreferences.visualThemeKey) ?? "") ?? .system
+    }
+
+    private static var isLuna: Bool { visualTheme == .luna }
+
     // MARK: - Surfaces
-    static var background: Color { Color(uiColor: .systemGroupedBackground) }
-    static var card: Color { Color(uiColor: .secondarySystemGroupedBackground) }
-    static var cardElevated: Color { Color(uiColor: .secondarySystemGroupedBackground) }
-    static var separator: Color { Color(uiColor: .separator).opacity(0.55) }
-    static var quaternary: Color { Color(uiColor: .quaternarySystemFill) }
+    static var background: Color {
+        isLuna ? Color(red: 0.055, green: 0.065, blue: 0.14) : Color(uiColor: .systemGroupedBackground)
+    }
+    static var card: Color {
+        isLuna ? Color(red: 0.105, green: 0.115, blue: 0.22) : Color(uiColor: .secondarySystemGroupedBackground)
+    }
+    static var cardElevated: Color {
+        isLuna ? Color(red: 0.14, green: 0.145, blue: 0.28) : Color(uiColor: .secondarySystemGroupedBackground)
+    }
+    static var separator: Color { isLuna ? Color.white.opacity(0.12) : Color(uiColor: .separator).opacity(0.55) }
+    static var quaternary: Color {
+        isLuna ? Color(red: 0.19, green: 0.19, blue: 0.34) : Color(uiColor: .quaternarySystemFill)
+    }
 
     // MARK: - Text
     static var primary: Color { .primary }

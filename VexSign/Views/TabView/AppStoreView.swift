@@ -24,6 +24,7 @@ struct AppStoreView: View {
     @State private var isAddingPresenting = false
     @State private var appSortOption: AppSortOption = .name
     @State private var selectedCategory: String = "All"
+    @AppStorage("VexSign.repositorySort") private var _repositorySortRaw = RepositorySortOption.priority.rawValue
 
     private let appCategories = ["All", "Utilities", "Emulators", "Tweaked", "Games", "Jailbreak"]
 
@@ -66,6 +67,14 @@ struct AppStoreView: View {
         case size = "Size"
     }
 
+    enum RepositorySortOption: String, CaseIterable {
+        case priority = "Priority"
+        case name = "Name"
+        case updated = "Last Updated"
+
+        var label: String { .localized(rawValue) }
+    }
+
     // Model representing an app combined with its source repository
     struct SourcedAppItem: Identifiable {
         // Source identifiers are optional in older Core Data stores. Falling
@@ -97,8 +106,21 @@ struct AppStoreView: View {
 
     private var filteredSources: [AltSource] {
         let base = nonExcludedSources
-        guard !searchText.isEmpty else { return base }
-        return base.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
+        let matched = searchText.isEmpty ? base : base.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
+        let selected = RepositorySortOption(rawValue: _repositorySortRaw) ?? .priority
+        switch selected {
+        case .priority:
+            return matched
+        case .name:
+            return matched.sorted { ($0.name ?? "").localizedCaseInsensitiveCompare($1.name ?? "") == .orderedAscending }
+        case .updated:
+            return matched.sorted {
+                let lhs = SourcePreferences.lastFetch(for: $0.identifier ?? $0.sourceURL?.absoluteString ?? "") ?? .distantPast
+                let rhs = SourcePreferences.lastFetch(for: $1.identifier ?? $1.sourceURL?.absoluteString ?? "") ?? .distantPast
+                if lhs != rhs { return lhs > rhs }
+                return ($0.name ?? "").localizedCaseInsensitiveCompare($1.name ?? "") == .orderedAscending
+            }
+        }
     }
 
     // All loaded apps from active repositories
@@ -812,6 +834,17 @@ struct AppStoreView: View {
                 Text(.localized("Sources & Repositories"))
                     .font(.headline)
                 Spacer()
+                Menu {
+                    Picker(.localized("Sort Repositories"), selection: $_repositorySortRaw) {
+                        ForEach(RepositorySortOption.allCases, id: \.rawValue) { option in
+                            Text(option.label).tag(option.rawValue)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.userTint)
+                }
                 Button {
                     isAddingPresenting = true
                 } label: {

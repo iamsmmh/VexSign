@@ -22,6 +22,7 @@ struct AppearanceView: View {
     @AppStorage("VexSign.shouldTintIcons") private var _shouldTintIcons: Bool = false
     @AppStorage("VexSign.shouldChangeIconsBasedOffStyle") private var _shouldChangeIconsBasedOffStyle: Bool = false
     @AppStorage("VexSign.userTintColor") private var _selectedColorHex: String = "#848ef9"
+    @AppStorage(VexSignStylePreferences.visualThemeKey) private var _visualTheme = VexSignVisualTheme.system.rawValue
     @AppStorage(VexSignStylePreferences.fontFamilyKey) private var _fontFamily = VexSignFontFamily.system.rawValue
     @AppStorage(VexSignStylePreferences.fontScaleKey) private var _fontScale = 1.0
     @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var _flareAnimations = true
@@ -55,6 +56,19 @@ struct AppearanceView: View {
                     .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
             } footer: {
                 Text(.localized("The tint colors navigation, buttons and highlights across the app."))
+            }
+
+            NBSection(.localized("Visual Theme"), systemName: "sparkles") {
+                Picker(.localized("Theme"), selection: $_visualTheme) {
+                    ForEach(VexSignVisualTheme.allCases) { theme in
+                        NBTitleWithSubtitleView(title: theme.title, subtitle: theme.description)
+                            .tag(theme.rawValue)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.inline)
+            } footer: {
+                Text(.localized("Luna is an original VexSign dark, glassy presentation. It changes surfaces and motion context without changing signing behavior."))
             }
 
             Section {
