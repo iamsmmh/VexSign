@@ -1,38 +1,334 @@
+//
+//  HomeView.swift
+//  VexSign
+//
+//  The Home tab is a compact VexSign dashboard. Its dark grid, glass cards and
+//  bright accent colors are an original implementation inspired by the
+//  attached FlareStore reference — the actions below remain VexSign actions.
+//
+
 import SwiftUI
 import NimbleViews
-import NimbleExtensions
 import CoreData
-
-// MARK: - Home — organized dashboard, Settings lives in its own tab
+import UniformTypeIdentifiers
 
 struct HomeView: View {
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ObservedObject private var updateChecker = AppUpdateChecker.shared
+    @StateObject private var downloadManager = DownloadManager.shared
     @ObservedObject private var lockManager = AppLockManager.shared
-    @State private var isAddingCertificate = false
-    @State private var showIPAExplorer = false
-    @State private var heroPulse = false
-    @AppStorage("VexSign.migrationBannerDismissed_v2") private var bannerDismissed = false
 
-    // Live counts for the overview cards
-    @FetchRequest(entity: CertificatePair.entity(), sortDescriptors: []) private var certificates: FetchedResults<CertificatePair>
-    @FetchRequest(entity: AltSource.entity(), sortDescriptors: []) private var sources: FetchedResults<AltSource>
-    @FetchRequest(entity: Signed.entity(), sortDescriptors: []) private var signedApps: FetchedResults<Signed>
-    @FetchRequest(entity: Imported.entity(), sortDescriptors: []) private var importedApps: FetchedResults<Imported>
+    @FetchRequest(entity: CertificatePair.entity(), sortDescriptors: [])
+    private var certificates: FetchedResults<CertificatePair>
 
-    private var libraryCount: Int {
-        guard lockManager.strictHidingEnabled else { return signedApps.count + importedApps.count }
-        let visibleSigned = signedApps.filter { app in
-            guard let uuid = app.uuid else { return true }
+    @FetchRequest(entity: AltSource.entity(), sortDescriptors: [])
+    private var repositories: FetchedResults<AltSource>
+
+    @FetchRequest(entity: Signed.entity(), sortDescriptors: [])
+    private var signedApps: FetchedResults<Signed>
+
+    @FetchRequest(entity: Imported.entity(), sortDescriptors: [])
+    private var importedApps: FetchedResults<Imported>
+
+    @State private var packageURL = ""
+    @State private var isDropTargeted = false
+    @State private var quickSignApp: AnyApp?
+    @State private var showAddRepository = false
+
+    private var visibleAppCount: Int {
+        let signed = signedApps.filter { app in
+            guard lockManager.strictHidingEnabled, let uuid = app.uuid else { return true }
             return !lockManager.isStrictlyHidden(uuid)
         }.count
-        let visibleImported = importedApps.filter { app in
-            guard let uuid = app.uuid else { return true }
+        let imported = importedApps.filter { app in
+            guard lockManager.strictHidingEnabled, let uuid = app.uuid else { return true }
             return !lockManager.isStrictlyHidden(uuid)
         }.count
-        return visibleSigned + visibleImported
+        return signed + imported
     }
+
+    private var updateCount: Int { updateChecker.updateCount }
+
+    private var updateTitle: String {
+        if updateCount == 1 { return .localized("1 Update Available") }
+        if updateCount > 1 { return String.localized("%lld Updates Available", arguments: updateCount) }
+        return .localized("No Updates Available")
+    }
+
+    private var updateSubtitle: String {
+        updateCount > 0
+            ? .localized("From repositories you have installed")
+            : .localized("Your repositories are up to date")
+    }
+
+    var body: some View {
+        NBNavigationView("", displayMode: .inline) {
+            ZStack {
+                FlareGridBackground()
+                    .ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 16) {
+                        header
+                        statistics
+                        updatesCard
+                        importCard
+                        packageURLField
+                        quickSignRow
+                        featureRows
+                    }
+                    .padding(.horizontal, 18)
+                    .padding(.top, 22)
+                    .padding(.bottom, 116)
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+            .preferredColorScheme(.dark)
+            .task {
+                if updateChecker.availableUpdates.isEmpty {
+                    await updateChecker.checkNow()
+                }
+            }
+            .fullScreenCover(item: $quickSignApp) { app in
+                SigningView(app: app.base)
+            }
+            .sheet(isPresented: $showAddRepository) {
+                SourcesAddView()
+            }
+        }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        HStack {
+            Text("VexSign")
+                .font(.system(size: 36, weight: .bold, design: .default))
+                .foregroundStyle(.white)
+                .tracking(-1.2)
+            Spacer()
+        }
+        .padding(.top, 6)
+        .accessibilityAddTraits(.isHeader)
+    }
+
+    // MARK: - Summary cards
+
+    private var statistics: some View {
+        HStack(spacing: 10) {
+            HomeMetricCard(
+                icon: "folder.fill",
+                value: "\(repositories.count)",
+                title: .localized("Repos"),
+                tint: FlarePalette.pink
+            ) {
+                openTab(.appStore)
+            }
+
+            HomeMetricCard(
+                icon: "checkmark.shield.fill",
+                value: "\(certificates.count)",
+                title: .localized("Certs"),
+                tint: FlarePalette.purple
+            ) {
+                openTab(.settings)
+            }
+
+            HomeMetricCard(
+                icon: "square.grid.2x2.fill",
+                value: "\(visibleAppCount)",
+                title: .localized("Apps"),
+                tint: FlarePalette.green
+            ) {
+                openTab(.library)
+            }
+        }
+    }
+
+    private var updatesCard: some View {
+        Button {
+            openTab(.appStore)
+        } label: {
+            HStack(spacing: 14) {
+                HomeIconTile(
+                    systemImage: "arrow.down.circle.fill",
+                    tint: FlarePalette.pink,
+                    size: 50
+                )
+
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(updateTitle)
+                            .font(.system(size: 19, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.75)
+
+                        if updateCount > 0 {
+                            Text("\(updateCount)")
+                                .font(.system(size: 14, weight: .bold, design: .monospaced))
+                                .foregroundStyle(.white)
+                                .frame(minWidth: 30, minHeight: 30)
+                                .background(FlarePalette.pink, in: Circle())
+                        }
+                    }
+
+                    Text(updateSubtitle)
+                        .font(.system(size: 14, weight: .medium, design: .monospaced))
+                        .foregroundStyle(FlarePalette.muted)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                }
+
+                Spacer(minLength: 4)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundStyle(FlarePalette.muted)
+            }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 84)
+            .background(FlarePalette.card, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(FlarePalette.pink.opacity(0.62), lineWidth: 1.2)
+            }
+        }
+        .buttonStyle(VexSignFlareButtonStyle())
+        .accessibilityLabel(Text(updateCount > 0
+                                 ? String.localized("%lld updates available", arguments: updateCount)
+                                 : .localized("No updates available")))
+    }
+
+    // MARK: - Import and download actions
+
+    private var importCard: some View {
+        Button {
+            browseForPackages()
+        } label: {
+            VStack(spacing: 13) {
+                ZStack {
+                    Circle()
+                        .fill(FlarePalette.pink.opacity(0.14))
+                        .frame(width: 58, height: 58)
+                    Circle()
+                        .stroke(FlarePalette.pink.opacity(0.60), lineWidth: 1.2)
+                        .frame(width: 58, height: 58)
+                    Image(systemName: "plus")
+                        .font(.system(size: 33, weight: .light))
+                        .foregroundStyle(FlarePalette.pink)
+                }
+                .shadow(color: FlarePalette.pink.opacity(0.42), radius: 18)
+
+                Text(.localized("Import IPA / TIPA"))
+                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
+
+                Text(.localized("Tap to browse or drag & drop files"))
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                    .foregroundStyle(FlarePalette.muted)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 210)
+            .background(FlarePalette.card.opacity(isDropTargeted ? 0.92 : 0.82), in: RoundedRectangle(cornerRadius: 23, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 23, style: .continuous)
+                    .stroke(
+                        isDropTargeted ? FlarePalette.pink : FlarePalette.grid,
+                        style: StrokeStyle(lineWidth: isDropTargeted ? 2 : 1.2, dash: [9, 8])
+                    )
+            }
+        }
+        .buttonStyle(VexSignFlareButtonStyle())
+        .onDrop(of: [UTType.fileURL.identifier, UTType.item.identifier], isTargeted: $isDropTargeted) { providers in
+            handleDrop(providers)
+        }
+        .accessibilityHint(Text(.localized("Choose an IPA or TIPA file from Files, or drop one here.")))
+    }
+
+    private var packageURLField: some View {
+        HStack(spacing: 13) {
+            Image(systemName: "link")
+                .font(.system(size: 21, weight: .medium))
+                .foregroundStyle(FlarePalette.muted)
+
+            TextField(
+                "https://example.com/app.ipa",
+                text: $packageURL
+            )
+            .font(.system(size: 16, weight: .medium, design: .monospaced))
+            .foregroundStyle(FlarePalette.pink)
+            .tint(FlarePalette.pink)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .keyboardType(.URL)
+            .submitLabel(.go)
+            .onSubmit { startURLDownload() }
+        }
+        .padding(.horizontal, 19)
+        .frame(height: 64)
+        .background(FlarePalette.card, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(FlarePalette.border, lineWidth: 1)
+        }
+        .accessibilityLabel(Text(.localized("Download app from URL")))
+        .accessibilityHint(Text(.localized("Enter a direct IPA or TIPA URL and press Go.")))
+    }
+
+    private var quickSignRow: some View {
+        Button {
+            browseForPackages(quickSign: true)
+        } label: {
+            HomeFeatureRow(
+                icon: "signature",
+                title: .localized("Quick Sign"),
+                subtitle: .localized("Pick and sign IPA immediately."),
+                tint: FlarePalette.pink
+            )
+        }
+        .buttonStyle(VexSignFlareButtonStyle())
+    }
+
+    private var featureRows: some View {
+        VStack(spacing: 14) {
+            NavigationLink {
+                CertificatesView()
+            } label: {
+                HomeFeatureRow(
+                    icon: "checkmark.shield.fill",
+                    title: .localized("Certificates"),
+                    subtitle: .localized("Manage your signing certificates"),
+                    tint: FlarePalette.purple
+                )
+            }
+            .buttonStyle(VexSignFlareButtonStyle())
+
+            Button {
+                showAddRepository = true
+            } label: {
+                HomeFeatureRow(
+                    icon: "plus.circle.fill",
+                    title: .localized("Add Repository"),
+                    subtitle: .localized("Add a new app source"),
+                    tint: FlarePalette.green
+                )
+            }
+            .buttonStyle(VexSignFlareButtonStyle())
+
+            NavigationLink {
+                IPSWBrowserView(inNavigationStack: false)
+            } label: {
+                HomeFeatureRow(
+                    icon: "externaldrive.fill",
+                    title: .localized("IPSW Browser"),
+                    subtitle: .localized("Browse firmware and signing status"),
+                    tint: FlarePalette.purple
+                )
+            }
+            .buttonStyle(VexSignFlareButtonStyle())
+        }
+    }
+
+    // MARK: - Working actions
 
     private func openTab(_ tab: TabEnum) {
         let prefs = TabBarPreferences.shared
@@ -43,715 +339,248 @@ struct HomeView: View {
         TabSelectionObserver.shared.selectedTab = tab
     }
 
-    private func openSettingsTab() {
-        TabSelectionObserver.shared.selectedTab = .settings
+    private func browseForPackages(quickSign: Bool = false) {
+        DocumentPicker.open([.ipa, .tipa], multiple: !quickSign, folder: .apps) { urls in
+            guard !urls.isEmpty else { return }
+            if quickSign {
+                enqueuePackage(urls[0], quickSign: true)
+            } else {
+                urls.forEach { enqueuePackage($0) }
+            }
+        }
     }
 
-    var body: some View {
-        NBNavigationView(.localized("Home")) {
-            ScrollView {
-                VStack(spacing: Theme.Spacing.section) {
-                    if !bannerDismissed { migrationBanner }
-                    hero
-                    if updateChecker.updateCount > 0 {
-                        homeUpdatesSection
+    private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
+        for provider in providers {
+            let identifier = provider.registeredTypeIdentifiers.first { id in
+                UTType(id)?.conforms(to: .fileURL) == true
+            } ?? UTType.fileURL.identifier
+
+            provider.loadItem(forTypeIdentifier: identifier, options: nil) { item, _ in
+                let url: URL?
+                if let itemURL = item as? URL {
+                    url = itemURL
+                } else if let itemURL = item as? NSURL {
+                    url = itemURL as URL
+                } else if let data = item as? Data {
+                    url = URL(dataRepresentation: data, relativeTo: nil)
+                } else if let path = item as? String {
+                    url = URL(fileURLWithPath: path)
+                } else {
+                    url = nil
+                }
+
+                guard let url else { return }
+                DispatchQueue.main.async {
+                    guard ["ipa", "tipa"].contains(url.pathExtension.lowercased()) else {
+                        Toast.error(.localized("Please drop an IPA or TIPA file."))
+                        return
                     }
-                    statsRow
-                    quickActions
-                    manageSection
-                    toolsSection
-                    settingsBanner
-                    footer
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-                .padding(.bottom, 28)
-            }
-            .background(Theme.background)
-            .scrollIndicators(.hidden)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { openSettingsTab() } label: {
-                        Image(systemName: "gearshape")
-                            .font(.body.weight(.semibold))
-                    }
-                    .accessibilityLabel(Text(.localized("Settings")))
-                    .accessibilityHint(Text(.localized("Open Settings tab")))
+                    enqueuePackage(url)
                 }
             }
-            .sheet(isPresented: $isAddingCertificate) {
-                CertificatesAddView()
-            }
-            .task {
-                if updateChecker.availableUpdates.isEmpty {
-                    await updateChecker.checkNow()
+        }
+        return true
+    }
+
+    private func enqueuePackage(_ url: URL, quickSign: Bool = false) {
+        guard let stagedURL = stagePackage(url) else { return }
+
+        if quickSign {
+            // Quick Sign uses the same import pipeline as the Library, but keeps
+            // the returned app so the signing sheet can open immediately.
+            FR.handlePackageFile(stagedURL) { result in
+                switch result {
+                case .success(let app):
+                    Toast.success(.localized("App ready to sign"), systemImage: "signature")
+                    quickSignApp = AnyApp(base: app)
+                case .failure(let error):
+                    Toast.error(error.localizedDescription, duration: .long)
                 }
+            }
+            return
+        }
+
+        downloadManager.startArchive(
+            from: stagedURL,
+            id: "VexSignHomeImport_\(UUID().uuidString)",
+            appName: stagedURL.deletingPathExtension().lastPathComponent
+        ) { error in
+            if let error {
+                Toast.error(error.localizedDescription, duration: .long)
+            } else {
+                Toast.success(.localized("App imported"), systemImage: "square.and.arrow.down")
             }
         }
     }
 
-    // MARK: Migration banner — Sources→App Store, Logs→Settings
-    private var migrationBanner: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                ZStack { RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.userTint.opacity(0.14)).frame(width: 36, height: 36)
-                    Image(systemName: "sparkles").font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.userTint) }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(.localized("What’s new")).font(.caption.weight(.heavy)).tracking(0.6).foregroundStyle(Color.userTint)
-                    Text(.localized("Sources is now App Store • Logs is in Settings")).font(.subheadline.weight(.semibold)).lineLimit(2).minimumScaleFactor(0.8)
-                }
-                Spacer()
-                Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { bannerDismissed = true } } label: {
-                    Image(systemName: "xmark").font(.caption.weight(.bold)).padding(6).background(Color.primary.opacity(0.08), in: Circle())
-                }
-                .accessibilityLabel(Text(.localized("Dismiss")))
-                .buttonStyle(.plain)
-            }
-            HStack(spacing: 8) {
-                Label(.localized("App Store"), systemImage: "bag.fill").font(.caption2.weight(.semibold)).padding(.horizontal, 8).padding(.vertical, 4).background(Theme.tintSoft, in: Capsule()).foregroundStyle(Theme.tint)
-                Image(systemName: "arrow.right").font(.caption2).foregroundStyle(.secondary)
-                Label(.localized("Files"), systemImage: "folder.fill").font(.caption2.weight(.semibold)).padding(.horizontal, 8).padding(.vertical, 4).background(Color(red: 0.55, green: 0.47, blue: 0.96).opacity(0.13), in: Capsule())
-                Image(systemName: "arrow.right").font(.caption2).foregroundStyle(.secondary)
-                Label(.localized("Downloads"), systemImage: "arrow.down.circle.fill").font(.caption2.weight(.semibold)).padding(.horizontal, 8).padding(.vertical, 4).background(Color(red: 0.20, green: 0.66, blue: 0.44).opacity(0.13), in: Capsule())
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel(Text(.localized("New tabs: App Store, Files, Downloads")))
+    private func stagePackage(_ url: URL) -> URL? {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer {
+            if scoped { url.stopAccessingSecurityScopedResource() }
         }
-        .padding(14)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.06), lineWidth: 1))
-        .accessibilityAddTraits(.isButton)
+
+        let fileManager = FileManager.default
+        let directory = fileManager.downloadStaging
+        do {
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            let target = FileManagerActions.uniqueURL(for: url.lastPathComponent, in: directory)
+            try fileManager.copyItem(at: url, to: target)
+            return target
+        } catch {
+            Toast.error(error.localizedDescription, duration: .long)
+            return nil
+        }
     }
 
-    // MARK: Hero — gradient header with logo, name and status
-
-    private var hero: some View {
-        VStack(spacing: 14) {
-            ZStack {
-                // Soft gradient halo behind icon
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.userTint.opacity(0.22), Color.userTintDeep.opacity(0.18)],
-                            startPoint: .topLeading, endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 112, height: 112)
-                    .scaleEffect(heroPulse ? 1.08 : 0.94)
-                    .opacity(heroPulse ? 0.82 : 0.58)
-                    .blur(radius: 8)
-
-                Image("AppLogo")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 84, height: 84)
-                    .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .shadow(color: Color.userTint.opacity(0.28), radius: 10, y: 5)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 22, style: .continuous)
-                            .strokeBorder(Color.white.opacity(colorScheme == .dark ? 0.12 : 0.0), lineWidth: 1)
-                    )
-            }
-
-            VStack(spacing: 5) {
-                HStack(spacing: 8) {
-                    Text("VexSign")
-                        .font(.title2.bold())
-                    // version badge
-                    Text(Bundle.main.version)
-                        .font(.caption2.weight(.semibold))
-                        .padding(.horizontal, 7).padding(.vertical, 3)
-                        .background(Color.userTint.opacity(0.12), in: Capsule())
-                        .foregroundStyle(Color.userTint)
-                        .monospacedDigit()
-                }
-
-                Text(.localized("Sign, install, and manage your apps."))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-
-                HStack(spacing: 6) {
-                    Circle().fill(Color.green).frame(width: 7, height: 7)
-                        .shadow(color: .green.opacity(0.5), radius: 4)
-                    Text(.localized("Ready to sign"))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Text("•").foregroundStyle(.tertiary)
-                    Text(verbatim: certificates.isEmpty ? String.localized("No Certificate") : String.localized("Certificate Ready"))
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(certificates.isEmpty ? .orange : .secondary)
-                        .lineLimit(1)
-                }
-                .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(Color(uiColor: .secondarySystemGroupedBackground), in: Capsule())
-            }
+    private func startURLDownload() {
+        let value = packageURL.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let url = URL(string: value),
+              let scheme = url.scheme?.lowercased(),
+              ["http", "https"].contains(scheme),
+              url.host != nil else {
+            Toast.error(.localized("Enter a valid HTTP or HTTPS app URL."))
+            return
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
-        .padding(.horizontal, 16)
-        .background(
-            RoundedRectangle(cornerRadius: Theme.Radius.large, style: .continuous)
-                .fill(Theme.card)
-                .shadow(color: Theme.cardShadow(for: colorScheme), radius: 14, y: 6)
+
+        _ = downloadManager.startDownload(
+            from: url,
+            id: "VexSignHomeURL_\(UUID().uuidString)",
+            appName: url.deletingPathExtension().lastPathComponent
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.Radius.large, style: .continuous)
-                .strokeBorder(Theme.tint.opacity(colorScheme == .dark ? 0.14 : 0.08), lineWidth: 1)
-        )
-        // subtle top gradient accent line
-        .overlay(alignment: .top) {
-            RoundedRectangle(cornerRadius: NBRadius.large, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [Color.userTint.opacity(0.55), Color.userTintDeep.opacity(0.0)],
-                        startPoint: .leading, endPoint: .trailing
-                    )
-                )
-                .frame(height: 1.2)
-                .clipShape(RoundedRectangle(cornerRadius: NBRadius.large, style: .continuous))
-                .padding(.horizontal, 1)
-        }
-        .onAppear {
-            withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
-                heroPulse = true
-            }
-        }
-    }
-
-    // MARK: - Updates Available Card for Home (App & Quantity)
-    private var homeUpdatesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .fill(Color.userTint.opacity(0.14))
-                        .frame(width: 36, height: 36)
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(Color.userTint)
-                }
-
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(.localized("Updates Available"))
-                            .font(.headline)
-                        Text("\(updateChecker.updateCount)")
-                            .font(.caption2.weight(.bold))
-                            .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Color.userTint, in: Capsule())
-                            .foregroundStyle(.white)
-                    }
-
-                    Text(.localized("New versions detected from your repository sources"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer()
-
-                NavigationLink(destination: UpdatesView()) {
-                    HStack(spacing: 3) {
-                        Text(.localized("See All"))
-                            .font(.caption.weight(.semibold))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10, weight: .bold))
-                    }
-                    .foregroundStyle(Color.userTint)
-                }
-                .buttonStyle(.plain)
-            }
-
-            VStack(spacing: 8) {
-                ForEach(updateChecker.availableUpdates.prefix(3)) { item in
-                    HStack(spacing: 12) {
-                        AsyncImage(url: item.iconURL) { phase in
-                            if let img = phase.image {
-                                img.resizable().aspectRatio(contentMode: .fit)
-                            } else {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(Color.userTint.opacity(0.12))
-                                    .overlay(
-                                        Image(systemName: "app.fill")
-                                            .font(.system(size: 16))
-                                            .foregroundStyle(Color.userTint)
-                                    )
-                            }
-                        }
-                        .frame(width: 42, height: 42)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.displayName)
-                                .font(.subheadline.weight(.semibold))
-                                .lineLimit(1)
-                            HStack(spacing: 4) {
-                                Text(item.installedVersion ?? "1.0")
-                                    .foregroundStyle(.secondary)
-                                Image(systemName: "arrow.right")
-                                    .font(.system(size: 8))
-                                    .foregroundStyle(.secondary)
-                                Text(item.sourceVersion ?? "1.1")
-                                    .foregroundStyle(Color.userTint)
-                                    .fontWeight(.bold)
-                                Text("• \(item.sourceName)")
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                            .font(.caption2)
-                        }
-
-                        Spacer()
-
-                        if let url = item.downloadURL {
-                            Button {
-                                _ = DownloadManager.shared.startDownload(
-                                    from: url,
-                                    id: item.app.currentUniqueId,
-                                    appName: item.displayName,
-                                    appDescription: item.app.localizedDescription
-                                )
-                                Toast.info(.localized("Download started"), systemImage: "arrow.down.circle")
-                            } label: {
-                                Text(.localized("UPDATE"))
-                                    .font(.caption2.weight(.bold))
-                                    .padding(.horizontal, 12).padding(.vertical, 6)
-                                    .background(Color.userTint, in: Capsule())
-                                    .foregroundStyle(.white)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(10)
-                    .background(Color(uiColor: .tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                }
-
-                if updateChecker.updateCount > 1 {
-                    NavigationLink(destination: UpdatesView()) {
-                        HStack {
-                            Spacer()
-                            Label(
-                                String.localized("Update All (%lld Apps)", arguments: updateChecker.updateCount),
-                                systemImage: "arrow.triangle.2.circlepath"
-                            )
-                            .font(.subheadline.weight(.semibold))
-                            Spacer()
-                        }
-                        .padding(.vertical, 10)
-                        .background(Color.userTint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .foregroundStyle(Color.userTint)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-        .padding(16)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Color.userTint.opacity(0.2), lineWidth: 1)
-        )
-    }
-
-    // MARK: Stats row — 3 compact cards (Sources → App Store)
-
-    private var statsRow: some View {
-        HStack(spacing: 12) {
-            HomeStatCard(
-                icon: "checkmark.seal.fill",
-                tint: Color.userTint,
-                value: "\(certificates.count)",
-                title: .localized("Certificates"),
-                subtitle: certificates.isEmpty ? .localized("Add one") : .localized("Ready")
-            )
-            HomeStatCard(
-                icon: "bag.fill",
-                tint: Color(red: 0.22, green: 0.60, blue: 0.96),
-                value: "\(sources.count)",
-                title: .localized("App Store"),
-                subtitle: sources.isEmpty ? .localized("Add source") : "\(sources.count) " + .localized("Active")
-            )
-            HomeStatCard(
-                icon: "square.stack.3d.up.fill",
-                tint: Color(red: 0.96, green: 0.62, blue: 0.12),
-                value: "\(libraryCount)",
-                title: .localized("Library"),
-                subtitle: libraryCount == 0 ? .localized("Empty") : .localized("Apps")
-            )
-        }
-    }
-
-    // MARK: Quick Actions — 2×2 grid
-
-    private var quickActions: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HomeSectionHeader(title: .localized("Quick Actions"), icon: "bolt.fill", tint: Color.userTint)
-
-            LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                HomeActionCard(
-                    title: .localized("Library"),
-                    subtitle: libraryCount == 0 ? .localized("No apps yet") : "\(libraryCount) " + .localized("Apps"),
-                    systemImage: "square.grid.2x2.fill",
-                    tint: Color(red: 0.95, green: 0.55, blue: 0.15),
-                    background: Color(red: 0.95, green: 0.55, blue: 0.15).opacity(0.13)
-                ) { openTab(.library) }
-
-                HomeActionCard(
-                    title: .localized("App Store"),
-                    subtitle: sources.isEmpty ? .localized("Browse catalog") : .localized("Explore apps"),
-                    systemImage: "bag.fill",
-                    tint: Color(red: 0.18, green: 0.62, blue: 0.96),
-                    background: Color(red: 0.18, green: 0.62, blue: 0.96).opacity(0.12)
-                ) { openTab(.appStore) }
-
-                HomeActionCard(
-                    title: .localized("Files"),
-                    subtitle: .localized("Ksign-style browser"),
-                    systemImage: "folder.fill",
-                    tint: Color(red: 0.55, green: 0.47, blue: 0.96),
-                    background: Color(red: 0.55, green: 0.47, blue: 0.96).opacity(0.12)
-                ) { openTab(.files) }
-
-                HomeActionCard(
-                    title: .localized("Downloads"),
-                    subtitle: .localized("Queue & progress"),
-                    systemImage: "arrow.down.circle.fill",
-                    tint: Color(red: 0.20, green: 0.66, blue: 0.44),
-                    background: Color(red: 0.20, green: 0.66, blue: 0.44).opacity(0.12)
-                ) { openTab(.downloads) }
-
-                HomeActionCard(
-                    title: .localized("Import Certificate"),
-                    subtitle: .localized("P12 + Provision"),
-                    systemImage: "plus.rectangle.on.folder.fill",
-                    tint: Color.userTint,
-                    background: Color.userTint.opacity(0.13)
-                ) { isAddingCertificate = true }
-
-                HomeActionCard(
-                    title: .localized("IPA Explorer"),
-                    subtitle: .localized("Browse & edit"),
-                    systemImage: "doc.text.magnifyingglass",
-                    tint: Color(red: 0.48, green: 0.42, blue: 0.96),
-                    background: Color(red: 0.48, green: 0.42, blue: 0.96).opacity(0.12)
-                ) {
-                    showIPAExplorer = true
-                }
-            }
-            // Hidden navigation destination for IPA Explorer (organized deep link)
-            .background(
-                NavigationLink(isActive: $showIPAExplorer) {
-                    IPAExplorerHomeView()
-                } label: { EmptyView() }
-                .hidden()
-            )
-        }
-    }
-
-    // MARK: Manage
-
-    private var manageSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HomeSectionHeader(title: .localized("Manage"), icon: "slider.horizontal.3", tint: Color.userTint)
-
-            VStack(spacing: 0) {
-                NavigationLink { CertificatesView() } label: {
-                    HomeToolRow(icon: "checkmark.seal.fill", iconTint: Color.userTint, title: .localized("Certificates"), subtitle: certificates.isEmpty ? .localized("Add and manage signing certificates") : "\(certificates.count) " + .localized("installed"))
-                }
-                Divider().padding(.leading, 52).opacity(0.6)
-                NavigationLink { ConfigurationView() } label: {
-                    HomeToolRow(icon: "signature", iconTint: Color(red: 0.20, green: 0.66, blue: 0.44), title: .localized("Signing Options"), subtitle: .localized("Entitlements, bundle ID, PPQ & more"))
-                }
-                Divider().padding(.leading, 52).opacity(0.6)
-                NavigationLink { SigningProfilesView() } label: {
-                    HomeToolRow(icon: "person.crop.rectangle.stack.fill", iconTint: Color(red: 0.48, green: 0.42, blue: 0.96), title: .localized("Signing Profiles"), subtitle: .localized("Save and reuse signing presets"))
-                }
-                Divider().padding(.leading, 52).opacity(0.6)
-                NavigationLink { InstallationView() } label: {
-                    HomeToolRow(icon: "arrow.down.app.fill", iconTint: Color(red: 0.18, green: 0.62, blue: 0.96), title: .localized("Installation"), subtitle: .localized("Server, Tunnel & Anti-Revoke"))
-                }
-            }
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-            )
-        }
-    }
-
-    // MARK: Tools — Logs moved to Settings (single nav bar, no double NBNavigationView)
-
-    private var toolsSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HomeSectionHeader(title: .localized("Tools"), icon: "wrench.and.screwdriver.fill", tint: Color.userTint)
-
-            VStack(spacing: 0) {
-                // Tweaks — now reachable here; tab no longer in main bar (moved to suitable place)
-                NavigationLink { TweakLibraryList().navigationTitle(.localized("Tweaks")) } label: {
-                    HomeToolRow(icon: "wrench.and.screwdriver.fill", iconTint: Color(red: 0.96, green: 0.46, blue: 0.18), title: .localized("Tweaks"), subtitle: .localized("Inject and manage tweaks"))
-                }
-                Divider().padding(.leading, 52).opacity(0.6)
-                // Logs — single nav bar: push LogsHistory (no nested NBNavigationView)
-                NavigationLink { LogsHistoryView() } label: {
-                    HomeToolRow(icon: "text.alignleft", iconTint: Color(red: 0.45, green: 0.45, blue: 0.50), title: .localized("Logs"), subtitle: .localized("Activity logs • now in Settings"))
-                }
-                Divider().padding(.leading, 52).opacity(0.6)
-                NavigationLink { IPAExplorerHomeView() } label: {
-                    HomeToolRow(icon: "folder.fill", iconTint: Color(red: 0.95, green: 0.71, blue: 0.15), title: .localized("IPA Explorer"), subtitle: .localized("Inspect bundles & entitlements"))
-                }
-                Divider().padding(.leading, 52).opacity(0.6)
-                NavigationLink { EcosystemView() } label: {
-                    HomeToolRow(icon: "square.stack.3d.up.fill", iconTint: Color(red: 0.20, green: 0.66, blue: 0.44), title: "Ecosystem", subtitle: .localized("Repository sync & health"))
-                }
-                Divider().padding(.leading, 52).opacity(0.6)
-                NavigationLink { UpdateMatchingSettingsView() } label: {
-                    HomeToolRow(
-                        icon: "slider.horizontal.3",
-                        iconTint: Color.userTint,
-                        title: .localized("Update Matching"),
-                        subtitle: updateChecker.updateCount > 0 ? "\(updateChecker.updateCount) " + .localized("updates available") : .localized("Rules, developer & beta filters")
-                    )
-                }
-            }
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-            )
-        }
-    }
-
-    // MARK: Settings banner — replaces the old “More options” button
-
-    private var settingsBanner: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.userTint.opacity(0.14))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: "gearshape.2.fill")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(Color.userTint)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(.localized("Everything else lives in Settings"))
-                        .font(.subheadline.weight(.semibold))
-                    Text(.localized("Appearance, downloads, storage, backup, cleanup and app preferences."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                }
-                Spacer(minLength: 8)
-            }
-
-            Button { openSettingsTab() } label: {
-                HStack(spacing: 6) {
-                    Text(.localized("Open Settings"))
-                        .font(.subheadline.weight(.semibold))
-                    Image(systemName: "arrow.right")
-                        .font(.caption.weight(.bold))
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(Color.userTint, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            .buttonStyle(.plain)
-
-            HStack(spacing: 4) {
-                Image(systemName: "info.circle")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                Text(.localized("No more “More” button — the Settings tab is always visible."))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.18 : 0.05), radius: 10, y: 4)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.userTint.opacity(0.10), lineWidth: 1)
-        )
-    }
-
-    private var footer: some View {
-        VStack(spacing: 6) {
-            Text(verbatim: "VexSign • " + Bundle.main.version + " (" + (Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—") + ")")
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
-            Text(.localized("On-device signing • No data leaves your device"))
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 4)
+        Toast.info(.localized("Download started"), systemImage: "arrow.down.circle")
+        packageURL = ""
     }
 }
 
-// MARK: - Reusable pieces
+// MARK: - Original Flare-inspired presentation tokens
 
-private struct HomeSectionHeader: View {
-    let title: String
-    let icon: String
-    let tint: Color
+private enum FlarePalette {
+    static let background = Color(red: 0.025, green: 0.022, blue: 0.045)
+    static let card = Color(red: 0.065, green: 0.065, blue: 0.095)
+    static let border = Color.white.opacity(0.10)
+    static let grid = Color(red: 0.42, green: 0.025, blue: 0.19).opacity(0.52)
+    static let muted = Color(red: 0.49, green: 0.47, blue: 0.55)
+    static let pink = Color(red: 1.0, green: 0.12, blue: 0.34)
+    static let purple = Color(red: 0.62, green: 0.20, blue: 1.0)
+    static let green = Color(red: 0.03, green: 0.76, blue: 0.50)
+}
 
+private struct FlareGridBackground: View {
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(tint)
-                .frame(width: 22, height: 22)
-                .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            Text(title)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-            Spacer()
+        Canvas { context, size in
+            var path = Path()
+            let spacing: CGFloat = 71
+
+            var x: CGFloat = 0
+            while x <= size.width + spacing {
+                path.move(to: CGPoint(x: x, y: 0))
+                path.addLine(to: CGPoint(x: x, y: size.height))
+                x += spacing
+            }
+
+            var y: CGFloat = 0
+            while y <= size.height + spacing {
+                path.move(to: CGPoint(x: 0, y: y))
+                path.addLine(to: CGPoint(x: size.width, y: y))
+                y += spacing
+            }
+
+            context.stroke(path, with: .color(FlarePalette.grid), lineWidth: 0.8)
         }
-        .padding(.horizontal, 2)
+        .background(FlarePalette.background)
     }
 }
 
-private struct HomeStatCard: View {
-    let icon: String
-    let tint: Color
-    let value: String
-    let title: String
-    let subtitle: String
-
-    @Environment(\.colorScheme) private var cs
-
-    var body: some View {
-        VStack(spacing: 10) {
-            ZStack {
-                Circle().fill(tint.opacity(0.13)).frame(width: 40, height: 40)
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(tint)
-            }
-            VStack(spacing: 2) {
-                Text(value)
-                    .font(.title3.bold())
-                    .monospacedDigit()
-                    .lineLimit(1)
-                Text(title)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(subtitle)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .padding(.horizontal, 8)
-        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(Color.primary.opacity(cs == .dark ? 0.08 : 0.05), lineWidth: 1)
-        )
-    }
-}
-
-private struct HomeActionCard: View {
-    let title: String
-    let subtitle: String
+private struct HomeIconTile: View {
     let systemImage: String
     let tint: Color
-    let background: Color
-    let action: () -> Void
+    let size: CGFloat
 
-    @Environment(\.colorScheme) private var cs
-    @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var flareAnimations = true
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .fill(tint.opacity(0.15))
+                .frame(width: size, height: size)
+            Image(systemName: systemImage)
+                .font(.system(size: size * 0.46, weight: .semibold))
+                .foregroundStyle(tint)
+        }
+    }
+}
+
+private struct HomeMetricCard: View {
+    let icon: String
+    let value: String
+    let title: String
+    let tint: Color
+    let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(background)
-                        .frame(width: 42, height: 42)
-                    Image(systemName: systemImage)
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(tint)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                Spacer(minLength: 0)
-                HStack(spacing: 4) {
-                    Text(.localized("Open"))
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(tint)
-                    Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(tint)
-                }
+            VStack(spacing: 9) {
+                Image(systemName: icon)
+                    .font(.system(size: 25, weight: .semibold))
+                    .foregroundStyle(tint)
+                    .frame(height: 30)
+
+                Text(value)
+                    .font(.system(size: 24, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .monospacedDigit()
+
+                Text(title)
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                    .foregroundStyle(FlarePalette.muted)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(14)
-            .frame(height: 132)
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Color.primary.opacity(cs == .dark ? 0.08 : 0.05), lineWidth: 1)
-            )
+            .frame(maxWidth: .infinity)
+            .frame(height: 104)
+            .background(FlarePalette.card, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(FlarePalette.border, lineWidth: 1)
+            }
         }
-        .buttonStyle(VexSignFlareButtonStyle(enabled: flareAnimations))
-        .accessibilityLabel(Text(title))
+        .buttonStyle(VexSignFlareButtonStyle())
+        .accessibilityLabel(Text("\(value) \(title)"))
     }
 }
 
-private struct HomeToolRow: View {
+private struct HomeFeatureRow: View {
     let icon: String
-    let iconTint: Color
     let title: String
     let subtitle: String
+    let tint: Color
 
     var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(iconTint.opacity(0.13))
-                    .frame(width: 36, height: 36)
-                Image(systemName: icon)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(iconTint)
-            }
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(spacing: 16) {
+            HomeIconTile(systemImage: icon, tint: tint, size: 48)
+
+            VStack(alignment: .leading, spacing: 5) {
                 Text(title)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.primary)
+                    .font(.system(size: 20, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.75)
                 Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 14, weight: .medium, design: .monospaced))
+                    .foregroundStyle(FlarePalette.muted)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.72)
             }
-            Spacer()
+
+            Spacer(minLength: 6)
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.tertiary)
+                .font(.system(size: 19, weight: .medium))
+                .foregroundStyle(FlarePalette.muted)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.horizontal, 17)
+        .frame(minHeight: 82)
+        .background(FlarePalette.card, in: RoundedRectangle(cornerRadius: 21, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 21, style: .continuous)
+                .stroke(FlarePalette.border, lineWidth: 1)
+        }
         .contentShape(Rectangle())
     }
 }
-
-
