@@ -52,6 +52,7 @@ The complete public history was read from **v0.0.1 through v1.3.0**. The changel
 - Tweak repository URL/deep-link import via `vexsign://tweak-repository/...`.
 - HTTPS Web Manager and WebDAV.
 - JIT/pairing, location simulator and Live Activity foundations.
+- In-app iOS/iPadOS guides for signing, sources, tweaks, JIT/location and troubleshooting.
 - Exportable signing/install logs and certificate inspection, including certificate-vs-profile expiry.
 - Dynamic Island download controls, strict app hiding/privacy behavior, widgets and Live Activities.
 - Original VexSign Luna visual theme and Flare-inspired touch treatment.
