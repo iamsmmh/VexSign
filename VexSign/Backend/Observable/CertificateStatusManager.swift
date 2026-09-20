@@ -165,9 +165,6 @@ final class CertificateStatusManager: ObservableObject {
 	}
 
     func refreshAppleStatus(for cert: CertificatePair, force: Bool = true) {
-        // This legacy service receives the PRIVATE KEY and password. Never upload
-        // silently during import/startup. The dashboard exposes explicit consent.
-        guard UserDefaults.standard.bool(forKey: "VexSign.security.allowLegacyCertificateUpload") else { return }
 		guard
 			let uuid = cert.uuid,
 			let p12URL = Storage.shared.getFile(.certificate, from: cert)
@@ -186,6 +183,8 @@ final class CertificateStatusManager: ObservableObject {
 		refreshingAppleStatusIDs.insert(uuid)
 
 		let password = cert.signingPassword ?? ""
+		let useLegacyRemote = UserDefaults.standard.bool(forKey: "VexSign.security.allowLegacyCertificateUpload")
+		let profileURL = Storage.shared.getFile(.provision, from: cert)
 
 		Task { [checkerURL = _checkerURL] in
 			defer {
@@ -193,11 +192,39 @@ final class CertificateStatusManager: ObservableObject {
 			}
 
 			do {
-				let snapshot = try await Self._fetchAppleStatus(
-					from: checkerURL,
-					p12URL: p12URL,
-					password: password
-				)
+				let snapshot: CertificateAppleStatusSnapshot
+				if useLegacyRemote {
+					snapshot = try await Self._fetchAppleStatus(
+						from: checkerURL,
+						p12URL: p12URL,
+						password: password
+					)
+				} else if let profileURL {
+					// Use local OCSP via CertificateInspector without transmitting private keys
+					let health = try await CertificateInspector.inspect(
+						id: uuid,
+						name: cert.nickname ?? "Certificate",
+						p12: p12URL,
+						password: password,
+						profile: profileURL,
+						online: true
+					)
+					let statusValue: CertificateStatusValue = {
+						switch health.revocation {
+						case .good: return .signed
+						case .revoked: return .revoked
+						case .unknown: return .unknown
+						}
+					}()
+					let label = health.revocation == .good ? "OCSP Valid" : (health.revocation == .revoked ? "Revoked" : "Unknown")
+					snapshot = CertificateAppleStatusSnapshot(
+						status: statusValue,
+						rawValue: label,
+						checkedAt: Date()
+					)
+				} else {
+					return
+				}
 
 				appleStatusSnapshots[uuid] = snapshot
 				_persistAppleStatuses()

@@ -50,6 +50,11 @@ final class DiscoveryViewModel: ObservableObject {
             await index.replace(apps); await search("")
         } catch { self.error = error.localizedDescription }
     }
+    func versions(for bundleIdentifier: String) -> [DiscoveryApp] {
+        apps.filter { $0.bundleIdentifier == bundleIdentifier }
+            .sorted { ($0.updated ?? .distantPast) > ($1.updated ?? .distantPast) }
+    }
+
     func search(_ query: String) async {
         generation += 1; let token = generation
         let found = await index.search(query, signals: signals)

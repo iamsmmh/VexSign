@@ -119,6 +119,11 @@ final class SigningHandler: NSObject {
 			try await _locateMachosAndChangeToSDK26(for: movedAppPath)
 		}
 
+		if _options.thinMachOBinaries {
+			SigningLog.shared.info(.localized("Thinning Mach-O binaries to ARM64"))
+			try await _locateMachosAndThin(for: movedAppPath)
+		}
+
 		let hasTweakSpecs = !(_options.tweakInjections ?? []).filter { $0.enabled }.isEmpty
 		if _options.experiment_replaceSubstrateWithEllekit {
 			SigningLog.shared.info(.localized("Injecting tweaks"))
@@ -158,12 +163,13 @@ final class SigningHandler: NSObject {
 			throw SigningFileHandlerError.missingCertifcate
 		}
 		
+		if let error = handler.hadError {
+			throw error
+		}
+
 		try await self.move()
 		try await self.addToDatabase()
 		
-        if let error = handler.hadError {
-            throw error
-        }
         if _options.signingOption == .default { await AnalyticsStore.shared.record(.appsSigned) }
         let injectedCount = _options.injectionFiles.count + (_options.tweakInjections ?? []).filter { $0.enabled }.count
         if injectedCount > 0 { await AnalyticsStore.shared.record(.tweaksInjected, count: injectedCount) }
@@ -544,6 +550,32 @@ extension SigningHandler {
 	private func _locateMachosAndChangeToSDK26(for app: URL) async throws {
 		if let url = Bundle(url: app)?.executableURL {
 			LCPatchMachOForSDK26(app.appendingPathComponent(url.relativePath).relativePath)
+		}
+	}
+
+	private func _locateMachosAndThin(for app: URL) async throws {
+		let candidates = _enumerateFiles(at: app) { file in
+			file.hasSuffix(".dylib") || file.hasSuffix(".framework") || !file.contains(".")
+		}
+
+		for fileURL in candidates {
+			switch fileURL.pathExtension {
+			case "dylib":
+				_ = LCThinMachOToARM64(fileURL.path)
+			case "framework":
+				if let bundle = Bundle(url: fileURL), let execURL = bundle.executableURL {
+					_ = LCThinMachOToARM64(execURL.path)
+				}
+			default:
+				var isDir: ObjCBool = false
+				if _fileManager.fileExists(atPath: fileURL.path, isDirectory: &isDir), !isDir.boolValue {
+					_ = LCThinMachOToARM64(fileURL.path)
+				}
+			}
+		}
+
+		if let mainExec = Bundle(url: app)?.executableURL {
+			_ = LCThinMachOToARM64(mainExec.path)
 		}
 	}
 	

@@ -118,6 +118,9 @@ struct Options: Codable, Equatable {
 	/// Info.plist keys stripped from the bundle for this sign.
 	var infoPlistRemovals: [String]? = nil
 
+	/// Strips non-target architectures (armv7, x86_64, etc.) from Mach-O binaries down to ARM64
+	var thinMachOBinaries: Bool
+
 	// MARK: Experiments
 	
 	/// Modifies app to support liquid glass
@@ -170,6 +173,7 @@ struct Options: Codable, Equatable {
 
 		// MARK: Experiments
 		
+		thinMachOBinaries: false,
 		experiment_supportLiquidGlass: false,
 		experiment_disableLiquidGlass: false,
 		experiment_replaceSubstrateWithEllekit: false,
@@ -301,6 +305,7 @@ extension Options {
 		tweakInjections = try? c.decode([TweakInjectionSpec].self, forKey: .tweakInjections)
 		infoPlistOverrides = try? c.decode(Data.self, forKey: .infoPlistOverrides)
 		infoPlistRemovals = try? c.decode([String].self, forKey: .infoPlistRemovals)
+		thinMachOBinaries = try c.decodeIfPresent(Bool.self, forKey: .thinMachOBinaries) ?? d.thinMachOBinaries
 		experiment_supportLiquidGlass = try c.decodeIfPresent(Bool.self, forKey: .experiment_supportLiquidGlass) ?? d.experiment_supportLiquidGlass
 		experiment_disableLiquidGlass = try c.decodeIfPresent(Bool.self, forKey: .experiment_disableLiquidGlass) ?? d.experiment_disableLiquidGlass
 		experiment_replaceSubstrateWithEllekit = try c.decodeIfPresent(Bool.self, forKey: .experiment_replaceSubstrateWithEllekit) ?? d.experiment_replaceSubstrateWithEllekit

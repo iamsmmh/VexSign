@@ -70,7 +70,28 @@ struct DiscoveryView: View {
             }
             Text(app.summary).font(.subheadline).lineLimit(3).frame(minHeight: 40, alignment: .top)
             HStack {
-                Text(app.version).font(.caption)
+                let allVersions = model.versions(for: app.bundleIdentifier)
+                if allVersions.count > 1 {
+                    Menu {
+                        ForEach(allVersions) { v in
+                            Button {
+                                Task { await model.download(v) }
+                            } label: {
+                                let sourceLabel = URL(string: v.source)?.host ?? v.source
+                                Text("v\(v.version) • \(sourceLabel)")
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("v\(app.version)")
+                            Image(systemName: "chevron.down").font(.caption2)
+                        }
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text(app.version).font(.caption)
+                }
                 Spacer()
                 Button("Get") { Task { await model.download(app) } }.buttonStyle(.borderedProminent).disabled(app.download == nil)
             }

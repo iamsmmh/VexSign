@@ -86,13 +86,15 @@ def get_key(api_key: str) -> sqlite3.Row | None:
         return conn.execute("SELECT * FROM keys WHERE api_key = ?", (api_key,)).fetchone()
 
 
-def consume_key(api_key: str, device_uuid: str) -> None:
-    """Mark a fresh key as used and bind it to a device (idempotently)."""
+def consume_key(api_key: str, device_uuid: str) -> bool:
+    """Mark a fresh key as used and bind it to a device (atomic and idempotent).
+    Returns True if successfully claimed, False if already claimed or disabled."""
     with connect() as conn:
-        conn.execute(
-            "UPDATE keys SET used = 1, device_uuid = ? WHERE api_key = ?",
+        cursor = conn.execute(
+            "UPDATE keys SET used = 1, device_uuid = ? WHERE api_key = ? AND used = 0 AND disabled = 0",
             (device_uuid, api_key),
         )
+        return cursor.rowcount > 0
 
 
 def device_has_activation(device_uuid: str) -> bool:

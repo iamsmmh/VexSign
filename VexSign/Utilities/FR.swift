@@ -304,6 +304,13 @@ enum FR {
 				return
 			}
 			
+			// Reject web schemes and dangerous protocols to prevent private key exfiltration
+			guard let scheme = callbackUrl.scheme?.lowercased(),
+				  !["http", "https", "file", "javascript", "data", "about"].contains(scheme) else {
+				Logger.misc.error("Rejected certificate export to web or unsafe URL scheme")
+				return
+			}
+
 			UIApplication.shared.open(callbackUrl)
 		}
 		
