@@ -19,6 +19,9 @@
 
 set -e
 
+# Robustness: require git and avoid failing on missing tags / shallow clones
+command -v git >/dev/null 2>&1 || { echo "git not available; skipping changelog"; exit 0; }
+
 # ---------------------------------------------------------------------------
 # Resolve version
 # ---------------------------------------------------------------------------
@@ -48,7 +51,13 @@ fi
 
 if [ -z "$RANGE" ]; then
     if [ -n "$PREVIOUS_TAG" ]; then
-        RANGE="${PREVIOUS_TAG}..HEAD"
+        # Verify the tag actually exists; if not, fall back to everything reachable.
+        if git rev-parse --verify "$PREVIOUS_TAG^{tag}" >/dev/null 2>&1 || git rev-parse --verify "$PREVIOUS_TAG" >/dev/null 2>&1; then
+            RANGE="${PREVIOUS_TAG}..HEAD"
+        else
+            RANGE="HEAD"
+            PREVIOUS_TAG="(first release)"
+        fi
     else
         # Shallow clones / first release: fall back to everything reachable.
         RANGE="HEAD"
@@ -59,6 +68,14 @@ fi
 # ---------------------------------------------------------------------------
 # Collect commits (subject line only, no merges)
 # ---------------------------------------------------------------------------
+# If the chosen range is invalid (e.g. missing tag/shallow clone), fall back.
+if [ -n "$RANGE" ] && [ "$RANGE" != "HEAD" ]; then
+    if ! git rev-parse --verify "${RANGE%%..*}" >/dev/null 2>&1; then
+        RANGE="HEAD"
+        PREVIOUS_TAG="(first release)"
+    fi
+fi
+
 COMMITS="$(git log --no-merges --pretty=format:'%h %s' "$RANGE" 2>/dev/null || true)"
 if [ -z "$COMMITS" ]; then
     COMMITS="$(git log -1 --no-merges --pretty=format:'%h %s' HEAD 2>/dev/null || true)"
