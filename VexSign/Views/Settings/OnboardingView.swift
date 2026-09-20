@@ -109,7 +109,7 @@ struct OnboardingView: View {
 
 			if !_certificates.isEmpty {
 				Label(
-					verbatim: String.localized("%lld certificate(s) ready", arguments: _certificates.count),
+					String.localized("%lld certificate(s) ready", arguments: _certificates.count),
 					systemImage: "checkmark.circle.fill"
 				)
 				.font(.footnote)
@@ -136,7 +136,7 @@ struct OnboardingView: View {
 
 			if !_sources.isEmpty {
 				Label(
-					verbatim: String.localized("%lld source(s) added", arguments: _sources.count),
+					String.localized("%lld source(s) added", arguments: _sources.count),
 					systemImage: "checkmark.circle.fill"
 				)
 				.font(.footnote)
@@ -146,6 +146,26 @@ struct OnboardingView: View {
 		}
 		.padding(28)
 		.frame(maxWidth: .infinity, alignment: .leading)
+	}
+
+	/// Imports the file the wizard's picker returned, using the same path the
+	/// Files tab uses, and remembers the name for the confirmation row.
+	private func _importFirstApp(from url: URL) {
+		let scoped = url.startAccessingSecurityScopedResource()
+		defer {
+			if scoped {
+				url.stopAccessingSecurityScopedResource()
+			}
+		}
+
+		FR.handlePackageFile(url) { result in
+			switch result {
+			case .success(let app):
+				_importedAppName = app.name ?? url.lastPathComponent
+			case .failure(let error):
+				Toast.error(error.localizedDescription, systemImage: "exclamationmark.triangle")
+			}
+		}
 	}
 
 	private var _pageFirstApp: some View {
@@ -162,7 +182,7 @@ struct OnboardingView: View {
 			.buttonStyle(.bordered)
 
 			if let name = _importedAppName {
-				Label(verbatim: String.localized("Imported %@", arguments: name), systemImage: "checkmark.circle.fill")
+				Label(String.localized("Imported %@", arguments: name), systemImage: "checkmark.circle.fill")
 					.font(.footnote)
 					.foregroundStyle(.green)
 			}

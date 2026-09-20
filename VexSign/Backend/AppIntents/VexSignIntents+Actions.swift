@@ -152,7 +152,7 @@ struct OpenVexSignIntent: AppIntent {
 
 	static var openAppWhenRun: Bool = true
 
-	@Parameter(title: "Section", requestValueDialog: "Where should VexSign open?", default: .home)
+	@Parameter(title: "Section", default: .home, requestValueDialog: "Where should VexSign open?")
 	var section: VexSignSection
 
 	@MainActor
