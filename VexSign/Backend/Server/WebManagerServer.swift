@@ -29,12 +29,14 @@ struct WebManagerAuthMiddleware: AsyncMiddleware {
 		return Response(status: .unauthorized, headers: headers)
 	}
 
-	/// Length-independent compare so a wrong guess can't be timed character-by-character.
+	/// Constant-time compare so a wrong guess cannot be timed character-by-character.
 	static func constantTimeEquals(_ a: String, _ b: String) -> Bool {
 		let lhs = Array(a.utf8), rhs = Array(b.utf8)
-		var diff = lhs.count ^ rhs.count
+		guard lhs.count == rhs.count else { return false }
+		guard !lhs.isEmpty else { return true }
+		var diff = 0
 		for i in 0..<lhs.count {
-			diff |= Int(lhs[i]) ^ Int(rhs[i < rhs.count ? i : 0])
+			diff |= Int(lhs[i]) ^ Int(rhs[i])
 		}
 		return diff == 0
 	}

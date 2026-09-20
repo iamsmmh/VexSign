@@ -164,11 +164,12 @@ extension WebManagerServer {
 			let streamed = self.streamToFile(req, destination: ipaURL, route: false, report: false, successStatus: .ok)
 			streamed.whenSuccess { _ in
 				Task { @MainActor in
-					let response = await self._signAndPackage(ipaURL: ipaURL, staging: staging)
+					let response = await self._signAndPackage(request: req, ipaURL: ipaURL, staging: staging)
 					promise.succeed(response)
 				}
 			}
 			streamed.whenFailure { error in
+				try? FileManager.default.removeItem(at: staging)
 				promise.fail(error)
 			}
 
@@ -181,12 +182,10 @@ extension WebManagerServer {
 	/// Imports the upload, signs it with the default certificate and packages the
 	/// result as an IPA. Main actor because the library lives in CoreData.
 	@MainActor
-	private func _signAndPackage(ipaURL: URL, staging: URL) async -> Response {
+	private func _signAndPackage(request: Request, ipaURL: URL, staging: URL) async -> Response {
 		do {
-			// The response body is read into memory, so staging can go once it is built.
-			defer { try? FileManager.default.removeItem(at: staging) }
-
 			guard AutoSignManager.canSign else {
+				try? FileManager.default.removeItem(at: staging)
 				return Response(
 					status: .preconditionFailed,
 					body: .init(string: "No certificate available. Import one in Settings → Certificates.")
@@ -203,6 +202,7 @@ extension WebManagerServer {
 			}
 
 			guard let app = imported.app else {
+				try? FileManager.default.removeItem(at: staging)
 				return Response(
 					status: .unprocessableEntity,
 					body: .init(string: imported.error?.localizedDescription ?? "Could not read that IPA.")
@@ -213,10 +213,12 @@ extension WebManagerServer {
 			switch await AutoSignManager.shared.sign(app) {
 			case .success(let result): signed = result
 			case .failure(let error):
+				try? FileManager.default.removeItem(at: staging)
 				return Response(status: .internalServerError, body: .init(string: error.localizedDescription))
 			}
 
 			guard let directory = Storage.shared.getAppDirectory(for: signed) else {
+				try? FileManager.default.removeItem(at: staging)
 				return Response(status: .internalServerError, body: .init(string: "Signed app disappeared before it could be packaged."))
 			}
 
@@ -226,10 +228,15 @@ extension WebManagerServer {
 					try AppArchiver.archive(appDir: directory, to: output, compression: .DefaultCompression)
 				}.value
 			} catch {
+				try? FileManager.default.removeItem(at: staging)
 				return Response(status: .internalServerError, body: .init(string: error.localizedDescription))
 			}
 
-			let response = Self.apiDownload(output, as: output.lastPathComponent)
+			// Stream the signed package back without loading multi-GB archives into RAM.
+			let response = request.fileio.streamFile(at: output.path) { _ in
+				try? FileManager.default.removeItem(at: staging)
+			}
+			response.headers.replaceOrAdd(name: .contentDisposition, value: "attachment; filename=\"\(output.lastPathComponent)\"")
 			let body = APISignResponse(
 				name: signed.name ?? "App",
 				bundleID: signed.identifier ?? "",
@@ -240,6 +247,7 @@ extension WebManagerServer {
 			response.headers.replaceOrAdd(name: "X-VexSign-Signed-App", value: encoded)
 			return response
 		} catch {
+			try? FileManager.default.removeItem(at: staging)
 			return Response(status: .internalServerError, body: .init(string: error.localizedDescription))
 		}
 	}

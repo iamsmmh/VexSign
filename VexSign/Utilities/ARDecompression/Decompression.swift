@@ -26,8 +26,12 @@ func extractFile(at fileURL: inout URL) throws {
 		try fileManager.createDirectory(at: extractionDirectory, withIntermediateDirectories: true)
 
 		let tarContainer = try TarContainer.open(container: data)
+		let standardizedExtractionDir = extractionDirectory.standardizedFileURL.path
 		for entry in tarContainer {
 			let entryPath = extractionDirectory.appendingPathComponent(entry.info.name)
+			guard entryPath.standardizedFileURL.path.hasPrefix(standardizedExtractionDir) else {
+				continue
+			}
 			if entry.info.type == .directory {
 				try fileManager.createDirectory(at: entryPath, withIntermediateDirectories: true)
 			} else if entry.info.type == .regular, let entryData = entry.data {

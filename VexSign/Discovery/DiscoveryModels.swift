@@ -20,6 +20,16 @@ struct TrendingApp: Identifiable { let app: DiscoveryApp; let score: Double; var
 struct CollectionItem: Identifiable { let id: String; let title: String; let apps: [DiscoveryApp] }
 struct CategoryItem: Identifiable { let name: String; let apps: [DiscoveryApp]; var id: String { name } }
 
+/// Canonical bundle ID deduplication grouping multi-source versions together.
+struct CanonicalAppGroup: Identifiable, Hashable, Sendable {
+    var id: String { bundleIdentifier }
+    let bundleIdentifier: String
+    let primaryApp: DiscoveryApp
+    let versions: [DiscoveryApp]
+    var hasMultipleSources: Bool { versions.count > 1 }
+    var sourceCount: Int { Set(versions.map(\.source)).count }
+}
+
 struct DiscoverySignals: Codable, Sendable {
     var favorites: Set<String> = []
     /// Local download requests, not fabricated global popularity or install counts.
@@ -47,6 +57,28 @@ actor DiscoveryIndex {
         self.apps = apps
         searchable = Dictionary(apps.map { ($0.id, $0.searchText) }, uniquingKeysWith: { first, _ in first })
     }
+
+    /// Groups apps by canonical bundle identifier to deduplicate multi-source listings.
+    func canonicalGroups(for candidateApps: [DiscoveryApp]? = nil) -> [CanonicalAppGroup] {
+        let pool = candidateApps ?? apps
+        let grouped = Dictionary(grouping: pool, by: \.bundleIdentifier)
+        return grouped.compactMap { bundleID, list in
+            guard let primary = list.max(by: { lhs, rhs in
+                (lhs.updated ?? .distantPast) < (rhs.updated ?? .distantPast)
+            }) else { return nil }
+            let sortedList = list.sorted {
+                ($0.updated ?? .distantPast) > ($1.updated ?? .distantPast)
+            }
+            return CanonicalAppGroup(bundleIdentifier: bundleID, primaryApp: primary, versions: sortedList)
+        }.sorted { $0.primaryApp.name.localizedStandardCompare($1.primaryApp.name) == .orderedAscending }
+    }
+
+    /// Returns all available source variants and versions for a given bundle identifier.
+    func versions(for bundleIdentifier: String) -> [DiscoveryApp] {
+        apps.filter { $0.bundleIdentifier == bundleIdentifier }
+            .sorted { ($0.updated ?? .distantPast) > ($1.updated ?? .distantPast) }
+    }
+
     /// An empty query matches every app (allSatisfy over no words is true), which is
     /// how the view lists everything before the user types.
     ///

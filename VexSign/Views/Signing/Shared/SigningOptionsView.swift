@@ -227,6 +227,13 @@ struct SigningOptionsView: View {
 		
 		NBSection(.localized("Experiments")) {
 			_toggle(
+				.localized("Thin Mach-O Binaries (ARM64)"),
+				systemImage: "scissors",
+				isOn: $options.thinMachOBinaries,
+				temporaryValue: temporaryOptions?.thinMachOBinaries
+			)
+
+			_toggle(
 				.localized("Replace Substrate with ElleKit"),
 				systemImage: "pencil",
 				isOn: $options.experiment_replaceSubstrateWithEllekit,

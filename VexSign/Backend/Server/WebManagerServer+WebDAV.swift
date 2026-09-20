@@ -70,7 +70,7 @@ extension WebManagerServer {
 		}
 
 		app.on(.DELETE, catchall) { [weak self] req -> Response in
-			guard let self, let url = self.resolve(req.url.path) else { return Response(status: .forbidden) }
+			guard let self, let url = self.resolve(req.url.path), url.path != self.inbox.path else { return Response(status: .forbidden) }
 			guard FileManager.default.fileExists(atPath: url.path) else { return Response(status: .notFound) }
 			try? FileManager.default.removeItem(at: url)
 			return Response(status: .noContent)

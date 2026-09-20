@@ -160,11 +160,14 @@ def validate(
     # Keys are single-use and device-bound. Re-validating with the same device
     # is allowed (idempotent) so reinstall/restore flows stay smooth; a
     # different device gets the exact message the app shows for burned keys.
-    if row["used"] and row["device_uuid"] != body.device_uuid:
-        raise HTTPException(status_code=401, detail=INVALID_KEY_DETAIL)
+    if row["used"]:
+        if row["device_uuid"] != body.device_uuid:
+            raise HTTPException(status_code=401, detail=INVALID_KEY_DETAIL)
+        return _urls_payload(request, count=25)
 
-    if not row["used"]:
-        db.consume_key(x_api_key, body.device_uuid)
+    # Atomically claim the key to prevent double-spending / race conditions.
+    if not db.consume_key(x_api_key, body.device_uuid):
+        raise HTTPException(status_code=401, detail=INVALID_KEY_DETAIL)
 
     return _urls_payload(request, count=25)
 

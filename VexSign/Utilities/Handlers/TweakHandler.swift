@@ -75,36 +75,66 @@ class TweakHandler {
 		return candidate
 	}
 
+	private func _findEllekitURL() -> URL? {
+		if let url = Bundle.main.url(forResource: "ellekit", withExtension: "deb"), _fileManager.fileExists(atPath: url.path) {
+			return url
+		}
+		if let resourceURL = Bundle.main.resourceURL?.appendingPathComponent("ellekit.deb"), _fileManager.fileExists(atPath: resourceURL.path) {
+			return resourceURL
+		}
+		let bundleResource = Bundle.main.bundleURL.appendingPathComponent("Resources/ellekit.deb")
+		if _fileManager.fileExists(atPath: bundleResource.path) {
+			return bundleResource
+		}
+		if let docURL = _fileManager.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("ellekit.deb"), _fileManager.fileExists(atPath: docURL.path) {
+			return docURL
+		}
+		return nil
+	}
+
+	private func _requiresSubstrateHooking() -> Bool {
+		let allTweakURLs = _options.injectionFiles + _enabledSpecs.flatMap { $0.files.filter(\.enabled).map(\.fileURL) }
+		for url in allTweakURLs {
+			let analysis = TweakAnalyzer.analyze(url: url)
+			if analysis.needsSubstrate {
+				return true
+			}
+		}
+		return false
+	}
+
 	private func _checkEllekit() async throws {
 		let frameworksPath = _app.appendingPathComponent("Frameworks").appendingPathComponent("CydiaSubstrate.framework")
+		let ellekitDylibPath = _app.appendingPathComponent("Frameworks").appendingPathComponent("ellekit.dylib")
+		let hasExistingHookFramework = _fileManager.fileExists(atPath: frameworksPath.path) || _fileManager.fileExists(atPath: ellekitDylibPath.path)
 
-		func addEllekit() async throws {
-			if let ellekitURL = Bundle.main.url(forResource: "ellekit", withExtension: "deb") {
+		func addEllekit(reason: String) async throws {
+			if let ellekitURL = _findEllekitURL() {
+				SigningLog.shared.info(.localized("Auto-injecting ElleKit (%@)", arguments: reason), category: "inject")
 				self._urls.insert(ellekitURL, at: 0)
 			} else {
-				Logger.misc.info("ellekit.deb not found in the app bundle")
+				SigningLog.shared.warn(.localized("Tweak requires Substrate/Substitute, but ellekit.deb was not found"), category: "inject")
+				Logger.misc.info("ellekit.deb not found in the app bundle or documents")
 			}
 
 			try _fileManager.createDirectoryIfNeeded(at: _app.appendingPathComponent("Frameworks"))
 		}
-		// we should check if CydiaSubstrate.framework exists, if it doesn't
-		// just add ellekit
-		// experiment_replaceSubstrateWithEllekit:
-		// 	for this version, we need to replace CydiaSubstrate.framework with
-		//	our own version containing ElleKit
-		// other:
-		// 	just return if it exists, should work fine
-		if _fileManager.fileExists(atPath: frameworksPath.path) {
+
+		if hasExistingHookFramework {
 			if _options.experiment_replaceSubstrateWithEllekit {
 				SigningLog.shared.info(.localized("Replacing Substrate with ElleKit"))
 				try _fileManager.removeFileIfNeeded(at: frameworksPath)
-				try await addEllekit()
+				try await addEllekit(reason: "replacement requested")
 			} else {
 				return
 			}
 		} else {
-			guard _hasAnyInjection else { return }
-			try await addEllekit()
+			let needsSubstrate = _requiresSubstrateHooking()
+			if needsSubstrate {
+				try await addEllekit(reason: "detected Substrate/Substitute dependency")
+			} else if _hasAnyInjection {
+				try await addEllekit(reason: "bundle hook runtime")
+			}
 		}
 	}
 

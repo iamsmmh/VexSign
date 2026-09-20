@@ -142,6 +142,9 @@ struct SettingsView: View {
                     NavigationLink(destination: EcosystemView()) {
                         Label("Ecosystem", systemImage: "square.stack.3d.up")
                     }
+                    NavigationLink(destination: CloudSigningView()) {
+                        Label(.localized("Cloud Signing"), systemImage: "cloud.fill")
+                    }
                     NavigationLink(destination: IPAExplorerHomeView()) {
                         Label(.localized("IPA Explorer"), systemImage: "doc.text.magnifyingglass")
                     }

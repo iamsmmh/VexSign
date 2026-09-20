@@ -182,6 +182,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>vexsign</string>
+				<string>feather</string>
 			</array>
 		</dict>
 	</array>
@@ -216,8 +217,6 @@
 		<string>processing</string>
 		<string>audio</string>
 	</array>
-	<key>UIFileSharingEnabled</key>
-	<true/>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

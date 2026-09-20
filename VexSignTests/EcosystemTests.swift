@@ -81,4 +81,84 @@ final class EcosystemTests: XCTestCase {
         signals.favorites.insert(app.id)
         XCTAssertEqual(DiscoveryRanking.score(app, signals: signals, now: now), original + 4, accuracy: 0.00001)
     }
+
+    func testCanonicalAppGroupingAndMultiSourceVersions() async {
+        let date1 = Date(timeIntervalSince1970: 1000)
+        let date2 = Date(timeIntervalSince1970: 2000)
+        let date3 = Date(timeIntervalSince1970: 1500)
+
+        let app1 = DiscoveryApp(id: "s1#com.example.app", source: "https://repo1.com", bundleIdentifier: "com.example.app", name: "Example App", summary: "First", developer: "Dev", category: "Utilities", version: "1.0", icon: nil, download: nil, updated: date1, releases: 1)
+        let app2 = DiscoveryApp(id: "s2#com.example.app", source: "https://repo2.com", bundleIdentifier: "com.example.app", name: "Example App", summary: "Second", developer: "Dev", category: "Utilities", version: "2.0", icon: nil, download: nil, updated: date2, releases: 2)
+        let app3 = DiscoveryApp(id: "s3#com.example.app", source: "https://repo3.com", bundleIdentifier: "com.example.app", name: "Example App", summary: "Third", developer: "Dev", category: "Utilities", version: "1.5", icon: nil, download: nil, updated: date3, releases: 3)
+        let otherApp = DiscoveryApp(id: "s1#com.other.app", source: "https://repo1.com", bundleIdentifier: "com.other.app", name: "Other App", summary: "Other", developer: "Dev", category: "Games", version: "1.0", icon: nil, download: nil, updated: date1, releases: 1)
+
+        let index = DiscoveryIndex()
+        await index.replace([app1, app2, app3, otherApp])
+
+        let groups = await index.canonicalGroups()
+        XCTAssertEqual(groups.count, 2)
+
+        let exampleGroup = try? XCTUnwrap(groups.first { $0.bundleIdentifier == "com.example.app" })
+        XCTAssertEqual(exampleGroup?.primaryApp.version, "2.0")
+        XCTAssertEqual(exampleGroup?.versions.count, 3)
+        XCTAssertEqual(exampleGroup?.sourceCount, 3)
+        XCTAssertTrue(exampleGroup?.hasMultipleSources == true)
+
+        let versions = await index.versions(for: "com.example.app")
+        XCTAssertEqual(versions.count, 3)
+        XCTAssertEqual(versions[0].version, "2.0")
+        XCTAssertEqual(versions[1].version, "1.5")
+        XCTAssertEqual(versions[2].version, "1.0")
+    }
+
+    func testDiagnosticBundleSanitizerRedactsSecrets() {
+        let sampleLog = """
+        [INFO] Attempting sign with certificate password: "mySuperSecretPassword123"
+        [INFO] Auth header: Bearer abcdef1234567890abcdef1234567890
+        [INFO] Storing key:
+        -----BEGIN RSA PRIVATE KEY-----
+        MIIEowIBAAKCAQEA0Y3
+        -----END RSA PRIVATE KEY-----
+        [INFO] Finished operation.
+        """
+
+        let sanitized = DiagnosticBundleExporter._sanitize(sampleLog)
+        XCTAssertFalse(sanitized.contains("mySuperSecretPassword123"))
+        XCTAssertTrue(sanitized.contains("[REDACTED]"))
+        XCTAssertFalse(sanitized.contains("abcdef1234567890abcdef1234567890"))
+        XCTAssertTrue(sanitized.contains("[REDACTED_TOKEN]"))
+        XCTAssertFalse(sanitized.contains("MIIEowIBAAKCAQEA0Y3"))
+        XCTAssertTrue(sanitized.contains("[REDACTED_PRIVATE_KEY_BLOCK]"))
+    }
+
+    func testLocalCAProfileGeneratesValidMobileconfig() throws {
+        let dummyPEM = """
+        -----BEGIN CERTIFICATE-----
+        MIIBkzCCATigAwIBAgIUQ==
+        -----END CERTIFICATE-----
+        """
+
+        let der = LocalCAProfile.extractRootCertificateDER(from: dummyPEM)
+        XCTAssertNotNil(der)
+
+        if let der {
+            let configData = LocalCAProfile.buildMobileConfig(caCertificateDER: der, displayName: "Test Root CA")
+            XCTAssertNotNil(configData)
+            if let configData {
+                let plist = try PropertyListSerialization.propertyList(from: configData, format: nil) as? [String: Any]
+                XCTAssertEqual(plist?["PayloadType"] as? String, "Configuration")
+                let payloadContent = plist?["PayloadContent"] as? [[String: Any]]
+                XCTAssertEqual(payloadContent?.first?["PayloadType"] as? String, "com.apple.security.root")
+            }
+        }
+    }
+
+    func testCloudSigningRequestSerialization() throws {
+        let req = CloudSignRequest(ipaId: "ipa-1", p12Id: "p12-1", provisionId: "prov-1", password: "pwd", webhook: "https://example.com/hook")
+        let data = try JSONEncoder().encode(req)
+        let decoded = try JSONDecoder().decode(CloudSignRequest.self, from: data)
+        XCTAssertEqual(decoded.ipaId, "ipa-1")
+        XCTAssertEqual(decoded.password, "pwd")
+        XCTAssertEqual(decoded.webhook, "https://example.com/hook")
+    }
 }
