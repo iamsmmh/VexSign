@@ -143,7 +143,7 @@ extension LogsView {
 			VStack(spacing: 6) {
 				Image(systemName: _log.entries.isEmpty ? "text.alignleft" : "line.3.horizontal.decrease.circle")
 					.font(.title3)
-				Text(_log.entries.isEmpty ? .localized("No logs yet") : .localized("Nothing matches this filter"))
+				Text(verbatim: _log.entries.isEmpty ? String.localized("No logs yet") : String.localized("Nothing matches this filter"))
 					.font(.footnote)
 				if _log.entries.isEmpty {
 					Text(.localized("Sign, install or download something and it shows up here as it happens."))

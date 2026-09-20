@@ -165,7 +165,7 @@ struct InstallQueuePill: View {
 				FRAppIconView(app: current.base, size: 26)
 
 				VStack(alignment: .leading, spacing: 1) {
-					Text(current.base.name ?? .localized("App"))
+					Text(verbatim: current.base.name ?? String.localized("App"))
 						.font(.footnote.weight(.semibold))
 						.foregroundStyle(.primary)
 						.lineLimit(1)

@@ -101,9 +101,9 @@ struct DownloadsTabView: View {
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(.localized("Downloads")).font(.headline)
-                        Text(downloadManager.downloads.isEmpty ? .localized("No downloads yet") : .localized("%lld total • %lld active", arguments: downloadManager.downloads.count, activeCount)).font(.caption).foregroundStyle(.secondary)
+                        Text(verbatim: downloadManager.downloads.isEmpty ? String.localized("No downloads yet") : String.localized("%lld total • %lld active", arguments: downloadManager.downloads.count, activeCount)).font(.caption).foregroundStyle(.secondary)
                         if downloadManager.currentDownloadSpeed > 0 {
-                            Text(downloadManager.currentDownloadSpeed.formattedByteCount + "/s").font(.caption2.weight(.medium)).foregroundStyle(Theme.tint).monospacedDigit()
+                            Text(verbatim: downloadManager.currentDownloadSpeed.formattedByteCount + "/s").font(.caption2.weight(.medium)).foregroundStyle(Theme.tint).monospacedDigit()
                                 .accessibilityLabel(Text("\(downloadManager.currentDownloadSpeed.formattedByteCount) per second"))
                         }
                     }
@@ -205,7 +205,7 @@ struct DownloadsTabView: View {
                     }
             }
         } header: {
-            Text(filtered.count == 1 ? .localized("1 item") : .localized("%lld items", arguments: filtered.count)).font(.caption2.weight(.semibold)).foregroundStyle(.secondary).textCase(nil)
+            Text(verbatim: filtered.count == 1 ? String.localized("1 item") : String.localized("%lld items", arguments: filtered.count)).font(.caption2.weight(.semibold)).foregroundStyle(.secondary).textCase(nil)
         }
         .headerProminence(.increased)
     }
@@ -215,7 +215,7 @@ struct DownloadsTabView: View {
             VStack(spacing: 12) {
                 Image(systemName: filter == .all ? "arrow.down.circle" : "tray")
                     .font(.system(size: 44)).foregroundStyle(.secondary).padding(.top, 8)
-                Text(filter == .all ? .localized("No downloads") : .localized("No %@ downloads", arguments: filter.rawValue.lowercased()))
+                Text(verbatim: filter == .all ? String.localized("No downloads") : String.localized("No %@ downloads", arguments: filter.rawValue.lowercased()))
                     .font(.headline)
                 Text(.localized("Download apps from the App Store tab or paste a direct IPA link.")).font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center).padding(.horizontal)
                 Button { showAddSheet = true } label: {
@@ -345,7 +345,7 @@ private struct DownloadRow: View {
                     Text(detail).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                 }
                 if DownloadManager.shared.currentDownloadSpeed > 0 && model.phase == .downloading {
-                    Text(DownloadManager.shared.currentDownloadSpeed.formattedByteCount + "/s").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                    Text(verbatim: DownloadManager.shared.currentDownloadSpeed.formattedByteCount + "/s").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }
             .accessibilityElement(children: .ignore)

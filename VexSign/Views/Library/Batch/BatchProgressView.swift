@@ -149,7 +149,7 @@ struct BatchProgressView: View {
 			FRAppIconView(app: item.installable, size: 44)
 
 			VStack(alignment: .leading, spacing: 4) {
-				Text(item.installable.name ?? .localized("Unknown"))
+				Text(verbatim: item.installable.name ?? String.localized("Unknown"))
 					.font(.headline)
 					.lineLimit(1)
 

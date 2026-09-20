@@ -177,7 +177,7 @@ extension LibraryInfoView {
 				)
 			} label: {
 				LabeledContent(.localized("Description")) {
-					Text(LinkTagParser.strip(from: _displayedDescription) ?? .localized("None"))
+					Text(verbatim: LinkTagParser.strip(from: _displayedDescription) ?? String.localized("None"))
 						.lineLimit(1)
 				}
 			}

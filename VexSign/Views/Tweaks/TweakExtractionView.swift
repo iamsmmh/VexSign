@@ -231,7 +231,7 @@ struct TweakExtractionView: View {
 				.frame(width: 24)
 
 			VStack(alignment: .leading, spacing: 1) {
-				Text(group.folder.isEmpty ? .localized("Root") : _folderName(group.folder))
+				Text(verbatim: group.folder.isEmpty ? String.localized("Root") : _folderName(group.folder))
 					.foregroundStyle(.primary)
 					.lineLimit(1)
 					.truncationMode(.middle)

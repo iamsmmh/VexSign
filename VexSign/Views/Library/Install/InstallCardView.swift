@@ -62,36 +62,46 @@ private struct InstallStatusView: View {
 
 	@ViewBuilder
 	private func _controls() -> some View {
-		ZStack {
+		// Labeled capsule buttons instead of bare play/pause-style glyphs — the old
+		// stacked round icons read as a media player's transport controls. The
+		// queue pause only exists when more apps are actually waiting (otherwise
+		// it would be a no-op during the current install), and every control says
+		// what it does.
+		HStack(spacing: 8) {
 			if !viewModel.isCompleted {
-				VStack(spacing: 0) {
-					Button(action: onCancel) {
-						Image(systemName: "forward.fill")
-							.font(.title3)
-							.symbolRenderingMode(.hierarchical)
-							.foregroundStyle(.secondary)
-							.contentShape(Circle())
+				if !upcoming.isEmpty, let onPause {
+					Button {
+						onPause()
+					} label: {
+						Label(
+							isPaused ? String.localized("Resume Queue") : String.localized("Pause Queue"),
+							systemImage: isPaused ? "play.fill" : "pause.fill"
+						)
+						.font(.footnote.weight(.semibold))
+						.labelStyle(.titleAndIcon)
 					}
-					.buttonStyle(.plain)
-					.padding()
-
-					if let onPause {
-						Button(action: onPause) {
-							Image(systemName: isPaused ? "play.fill" : "pause.fill")
-								.font(.title3)
-								.symbolRenderingMode(.hierarchical)
-								.foregroundStyle(.secondary)
-								.contentShape(Circle())
-						}
-						.buttonStyle(.plain)
-						.padding()
-					}
+					.buttonStyle(.bordered)
+					.controlSize(.small)
+					.accessibilityHint(Text(verbatim: String.localized("Holds the remaining apps; the current install finishes.")))
+					.compatTransition()
 				}
+
+				Button(action: onCancel) {
+					Label(String.localized("Skip"), systemImage: "xmark")
+						.font(.footnote.weight(.semibold))
+						.labelStyle(.titleAndIcon)
+						.foregroundStyle(.secondary)
+				}
+				.buttonStyle(.bordered)
+				.controlSize(.small)
+				.accessibilityHint(Text(verbatim: String.localized("Cancel this app and move to the next one.")))
 				.compatTransition()
 			}
 		}
 		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+		.padding(12)
 		.animation(.easeInOut(duration: 0.3), value: viewModel.isCompleted)
+		.animation(.easeInOut(duration: 0.25), value: isPaused)
 	}
 
 	@ViewBuilder

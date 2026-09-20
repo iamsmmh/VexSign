@@ -201,7 +201,7 @@ struct AppStoreView: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(.localized("Updates")).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                    Text(updateCount == 1 ? .localized("1 app has an update") : .localized("%lld apps have updates", arguments: updateCount)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Text(verbatim: updateCount == 1 ? String.localized("1 app has an update") : String.localized("%lld apps have updates", arguments: updateCount)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Spacer()
                 Text(.localized("View")).font(.caption.weight(.semibold)).padding(.horizontal, 12).padding(.vertical, 6).background(Color.userTint, in: Capsule()).foregroundStyle(.white)
@@ -274,7 +274,7 @@ struct AppStoreView: View {
     private var emptySearch: some View {
         VStack(spacing: 10) {
             Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.secondary)
-            Text(.localized("No results for “%@”", arguments: searchText)).font(.subheadline.weight(.medium))
+            Text(verbatim: String.localized("No results for “%@”", arguments: searchText)).font(.subheadline.weight(.medium))
             Text(.localized("Try a different search term.")).font(.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 30)
@@ -311,7 +311,7 @@ private struct AppStoreSourceRow: View {
                 .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(source.name ?? .localized("Unknown")).font(.subheadline.weight(.semibold)).lineLimit(1).foregroundStyle(.primary)
+                Text(verbatim: source.name ?? String.localized("Unknown")).font(.subheadline.weight(.semibold)).lineLimit(1).foregroundStyle(.primary)
                 if let url = source.sourceURL?.absoluteString {
                     Text(url.replacingOccurrences(of: "https://", with: "")).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                 } else {

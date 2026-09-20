@@ -154,7 +154,7 @@ struct CollapsedDownloadHeader: View {
             }
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(downloads.count == 1 ? downloads[0].fileName : .localized("%lld items", arguments: downloads.count))
+                Text(verbatim: downloads.count == 1 ? downloads[0].fileName : String.localized("%lld items", arguments: downloads.count))
                     .font(.caption.weight(.medium))
                     .lineLimit(1)
 

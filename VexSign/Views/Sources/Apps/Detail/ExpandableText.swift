@@ -44,7 +44,7 @@ struct ExpandableText: View {
 						expanded.toggle()
 					}
 				}) {
-					Text(expanded ? .localized("Less") : .localized("More"))
+					Text(verbatim: expanded ? String.localized("Less") : String.localized("More"))
 						.font(.caption)
 						.foregroundColor(.accentColor)
 				}

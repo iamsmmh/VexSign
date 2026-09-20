@@ -71,7 +71,7 @@ struct AppLibraryPicker: View {
 		HStack(spacing: 12) {
 			FRAppIconView(app: app, size: 38)
 			VStack(alignment: .leading, spacing: 2) {
-				Text(app.name ?? .localized("Unknown"))
+				Text(verbatim: app.name ?? String.localized("Unknown"))
 					.foregroundStyle(.primary)
 					.lineLimit(1)
 				if let sub = subtitle(app), !sub.isEmpty {

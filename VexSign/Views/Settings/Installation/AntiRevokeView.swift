@@ -44,7 +44,7 @@ struct AntiRevokeView: View {
 	private var _statusSection: some View {
 		Section {
 			LabeledContent(.localized("Status")) {
-				Text(_hasProfile ? .localized("Ready to install") : .localized("Not protected"))
+				Text(verbatim: _hasProfile ? String.localized("Ready to install") : String.localized("Not protected"))
 					.foregroundStyle(_hasProfile ? Color.green : Color.secondary)
 			}
 		} footer: {
