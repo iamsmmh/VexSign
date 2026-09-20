@@ -141,9 +141,9 @@ struct SourceAppsDetailView: View {
 				
 				if let appDesc = app.cleanedLocalizedDescription {
 					NBSection(.localized("Description")) {
-						VStack(alignment: .leading, spacing: 2) {
-							ExpandableText(text: appDesc, lineLimit: 3)
-						}
+						MarkdownView(text: appDesc)
+							.font(.subheadline)
+							.foregroundStyle(.primary)
 						.frame(maxWidth: .infinity, alignment: .leading)
 					}
 

@@ -22,6 +22,10 @@ struct AppearanceView: View {
     @AppStorage("VexSign.shouldTintIcons") private var _shouldTintIcons: Bool = false
     @AppStorage("VexSign.shouldChangeIconsBasedOffStyle") private var _shouldChangeIconsBasedOffStyle: Bool = false
     @AppStorage("VexSign.userTintColor") private var _selectedColorHex: String = "#848ef9"
+    @AppStorage(VexSignStylePreferences.visualThemeKey) private var _visualTheme = VexSignVisualTheme.system.rawValue
+    @AppStorage(VexSignStylePreferences.fontFamilyKey) private var _fontFamily = VexSignFontFamily.system.rawValue
+    @AppStorage(VexSignStylePreferences.fontScaleKey) private var _fontScale = 1.0
+    @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var _flareAnimations = true
 
     private var _tintColorBinding: Binding<Color> {
         Binding(
@@ -54,11 +58,53 @@ struct AppearanceView: View {
                 Text(.localized("The tint colors navigation, buttons and highlights across the app."))
             }
 
+            NBSection(.localized("Visual Theme"), systemName: "sparkles") {
+                Picker(.localized("Theme"), selection: $_visualTheme) {
+                    ForEach(VexSignVisualTheme.allCases) { theme in
+                        NBTitleWithSubtitleView(title: theme.title, subtitle: theme.description)
+                            .tag(theme.rawValue)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.inline)
+            } footer: {
+                Text(.localized("Luna is an original VexSign dark, glassy presentation. It changes surfaces and motion context without changing signing behavior."))
+            }
+
             Section {
                 ColorPicker(.localized("Custom Theme Color"), selection: _tintColorBinding, supportsOpacity: false)
                     .tint(Color.userTint)
             } footer: {
                 Text(.localized("Pick any color if the presets don’t fit. It updates instantly."))
+            }
+
+            NBSection(.localized("Font & Motion"), systemName: "textformat") {
+                Picker(.localized("Font"), selection: $_fontFamily) {
+                    ForEach(VexSignFontFamily.allCases) { family in
+                        Text(family.title)
+                            .font(.system(.body, design: family.design))
+                            .tag(family.rawValue)
+                    }
+                }
+                .pickerStyle(.menu)
+
+                HStack {
+                    Text("A")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Slider(value: $_fontScale, in: 0.9...1.15, step: 0.05)
+                        .tint(Color.userTint)
+                    Text("A")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(Color.userTint)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel(Text(.localized("Font size")))
+
+                Toggle(.localized("Flare Touch Animations"), isOn: $_flareAnimations)
+                    .tint(Color.userTint)
+            } footer: {
+                Text(.localized("Choose the app font and size. Flare touch feedback adds a subtle spring to buttons without changing layout."))
             }
 
             if #available(iOS 18.0, *) {

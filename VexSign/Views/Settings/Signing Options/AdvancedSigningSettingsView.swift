@@ -2,104 +2,90 @@
 //  AdvancedSigningSettingsView.swift
 //  VexSign — FlareStore / FeatherPlus / MySign Advanced Signing & Patches
 //
+//  These controls are bound to the same Options object consumed by SigningHandler.
+//  They are not a second, settings-only preference store.
+//
 
 import SwiftUI
 import NimbleViews
 import NimbleExtensions
 
 struct AdvancedSigningSettingsView: View {
-    @AppStorage("VexSign.signing.buildSDKSpoof") private var buildSDKSpoof = false
-    @AppStorage("VexSign.signing.targetSDKVersion") private var targetSDKVersion = "iOS 26.0"
-    @AppStorage("VexSign.signing.clearCompatOptOut") private var clearCompatOptOut = true
-    @AppStorage("VexSign.signing.forceFileSharing") private var forceFileSharing = false
-    @AppStorage("VexSign.signing.removeMinOSVersion") private var removeMinOSVersion = true
-    @AppStorage("VexSign.signing.machoSliceThinning") private var machoSliceThinning = true
-    @AppStorage("VexSign.signing.randomizeBundleId") private var randomizeBundleId = false
-    @AppStorage("VexSign.signing.stripURLSchemes") private var stripURLSchemes = false
+	@StateObject private var optionsManager = OptionsManager.shared
 
-    private let sdkOptions = ["iOS 17.0", "iOS 18.0", "iOS 26.0", "iOS 27.0"]
+	var body: some View {
+		NBList(.localized("Advanced Signing & Patches")) {
+			headerSection
+			flareStoreSDKSection
+			compatibilitySection
+			machoAndPackagingSection
+		}
+		.onChange(of: optionsManager.options) { _ in
+			optionsManager.saveOptions()
+		}
+	}
 
-    var body: some View {
-        NBList(.localized("Advanced Signing & Patches")) {
-            headerSection
+	private var headerSection: some View {
+		NBSection(.localized("Advanced Signer Engine")) {
+			HStack(spacing: 14) {
+				ZStack {
+					RoundedRectangle(cornerRadius: 12, style: .continuous)
+						.fill(Color.orange.opacity(0.15))
+						.frame(width: 44, height: 44)
+					Image(systemName: "cpu.fill")
+						.font(.system(size: 20, weight: .bold))
+						.foregroundStyle(Color.orange)
+				}
 
-            flareStoreSDKSection
+				VStack(alignment: .leading, spacing: 3) {
+					Text(.localized("Binary & SDK Patching"))
+						.font(.headline)
+					Text(.localized("Every option below is applied by the active signing pipeline."))
+						.font(.caption)
+						.foregroundStyle(.secondary)
+				}
+			}
+			.padding(.vertical, 4)
+		}
+	}
 
-            compatibilitySection
+	private var flareStoreSDKSection: some View {
+		NBSection(.localized("Build SDK Spoofing")) {
+			Toggle(.localized("Spoof Build SDK Version"), isOn: $optionsManager.options.experiment_supportLiquidGlass)
+				.tint(Color.orange)
 
-            machoAndPackagingSection
-        }
-    }
+			if optionsManager.options.experiment_supportLiquidGlass {
+				LabeledContent(.localized("Target SDK"), value: "iOS 26.0")
+				Text(.localized("The current on-device Mach-O patcher targets the iOS 26 SDK load command."))
+					.font(.caption)
+					.foregroundStyle(.secondary)
+			}
+		} footer: {
+			Text(.localized("Patches the main executable for the iOS 26 SDK and clears UIDesignRequiresCompatibility so modern system UI can render natively."))
+		}
+	}
 
-    private var headerSection: some View {
-        NBSection(.localized("Advanced Signer Engine")) {
-            HStack(spacing: 14) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.orange.opacity(0.15))
-                        .frame(width: 44, height: 44)
-                    Image(systemName: "cpu.fill")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(Color.orange)
-                }
+	private var compatibilitySection: some View {
+		NBSection(.localized("Info.plist Patches")) {
+			Toggle(.localized("Force Files App Sharing"), isOn: $optionsManager.options.fileSharing)
+				.tint(Color.userTint)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(.localized("Binary & SDK Patching"))
-                        .font(.headline)
-                    Text(.localized("Features curated from FlareStore, FeatherPlus and MySign."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .padding(.vertical, 4)
-        }
-    }
+			Toggle(.localized("Remove Minimum iOS Version"), isOn: $optionsManager.options.removeMinimumOSVersion)
+				.tint(Color.userTint)
 
-    private var flareStoreSDKSection: some View {
-        NBSection(.localized("Build SDK Spoofing")) {
-            Toggle(.localized("Spoof Build SDK Version"), isOn: $buildSDKSpoof)
-                .tint(Color.orange)
+			Toggle(.localized("Strip Existing URL Schemes"), isOn: $optionsManager.options.removeURLScheme)
+				.tint(Color.userTint)
+		} footer: {
+			Text(.localized("These changes are written into the working app bundle before it is signed. Bundle duplication uses the explicit Clone or Duplicate action so this screen never silently changes an app's identity."))
+		}
+	}
 
-            if buildSDKSpoof {
-                Picker(.localized("Target SDK"), selection: $targetSDKVersion) {
-                    ForEach(sdkOptions, id: \.self) { sdk in
-                        Text(sdk).tag(sdk)
-                    }
-                }
-                .pickerStyle(.menu)
-            }
-
-            Toggle(.localized("Clear Compatibility Opt-Out"), isOn: $clearCompatOptOut)
-                .tint(Color.orange)
-        } footer: {
-            Text(.localized("Ported from FlareStore 1.3. Forces an app to build against modern iOS SDKs and clears the compatibility opt-out flag so redesigned iOS 26+ UI paradigms render natively."))
-        }
-    }
-
-    private var compatibilitySection: some View {
-        NBSection(.localized("Info.plist Patches")) {
-            Toggle(.localized("Force Files App Sharing"), isOn: $forceFileSharing)
-                .tint(Color.userTint)
-
-            Toggle(.localized("Remove Minimum iOS Version"), isOn: $removeMinOSVersion)
-                .tint(Color.userTint)
-
-            Toggle(.localized("Strip Existing URL Schemes"), isOn: $stripURLSchemes)
-                .tint(Color.userTint)
-
-            Toggle(.localized("Randomize Bundle ID (Duplicate App)"), isOn: $randomizeBundleId)
-                .tint(Color.userTint)
-        } footer: {
-            Text(.localized("Enables UIFileSharingEnabled to expose app documents directly in the Files app. Removes MinimumOSVersion to allow running legacy or newer apps on incompatible firmware."))
-        }
-    }
-
-    private var machoAndPackagingSection: some View {
-        NBSection(.localized("Mach-O & Binary Optimization")) {
-            Toggle(.localized("Mach-O Architecture Thinning"), isOn: $machoSliceThinning)
-                .tint(Color.userTint)
-        } footer: {
-            Text(.localized("Ported from MySign and Feather. Strips unnecessary 32-bit and extra architecture slices from Mach-O binaries to reduce final signed IPA size by up to 40%."))
-        }
-    }
+	private var machoAndPackagingSection: some View {
+		NBSection(.localized("Mach-O & Binary Optimization")) {
+			Toggle(.localized("Mach-O Architecture Thinning"), isOn: $optionsManager.options.thinMachOBinaries)
+				.tint(Color.userTint)
+		} footer: {
+			Text(.localized("Strips non-ARM64 slices from Mach-O binaries before signing. Leave this off when the output must support another architecture."))
+		}
+	}
 }

@@ -16,7 +16,7 @@ struct PauseDownloadsIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pause Downloads"
 
     func perform() async throws -> some IntentResult {
-        NotificationCenter.default.post(name: NSNotification.Name("PauseDownloads"), object: nil)
+        WidgetStatusPayload.requestDownloadControl("pause")
         return .result()
     }
 }
@@ -25,7 +25,16 @@ struct ResumeDownloadsIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Resume Downloads"
 
     func perform() async throws -> some IntentResult {
-        NotificationCenter.default.post(name: NSNotification.Name("ResumeDownloads"), object: nil)
+        WidgetStatusPayload.requestDownloadControl("resume")
+        return .result()
+    }
+}
+
+struct StopDownloadsIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Stop Downloads"
+
+    func perform() async throws -> some IntentResult {
+        WidgetStatusPayload.requestDownloadControl("stop")
         return .result()
     }
 }
@@ -188,7 +197,15 @@ struct DownloadLiveActivity: Widget {
 
         DynamicIslandExpandedRegion(.leading) { EmptyView() }
         DynamicIslandExpandedRegion(.trailing) { EmptyView() }
-        DynamicIslandExpandedRegion(.bottom) { EmptyView() }
+        DynamicIslandExpandedRegion(.bottom) {
+          Button(intent: StopDownloadsIntent()) {
+            Label("Stop Downloads", systemImage: "xmark.circle.fill")
+              .font(.caption.weight(.semibold))
+              .frame(maxWidth: .infinity)
+          }
+          .buttonStyle(.plain)
+          .foregroundStyle(.red)
+        }
 
       } compactLeading: {
         // Compact leading (left side of notch)

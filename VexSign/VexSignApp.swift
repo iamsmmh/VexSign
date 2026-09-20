@@ -23,6 +23,10 @@ struct VexSignApp: App {
     @StateObject private var selfUpdate = SelfUpdateManager.shared
     @StateObject private var appLock = AppLockManager.shared
     @AppStorage("VexSign.onboardingCompleted") private var _onboardingCompleted = false
+    @AppStorage(VexSignStylePreferences.visualThemeKey) private var visualTheme = VexSignVisualTheme.system.rawValue
+    @AppStorage(VexSignStylePreferences.fontFamilyKey) private var fontFamily = VexSignFontFamily.system.rawValue
+    @AppStorage(VexSignStylePreferences.fontScaleKey) private var fontScale = 1.0
+    @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var flareAnimations = true
     @State private var _showOnboarding = false
     let storage = Storage.shared
 
@@ -106,7 +110,10 @@ struct VexSignApp: App {
                             .onOpenURL(perform: _handleURL)
                             .zIndex(0)
                     }
-                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: hasActiveDownloads)
+                    .animation(
+                        flareAnimations ? .spring(response: 0.4, dampingFraction: 0.8) : nil,
+                        value: hasActiveDownloads
+                    )
                 } else {
                     ZStack {
                         VariedTabbarView()
@@ -121,6 +128,14 @@ struct VexSignApp: App {
                     }
                 }
             }
+            .environment(\.font, VexSignStylePreferences.font(familyRawValue: fontFamily, scale: fontScale))
+            .preferredColorScheme(
+                visualTheme == VexSignVisualTheme.luna.rawValue || visualTheme == VexSignVisualTheme.flare.rawValue
+                    ? .dark
+                    : nil
+            )
+            .buttonStyle(VexSignFlareButtonStyle(enabled: flareAnimations))
+            .vexSignWebMotion()
             .overlay(alignment: .bottom) {
                 InstallQueuePill()
             }
@@ -146,7 +161,10 @@ struct VexSignApp: App {
                     UIApplication.topViewController()?.view.window?.overrideUserInterfaceStyle = style
                 }
 
-                UIApplication.topViewController()?.view.window?.tintColor = UIColor(Color.userTint)
+                UIApplication.topViewController()?.view.window?.tintColor = UIColor(Theme.tint)
+            }
+            .onChange(of: visualTheme) { _ in
+                UIApplication.topViewController()?.view.window?.tintColor = UIColor(Theme.tint)
             }
             .onChange(of: scenePhase) { newPhase in
                 if newPhase == .background {
@@ -276,6 +294,23 @@ struct VexSignApp: App {
 				}
 
 				FR.exportCertificateAndOpenUrl(using: callbackTemplate)
+			}
+			/// vexsign://tweak-repository/<url> or vexsign://tweak-repository?url=<url>
+			if url.host == "tweak-repository" || url.path.hasPrefix("/tweak-repository") {
+				let queryURL = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
+					.first(where: { $0.name.lowercased() == "url" })?.value
+				let raw = queryURL ?? url.validatedScheme(after: "/tweak-repository/")
+				if let raw, let repositoryURL = URL(string: raw), repositoryURL.scheme?.lowercased() == "https" {
+					Task {
+						do {
+							let count = try await TweakManager.shared.addRepository(repositoryURL)
+							Toast.success(String.localized("Imported %lld tweaks", arguments: count), systemImage: "wrench.and.screwdriver.fill")
+						} catch {
+							Toast.error(error.localizedDescription, duration: .sticky)
+						}
+					}
+				}
+				return
 			}
 			/// vexsign://source/<url>
 			if let fullPath = url.validatedScheme(after: "/source/") {

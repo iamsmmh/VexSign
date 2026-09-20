@@ -25,9 +25,20 @@ struct ResumeDownloadsIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Resume Downloads"
 
     func perform() async throws -> some IntentResult {
-        // Relies on BackgroundTaskManager's silent-audio keep-alive to run in the background.
         await MainActor.run {
             DownloadManager.shared.resumeAllDownloads()
+        }
+        return .result()
+    }
+}
+
+@available(iOS 17.0, *)
+struct StopDownloadsIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Stop Downloads"
+
+    func perform() async throws -> some IntentResult {
+        await MainActor.run {
+            DownloadManager.shared.cancelAllDownloads()
         }
         return .result()
     }

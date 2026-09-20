@@ -185,6 +185,9 @@ struct SettingsView: View {
 
                 // MARK: 5. LiveContainer, JIT & Services (LiveContainer / SideStore / FlareStore)
                 NBSection(.localized("LiveContainer, JIT & Tools"), systemName: "bolt.badge.automatic.fill") {
+                    NavigationLink(destination: GuidesView()) {
+                        Label(.localized("Guides"), systemImage: "book.fill")
+                    }
                     NavigationLink(destination: JITSettingsView()) {
                         Label(.localized("JIT & On-Device Pairing"), systemImage: "bolt.badge.automatic.fill")
                     }

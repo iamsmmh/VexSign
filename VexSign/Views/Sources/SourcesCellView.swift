@@ -47,6 +47,12 @@ struct SourcesCellView: View {
 					.foregroundColor(.yellow)
 					.font(.caption)
 			}
+			if SourcePreferences.isTrusted(_sourceIdentifier) {
+				Image(systemName: "checkmark.seal.fill")
+					.foregroundStyle(.green)
+					.font(.caption)
+					.accessibilityLabel(Text(.localized("Trusted repository")))
+			}
 			if _isExcluded {
 				Image(systemName: "eye.slash")
 					.foregroundColor(.secondary)
@@ -119,6 +125,12 @@ extension SourcesCellView {
 			systemImage: SourcePreferences.isPinned(_sourceIdentifier) ? "pin.slash" : "pin"
 		) {
 			SourcePreferences.setPinned(_sourceIdentifier, pinned: !SourcePreferences.isPinned(_sourceIdentifier))
+		}
+		Button(
+			SourcePreferences.isTrusted(_sourceIdentifier) ? .localized("Remove Trust") : .localized("Mark as Trusted"),
+			systemImage: SourcePreferences.isTrusted(_sourceIdentifier) ? "checkmark.seal" : "checkmark.seal.fill"
+		) {
+			SourcePreferences.setTrusted(_sourceIdentifier, trusted: !SourcePreferences.isTrusted(_sourceIdentifier))
 		}
 	}
 

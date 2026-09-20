@@ -26,14 +26,27 @@ struct SourcesView: View {
 	@State private var _selectedSources: Set<AltSource> = []
 	@State private var _showDeleteConfirmation = false
 
+	private var _sourceOrder: [String] {
+		SourcePreferences.order(for: _sources.map { $0.identifier ?? $0.sourceURL?.absoluteString ?? "" })
+	}
+
 	@AppStorage("VexSign.sourcesTabShowAllReposDirectly")
 	private var _sourcesTabShowAllReposDirectly: Bool = false
 
 	/// Sources not excluded from "All Repositories"
 	private var _nonExcludedSources: [AltSource] {
-		_sources.filter { source in
+		let visible = _sources.filter { source in
 			let id = source.identifier ?? source.sourceURL?.absoluteString ?? ""
 			return !VexSignAPI.isSourceExcluded(id)
+		}
+		let priorities = _sourceOrder.enumerated().reduce(into: [String: Int]()) { result, item in
+			result[item.element] = item.offset
+		}
+		return visible.sorted {
+			let lhs = priorities[$0.identifier ?? $0.sourceURL?.absoluteString ?? ""] ?? Int.max
+			let rhs = priorities[$1.identifier ?? $1.sourceURL?.absoluteString ?? ""] ?? Int.max
+			if lhs != rhs { return lhs < rhs }
+			return ($0.name ?? "").localizedCaseInsensitiveCompare($1.name ?? "") == .orderedAscending
 		}
 	}
 
@@ -42,13 +55,19 @@ struct SourcesView: View {
 
 	private var _filteredSources: [AltSource] {
 		let filtered = _sources.filter { _searchText.isEmpty || ($0.name?.localizedCaseInsensitiveContains(_searchText) ?? false) }
+		let priorities = _sourceOrder.enumerated().reduce(into: [String: Int]()) { result, item in
+			result[item.element] = item.offset
+		}
 		return filtered.sorted { lhs, rhs in
 			let lid = lhs.identifier ?? lhs.sourceURL?.absoluteString ?? ""
 			let rid = rhs.identifier ?? rhs.sourceURL?.absoluteString ?? ""
 			let lp = SourcePreferences.isPinned(lid)
 			let rp = SourcePreferences.isPinned(rid)
 			if lp != rp { return lp && !rp }
-			return (lhs.name ?? "") < (rhs.name ?? "")
+			let lPriority = priorities[lid] ?? Int.max
+			let rPriority = priorities[rid] ?? Int.max
+			if lPriority != rPriority { return lPriority < rPriority }
+			return (lhs.name ?? "").localizedCaseInsensitiveCompare(rhs.name ?? "") == .orderedAscending
 		}
 	}
 
@@ -369,12 +388,21 @@ struct SourcesView: View {
 				}
 				.disabled(_selectedSources.isEmpty)
 			} else {
-				Button {
-					_isAddingPresenting = true
-				} label: {
-					Image(systemName: "plus")
+				HStack(spacing: 14) {
+					NavigationLink {
+						SourcePriorityView(sources: Array(_sources))
+					} label: {
+						Image(systemName: "list.number")
+					}
+					.accessibilityLabel(Text(.localized("Repository Priority")))
+
+					Button {
+						_isAddingPresenting = true
+					} label: {
+						Image(systemName: "plus")
+					}
+					.disabled(_addingSourceLoading)
 				}
-				.disabled(_addingSourceLoading)
 			}
 		}
 	}

@@ -21,6 +21,9 @@ extension SourceAppsTableRepresentableView.Coordinator {
                 filtered.filter { updateChecker.appsWithUpdates.contains($0.app.currentUniqueId) } : 
                 filtered
 
+            // SourceAppsView passes repositories in the user's priority order. Resolve
+            // duplicate bundle IDs before sorting so the same app is never selected by
+            // Core Data/network arrival order.
             let deduped: [(source: ASRepository, app: ASRepository.App)]
             if SourcePreferences.hideDuplicates {
                 var seen = Set<String>()
@@ -35,13 +38,13 @@ extension SourceAppsTableRepresentableView.Coordinator {
             switch sortOption {
             case .default:
                 clearGroupedData()
-                return sortAscending ? updatesFiltered : updatesFiltered.reversed()
+                return sortAscending ? deduped : Array(deduped.reversed())
                 
             case .name:
-                return sortByName(updatesFiltered)
+                return sortByName(deduped)
                 
             case .date:
-                return sortByDate(updatesFiltered)
+                return sortByDate(deduped)
             }
         }
         

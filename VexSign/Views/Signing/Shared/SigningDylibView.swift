@@ -23,7 +23,7 @@ struct SigningDylibView: View {
 	}
 
 	var body: some View {
-		NBList(.localized("Dylibs"), type: .list) {
+		NBList(.localized("Dylib Browser"), type: .list) {
 			Section {
 				ForEach(_filteredDylibs, id: \.self) { dylib in
 					SigningToggleCellView(

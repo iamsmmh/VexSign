@@ -19,16 +19,20 @@ final class TweakManager: ObservableObject {
 
 	@Published private(set) var tweaks: [ManagedTweak]
 	@Published private(set) var folders: [TweakFolder]
+	@Published private(set) var repositories: [TweakRepository]
 
 	private let _fm = FileManager.default
 	private var _manifestURL: URL { _fm.tweaksLibrary.appendingPathComponent("library.json") }
 	private var _foldersURL: URL { _fm.tweaksLibrary.appendingPathComponent("folders.json") }
+	private var _repositoriesURL: URL { _fm.tweaksLibrary.appendingPathComponent("repositories.json") }
 
 	private init() {
 		self.tweaks = []
 		self.folders = []
+		self.repositories = []
 		_load()
 		_loadFolders()
+		_loadRepositories()
 	}
 
 	// MARK: Persistence
@@ -65,6 +69,22 @@ final class TweakManager: ObservableObject {
 			try data.write(to: _foldersURL, options: .atomic)
 		} catch {
 			Logger.misc.error("TweakManager folders save failed: \(error.localizedDescription)")
+		}
+		objectWillChange.send()
+	}
+
+	private func _loadRepositories() {
+		guard let data = try? Data(contentsOf: _repositoriesURL) else { return }
+		repositories = TweakManager.decodeLenientArray(TweakRepository.self, from: data)
+	}
+
+	private func _saveRepositories() {
+		do {
+			try _fm.createDirectoryIfNeeded(at: _fm.tweaksLibrary)
+			let data = try JSONEncoder().encode(repositories)
+			try data.write(to: _repositoriesURL, options: .atomic)
+		} catch {
+			Logger.misc.error("TweakManager repositories save failed: \(error.localizedDescription)")
 		}
 		objectWillChange.send()
 	}
@@ -152,6 +172,84 @@ final class TweakManager: ObservableObject {
 
 	func fileURLs(forTweak tweakId: UUID, version: TweakVersion) -> [URL] {
 		version.components.map { fileURL(forTweak: tweakId, version: version, component: $0) }
+	}
+
+	// MARK: Tweak repositories
+
+	/// Adds a small JSON feed and imports its downloadable tweak components. Supported
+	/// entries use `name` plus `url`, `download`, or `downloadURL`; a root object may
+	/// place entries under `tweaks`, `packages`, or `items`.
+	@MainActor
+	func addRepository(_ url: URL) async throws -> Int {
+		guard url.scheme?.lowercased() == "https" else {
+			throw RepositoryError.invalid("Tweak repositories must use HTTPS.")
+		}
+		let (data, response) = try await URLSession.shared.data(from: url)
+		if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+			throw RepositoryError.invalid("The tweak repository returned HTTP \(http.statusCode).")
+		}
+		guard data.count <= 5 * 1_024 * 1_024,
+			  let object = try? JSONSerialization.jsonObject(with: data) else {
+			throw RepositoryError.invalid("The tweak repository is not valid JSON.")
+		}
+
+		let entries: [[String: Any]]
+		if let array = object as? [[String: Any]] {
+			entries = array
+		} else if let dictionary = object as? [String: Any],
+				  let nested = ["tweaks", "packages", "items"].compactMap({ dictionary[$0] as? [[String: Any]] }).first {
+			entries = nested
+		} else {
+			throw RepositoryError.invalid("No tweak entries were found in this repository.")
+		}
+
+		let repositoryID = repositories.first(where: { $0.url == url })?.id ?? UUID()
+		let repositoryName = (object as? [String: Any])?["name"] as? String
+			?? url.host
+			?? url.deletingPathExtension().lastPathComponent
+		let storage = _fm.tweaksLibrary.appendingPathComponent("Repositories", isDirectory: true)
+			.appendingPathComponent(repositoryID.uuidString, isDirectory: true)
+		try _fm.createDirectory(at: storage, withIntermediateDirectories: true)
+
+		var imported = 0
+		for (index, entry) in entries.prefix(100).enumerated() {
+			guard
+				let rawURL = (entry["url"] as? String)
+					?? (entry["download"] as? String)
+					?? (entry["downloadURL"] as? String),
+				let downloadURL = URL(string: rawURL, relativeTo: url)?.absoluteURL,
+				downloadURL.scheme?.lowercased() == "https"
+			else { continue }
+
+			let (fileData, fileResponse) = try await URLSession.shared.data(from: downloadURL)
+			if let http = fileResponse as? HTTPURLResponse, !(200..<300).contains(http.statusCode) { continue }
+			guard fileData.count <= 100 * 1_024 * 1_024 else { continue }
+			let ext = downloadURL.pathExtension.isEmpty ? "dylib" : downloadURL.pathExtension
+			let filename = ((entry["name"] as? String)?.isEmpty == false ? (entry["name"] as? String)! : "Tweak \(index + 1)")
+				.replacingOccurrences(of: "/", with: "_")
+			let fileURL = storage.appendingPathComponent(filename).appendingPathExtension(ext)
+			try fileData.write(to: fileURL, options: .atomic)
+			let displayName = (entry["name"] as? String) ?? downloadURL.deletingPathExtension().lastPathComponent
+			if addTweak(name: displayName, from: fileURL, versionLabel: (entry["version"] as? String) ?? "1.0") != nil {
+				imported += 1
+			}
+		}
+
+		if let index = repositories.firstIndex(where: { $0.url == url }) {
+			repositories[index].name = repositoryName
+			repositories[index].lastFetched = Date()
+			repositories[index].importedCount += imported
+		} else {
+			repositories.append(TweakRepository(id: repositoryID, name: repositoryName, url: url, lastFetched: Date(), importedCount: imported))
+		}
+		_saveRepositories()
+		return imported
+	}
+
+	@MainActor
+	func removeRepository(_ id: UUID) {
+		repositories.removeAll { $0.id == id }
+		_saveRepositories()
 	}
 
 	// MARK: Mutations
@@ -301,6 +399,7 @@ final class TweakManager: ObservableObject {
 	func resetLibrary() {
 		tweaks = []
 		folders = []
+		repositories = []
 		try? _fm.removeFileIfNeeded(at: _fm.tweaksLibrary)
 	}
 

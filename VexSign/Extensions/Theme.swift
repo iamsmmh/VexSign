@@ -8,12 +8,40 @@ import SwiftUI
 import NimbleViews
 
 enum Theme {
+    private static var visualTheme: VexSignVisualTheme {
+        VexSignVisualTheme(rawValue: UserDefaults.standard.string(forKey: VexSignStylePreferences.visualThemeKey) ?? "") ?? .system
+    }
+
+    private static var isLuna: Bool { visualTheme == .luna }
+    private static var isFlareWeb: Bool { visualTheme == .flare }
+
+    // MARK: - Website-inspired palette
+    // These are original native tokens, not copied website CSS or assets.
+    static var websiteAccent: Color { Color(red: 0.47, green: 0.39, blue: 1.0) }
+    static var websiteAccentSecondary: Color { Color(red: 0.17, green: 0.78, blue: 0.95) }
+    static var websiteGlow: Color { websiteAccent.opacity(0.25) }
+
     // MARK: - Surfaces
-    static var background: Color { Color(uiColor: .systemGroupedBackground) }
-    static var card: Color { Color(uiColor: .secondarySystemGroupedBackground) }
-    static var cardElevated: Color { Color(uiColor: .secondarySystemGroupedBackground) }
-    static var separator: Color { Color(uiColor: .separator).opacity(0.55) }
-    static var quaternary: Color { Color(uiColor: .quaternarySystemFill) }
+    static var background: Color {
+        if isFlareWeb { return Color(red: 0.035, green: 0.045, blue: 0.10) }
+        return isLuna ? Color(red: 0.055, green: 0.065, blue: 0.14) : Color(uiColor: .systemGroupedBackground)
+    }
+    static var card: Color {
+        if isFlareWeb { return Color(red: 0.075, green: 0.09, blue: 0.17) }
+        return isLuna ? Color(red: 0.105, green: 0.115, blue: 0.22) : Color(uiColor: .secondarySystemGroupedBackground)
+    }
+    static var cardElevated: Color {
+        if isFlareWeb { return Color(red: 0.105, green: 0.125, blue: 0.23) }
+        return isLuna ? Color(red: 0.14, green: 0.145, blue: 0.28) : Color(uiColor: .secondarySystemGroupedBackground)
+    }
+    static var separator: Color {
+        if isFlareWeb { return Color(red: 0.30, green: 0.35, blue: 0.62).opacity(0.34) }
+        return isLuna ? Color.white.opacity(0.12) : Color(uiColor: .separator).opacity(0.55)
+    }
+    static var quaternary: Color {
+        if isFlareWeb { return Color(red: 0.15, green: 0.18, blue: 0.32) }
+        return isLuna ? Color(red: 0.19, green: 0.19, blue: 0.34) : Color(uiColor: .quaternarySystemFill)
+    }
 
     // MARK: - Text
     static var primary: Color { .primary }
@@ -21,9 +49,9 @@ enum Theme {
     static var tertiary: Color { Color(uiColor: .tertiaryLabel) }
 
     // MARK: - Tint
-    static var tint: Color { Color.userTint }
-    static var tintDeep: Color { Color.userTintDeep }
-    static var tintSoft: Color { Color.userTint.opacity(0.12) }
+    static var tint: Color { isFlareWeb ? websiteAccent : Color.userTint }
+    static var tintDeep: Color { isFlareWeb ? Color(red: 0.31, green: 0.25, blue: 0.76) : Color.userTintDeep }
+    static var tintSoft: Color { tint.opacity(0.12) }
 
     // MARK: - Metrics
     enum Radius {
@@ -49,5 +77,19 @@ enum Theme {
     }
     static var filesGradient: LinearGradient {
         LinearGradient(colors: [Color.userTint.opacity(0.22), Color.userTintDeep.opacity(0.18)], startPoint: .topLeading, endPoint: .bottomTrailing)
+    }
+
+    /// Shared accent treatment used by cards, headers and touch feedback. It is
+    /// intentionally translucent so it remains legible in both appearances.
+    static var flareGradient: LinearGradient {
+        LinearGradient(
+            colors: [tint.opacity(0.28), tintDeep.opacity(0.08)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    static var flareShadow: Color {
+        tint.opacity(0.20)
     }
 }

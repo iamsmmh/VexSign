@@ -47,6 +47,7 @@ enum InfoPlistPlan {
 		// The device allowlist would pin the app to the models it shipped for.
 		var keys = ["UISupportedDevices"]
 		if options.removeURLScheme { keys.append("CFBundleURLTypes") }
+		if options.removeMinimumOSVersion { keys.append("MinimumOSVersion") }
 		return keys
 	}
 

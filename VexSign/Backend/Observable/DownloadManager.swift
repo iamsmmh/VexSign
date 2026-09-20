@@ -219,6 +219,7 @@ class DownloadManager: NSObject, ObservableObject {
 	}
 
 	@objc private func appDidBecomeActive() {
+		consumeWidgetDownloadControl()
 		isAppInBackground = false
 		backgroundEntryTime = nil
 
@@ -276,6 +277,19 @@ class DownloadManager: NSObject, ObservableObject {
 		}
 	}
 
+	/// Handles commands written by a Live Activity intent in the widget
+	/// extension. This is polled by the existing progress timer and on app
+	/// activation, so Stop works even when VexSign is not the foreground app.
+	private func consumeWidgetDownloadControl() {
+		guard let command = WidgetStatusPayload.consumeDownloadControl() else { return }
+		switch command {
+		case "pause": pauseAllDownloads()
+		case "resume": resumeAllDownloads()
+		case "stop": cancelAllDownloads()
+		default: break
+		}
+	}
+
 	@objc private func appWillTerminate() {
 		// Must finish fast (synchronous, time-limited) to avoid watchdog termination.
 		backgroundTaskManager?.stop()
@@ -325,6 +339,7 @@ class DownloadManager: NSObject, ObservableObject {
 	}
 
 	private func handleProgressTick() {
+		consumeWidgetDownloadControl()
 		sampleDownloadSpeed()
 
 		if isAppInBackground {
@@ -721,8 +736,21 @@ class DownloadManager: NSObject, ObservableObject {
 		}
 	}
 	
+	/// Stops every network/import job represented by the current Live Activity.
+	/// Unlike pause, this removes the jobs from the queue and immediately ends
+	/// the Dynamic Island activity.
+	func cancelAllDownloads() {
+		let currentDownloads = downloads.filter { $0.isActive || $0.isPaused || $0.isImporting || $0.isSigning }
+		for download in currentDownloads {
+			cancelDownload(download)
+		}
+	}
+
 	func pauseAllDownloads() {
-		for download in downloads {
+		let currentDownloads = downloads.filter {
+			$0.isActive || ($0.progress > 0 && $0.progress < 1.0) || $0.isImporting || $0.isSigning
+		}
+		for download in currentDownloads {
 			pauseDownload(download)
 		}
 		

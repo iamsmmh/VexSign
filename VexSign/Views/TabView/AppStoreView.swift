@@ -15,7 +15,7 @@ import AltSourceKit
 
 struct AppStoreView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @StateObject private var viewModel = SourcesViewModel.shared
+    @ObservedObject private var viewModel = SourcesViewModel.shared
     @ObservedObject private var updateChecker = AppUpdateChecker.shared
     @ObservedObject private var premiumFilter = PremiumFilterPreferences.shared
 
@@ -24,6 +24,7 @@ struct AppStoreView: View {
     @State private var isAddingPresenting = false
     @State private var appSortOption: AppSortOption = .name
     @State private var selectedCategory: String = "All"
+    @AppStorage("VexSign.repositorySort") private var _repositorySortRaw = RepositorySortOption.priority.rawValue
 
     private let appCategories = ["All", "Utilities", "Emulators", "Tweaked", "Games", "Jailbreak"]
 
@@ -66,23 +67,60 @@ struct AppStoreView: View {
         case size = "Size"
     }
 
+    enum RepositorySortOption: String, CaseIterable {
+        case priority = "Priority"
+        case name = "Name"
+        case updated = "Last Updated"
+
+        var label: String { .localized(rawValue) }
+    }
+
     // Model representing an app combined with its source repository
     struct SourcedAppItem: Identifiable {
-        var id: String { "\(source.identifier ?? "")-\(app.id ?? app.currentName)" }
+        // Source identifiers are optional in older Core Data stores. Falling
+        // back to the managed object's URI prevents duplicate ForEach IDs when
+        // two repositories publish an app with the same bundle identifier.
+        var id: String {
+            let sourceID = source.identifier
+                ?? source.objectID.uriRepresentation().absoluteString
+            return "\(sourceID)-\(app.id ?? app.currentName)"
+        }
         let source: AltSource
         let repository: ASRepository
         let app: ASRepository.App
     }
 
     private var nonExcludedSources: [AltSource] {
-        sources.filter { !VexSignAPI.isSourceExcluded($0.identifier ?? $0.sourceURL?.absoluteString ?? "") }
+        let visible = sources.filter { !VexSignAPI.isSourceExcluded($0.identifier ?? $0.sourceURL?.absoluteString ?? "") }
+        let ids = visible.map { $0.identifier ?? $0.sourceURL?.absoluteString ?? "" }
+        let order = SourcePreferences.order(for: ids).enumerated().reduce(into: [String: Int]()) { result, item in
+            result[item.element] = item.offset
+        }
+        return visible.sorted {
+            let lhs = order[$0.identifier ?? $0.sourceURL?.absoluteString ?? ""] ?? Int.max
+            let rhs = order[$1.identifier ?? $1.sourceURL?.absoluteString ?? ""] ?? Int.max
+            if lhs != rhs { return lhs < rhs }
+            return ($0.name ?? "").localizedCaseInsensitiveCompare($1.name ?? "") == .orderedAscending
+        }
     }
 
     private var filteredSources: [AltSource] {
         let base = nonExcludedSources
-        guard !searchText.isEmpty else { return base.sorted { ($0.name ?? "") < ($1.name ?? "") } }
-        return base.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
-            .sorted { ($0.name ?? "") < ($1.name ?? "") }
+        let matched = searchText.isEmpty ? base : base.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
+        let selected = RepositorySortOption(rawValue: _repositorySortRaw) ?? .priority
+        switch selected {
+        case .priority:
+            return matched
+        case .name:
+            return matched.sorted { ($0.name ?? "").localizedCaseInsensitiveCompare($1.name ?? "") == .orderedAscending }
+        case .updated:
+            return matched.sorted {
+                let lhs = SourcePreferences.lastFetch(for: $0.identifier ?? $0.sourceURL?.absoluteString ?? "") ?? .distantPast
+                let rhs = SourcePreferences.lastFetch(for: $1.identifier ?? $1.sourceURL?.absoluteString ?? "") ?? .distantPast
+                if lhs != rhs { return lhs > rhs }
+                return ($0.name ?? "").localizedCaseInsensitiveCompare($1.name ?? "") == .orderedAscending
+            }
+        }
     }
 
     // All loaded apps from active repositories
@@ -153,6 +191,16 @@ struct AppStoreView: View {
 
     private var updateCount: Int { updateChecker.updateCount }
 
+    /// A lightweight, stable task identity. Passing `Array(FetchedResults)` to
+    /// `.task(id:)` makes SwiftUI compare managed objects while Core Data is
+    /// changing, which can restart the catalog load repeatedly on iOS 18/19.
+    private var sourceRefreshKey: String {
+        sources
+            .compactMap { $0.sourceURL?.absoluteString }
+            .sorted()
+            .joined(separator: "\u{1F}")
+    }
+
     // MARK: - Body
     var body: some View {
         // ONE navigation bar — NBNavigationView is the only NavigationStack in this tab
@@ -199,7 +247,7 @@ struct AppStoreView: View {
             .sheet(isPresented: $isAddingPresenting) {
                 SourcesAddView().adaptiveSheetSizing()
             }
-            .task(id: Array(sources)) {
+            .task(id: sourceRefreshKey) {
                 await viewModel.fetchSources(sources)
             }
             .onChange(of: premiumFilter.stamp) { _ in
@@ -213,6 +261,14 @@ struct AppStoreView: View {
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             HStack(spacing: 12) {
+                NavigationLink {
+                    SourcePriorityView(sources: Array(sources))
+                } label: {
+                    Image(systemName: "list.number")
+                        .font(.body.weight(.semibold))
+                }
+                .accessibilityLabel(Text(.localized("Repository Priority")))
+
                 Button {
                     isAddingPresenting = true
                 } label: {
@@ -224,14 +280,24 @@ struct AppStoreView: View {
                 // Profile / Settings Menu (styled like App Store Account button)
                 Menu {
                     Section(.localized("Updates")) {
-                        NavigationLink(destination: UpdateMatchingSettingsView()) {
-                            Label(.localized("Update Matching"), systemImage: "slider.horizontal.3")
-                        }
-                        NavigationLink(destination: FavoritesAndAutoUpdatesSettingsView()) {
-                            Label(.localized("Favorites & Auto Updates"), systemImage: "star.circle.fill")
-                        }
-                        NavigationLink(destination: UpdatesView()) {
+                        // Keep menu actions local to this tab. NavigationLinks inside
+                        // a toolbar Menu are not consistently routed by TabView and
+                        // were one of the reasons the store controls appeared dead.
+                        Button {
+                            withAnimation(.snappy) {
+                                selectedSegment = .updates
+                                searchText = ""
+                            }
+                        } label: {
                             Label(updateCount > 0 ? String.localized("Pending Updates (%lld)", arguments: updateCount) : .localized("Pending Updates"), systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        Button {
+                            withAnimation(.snappy) {
+                                selectedSegment = .repositories
+                                searchText = ""
+                            }
+                        } label: {
+                            Label(.localized("Manage Repositories"), systemImage: "shippingbox")
                         }
                     }
 
@@ -315,6 +381,10 @@ struct AppStoreView: View {
                     Button {
                         withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
                             selectedSegment = seg
+                            // A segment is a real destination, not a filter on
+                            // the current search result. Clear search so every
+                            // App Store tab remains reachable after searching.
+                            searchText = ""
                         }
                     } label: {
                         HStack(spacing: 6) {
@@ -335,7 +405,7 @@ struct AppStoreView: View {
                         .foregroundStyle(isSelected ? .white : .primary)
                         .overlay(Capsule().strokeBorder(Color.primary.opacity(isSelected ? 0 : 0.08), lineWidth: 1))
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(VexSignFlareButtonStyle())
                 }
             }
             .padding(.vertical, 2)
@@ -764,6 +834,17 @@ struct AppStoreView: View {
                 Text(.localized("Sources & Repositories"))
                     .font(.headline)
                 Spacer()
+                Menu {
+                    Picker(.localized("Sort Repositories"), selection: $_repositorySortRaw) {
+                        ForEach(RepositorySortOption.allCases, id: \.rawValue) { option in
+                            Text(option.label).tag(option.rawValue)
+                        }
+                    }
+                } label: {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.userTint)
+                }
                 Button {
                     isAddingPresenting = true
                 } label: {
@@ -789,7 +870,7 @@ struct AppStoreView: View {
                 .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             } else {
                 VStack(spacing: 0) {
-                    ForEach(Array(filteredSources.enumerated()), id: \.element.identifier) { index, source in
+                    ForEach(Array(filteredSources.enumerated()), id: \.element.objectID) { index, source in
                         NavigationLink {
                             SourceAppsView(object: [source], viewModel: viewModel, onRefresh: {
                                 await viewModel.fetchSources(sources, refresh: true)
@@ -1038,7 +1119,7 @@ struct AppStoreView: View {
                     .padding(.horizontal, 4)
 
                 VStack(spacing: 0) {
-                    ForEach(Array(filteredSources.enumerated()), id: \.element.identifier) { index, source in
+                    ForEach(Array(filteredSources.enumerated()), id: \.element.objectID) { index, source in
                         NavigationLink {
                             SourceAppsView(object: [source], viewModel: viewModel, onRefresh: {
                                 await viewModel.fetchSources(sources, refresh: true)
@@ -1158,6 +1239,11 @@ private struct RepositoryRow: View {
                             .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(Color.orange.opacity(0.15), in: Capsule())
                             .foregroundStyle(.orange)
+                    }
+                    if SourcePreferences.isTrusted(source.identifier ?? source.sourceURL?.absoluteString ?? "") {
+                        Label(.localized("Trusted"), systemImage: "checkmark.seal.fill")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(.green)
                     }
                     let count = repository?.apps.count ?? source.appsCount
                     Text("\(count) apps")
