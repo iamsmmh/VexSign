@@ -11,6 +11,31 @@ struct TabBarSettingsView: View {
 
     var body: some View {
         NBList(.localized("Tab Bar"), type: .list) {
+            // Live preview — Files·Library·Home·App Store·Downloads·Settings
+            NBSection(.localized("Preview")) {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 14) {
+                        ForEach(_prefs.visibleTabs, id: \.self) { tab in
+                            VStack(spacing: 4) {
+                                Image(systemName: tab.icon).font(.system(size: 20, weight: .semibold)).foregroundStyle(Theme.tint)
+                                Text(tab.title).font(.caption2.weight(.medium)).lineLimit(1).minimumScaleFactor(0.6)
+                            }
+                            .frame(width: 56)
+                            .padding(.vertical, 8)
+                            .background(Theme.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.06), lineWidth: 1))
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(Text(tab.title))
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .listRowInsets(EdgeInsets(top: 8, leading: 12, bottom: 8, trailing: 12))
+                .listRowBackground(Color.clear)
+            } footer: {
+                Text(.localized("Your current order: %@.", arguments: _prefs.visibleTabs.map { $0.title }.joined(separator: " • ")))
+            }
+
             NBSection(.localized("Layout")) {
                 Toggle(isOn: Binding(
                     get: { _prefs.isMinimal },

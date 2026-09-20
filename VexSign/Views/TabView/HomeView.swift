@@ -7,8 +7,10 @@ import CoreData
 
 struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var isAddingCertificate = false
     @State private var showIPAExplorer = false
+    @AppStorage("VexSign.migrationBannerDismissed_v2") private var bannerDismissed = false
 
     // Live counts for the overview cards
     @FetchRequest(entity: CertificatePair.entity(), sortDescriptors: []) private var certificates: FetchedResults<CertificatePair>
@@ -34,7 +36,8 @@ struct HomeView: View {
     var body: some View {
         NBNavigationView(.localized("Home")) {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: Theme.Spacing.section) {
+                    if !bannerDismissed { migrationBanner }
                     hero
                     statsRow
                     quickActions
@@ -47,7 +50,7 @@ struct HomeView: View {
                 .padding(.top, 12)
                 .padding(.bottom, 28)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
+            .background(Theme.background)
             .scrollIndicators(.hidden)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -56,12 +59,46 @@ struct HomeView: View {
                             .font(.body.weight(.semibold))
                     }
                     .accessibilityLabel(Text(.localized("Settings")))
+                    .accessibilityHint(Text(.localized("Open Settings tab")))
                 }
             }
             .sheet(isPresented: $isAddingCertificate) {
                 CertificatesAddView()
             }
         }
+    }
+
+    // MARK: Migration banner — Sources→App Store, Logs→Settings
+    private var migrationBanner: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                ZStack { RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.userTint.opacity(0.14)).frame(width: 36, height: 36)
+                    Image(systemName: "sparkles").font(.system(size: 16, weight: .semibold)).foregroundStyle(Color.userTint) }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(.localized("What’s new")).font(.caption.weight(.heavy)).tracking(0.6).foregroundStyle(Color.userTint)
+                    Text(.localized("Sources is now App Store • Logs is in Settings")).font(.subheadline.weight(.semibold)).lineLimit(2).minimumScaleFactor(0.8)
+                }
+                Spacer()
+                Button { withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { bannerDismissed = true } } label: {
+                    Image(systemName: "xmark").font(.caption.weight(.bold)).padding(6).background(Color.primary.opacity(0.08), in: Circle())
+                }
+                .accessibilityLabel(Text(.localized("Dismiss")))
+                .buttonStyle(.plain)
+            }
+            HStack(spacing: 8) {
+                Label(.localized("App Store"), systemImage: "bag.fill").font(.caption2.weight(.semibold)).padding(.horizontal, 8).padding(.vertical, 4).background(Theme.tintSoft, in: Capsule()).foregroundStyle(Theme.tint)
+                Image(systemName: "arrow.right").font(.caption2).foregroundStyle(.secondary)
+                Label(.localized("Files"), systemImage: "folder.fill").font(.caption2.weight(.semibold)).padding(.horizontal, 8).padding(.vertical, 4).background(Color(red: 0.55, green: 0.47, blue: 0.96).opacity(0.13), in: Capsule())
+                Image(systemName: "arrow.right").font(.caption2).foregroundStyle(.secondary)
+                Label(.localized("Downloads"), systemImage: "arrow.down.circle.fill").font(.caption2.weight(.semibold)).padding(.horizontal, 8).padding(.vertical, 4).background(Color(red: 0.20, green: 0.66, blue: 0.44).opacity(0.13), in: Capsule())
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(.localized("New tabs: App Store, Files, Downloads")))
+        }
+        .padding(14)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.06), lineWidth: 1))
+        .accessibilityAddTraits(.isButton)
     }
 
     // MARK: Hero — gradient header with logo, name and status
@@ -131,13 +168,13 @@ struct HomeView: View {
         .padding(.vertical, 18)
         .padding(.horizontal, 16)
         .background(
-            RoundedRectangle(cornerRadius: NBRadius.large, style: .continuous)
-                .fill(Color(uiColor: .secondarySystemGroupedBackground))
-                .shadow(color: .black.opacity(colorScheme == .dark ? 0.20 : 0.05), radius: 14, y: 6)
+            RoundedRectangle(cornerRadius: Theme.Radius.large, style: .continuous)
+                .fill(Theme.card)
+                .shadow(color: Theme.cardShadow(for: colorScheme), radius: 14, y: 6)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: NBRadius.large, style: .continuous)
-                .strokeBorder(Color.userTint.opacity(colorScheme == .dark ? 0.14 : 0.08), lineWidth: 1)
+            RoundedRectangle(cornerRadius: Theme.Radius.large, style: .continuous)
+                .strokeBorder(Theme.tint.opacity(colorScheme == .dark ? 0.14 : 0.08), lineWidth: 1)
         )
         // subtle top gradient accent line
         .overlay(alignment: .top) {
