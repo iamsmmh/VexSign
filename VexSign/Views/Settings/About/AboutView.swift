@@ -170,8 +170,7 @@ struct AboutView: View {
 		UIAlertController.showAlertWithOk(
 			title: .localized("From VexSign Team, Version \(Bundle.main.version)"),
 			message: .localized("This version introduces:\n\n• Redesigned Apple Official App Store tab with merged Sources\n• Ksign-style Files tab with storage ring & Quick Access folders\n• Dedicated Downloads tab with active progress & finished IPAs management\n• Single Back Navigation Bar throughout the app (no duplicate headers)\n• Activity Logs moved cleanly to Settings\n• App About ported from Ksign with patch notes & acknowledgements\n• Fully functional tabs: Files, Library, Home, App Store, Downloads, Settings\n• Seamless background downloading and on-device IPA signing"),
-			isCancel: true,
-			thankYou: true
+			isCancel: true
 		)
 	}
 }

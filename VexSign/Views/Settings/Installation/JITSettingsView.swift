@@ -6,6 +6,7 @@
 import SwiftUI
 import NimbleViews
 import NimbleExtensions
+import IDeviceSwift
 
 struct JITSettingsView: View {
     @AppStorage("VexSign.jit.autoEnable") private var jitAutoEnable = false
@@ -13,7 +14,7 @@ struct JITSettingsView: View {
     @State private var isRunningTest = false
     @State private var testResultText: String? = nil
     @State private var showFilePicker = false
-    @State private var pairingFilePresent = HeartbeatManager.pairingFileExists()
+    @State private var pairingFilePresent = FileManager.default.fileExists(atPath: HeartbeatManager.pairingFile())
 
     var body: some View {
         NBList(.localized("JIT & On-Device Pairing")) {
