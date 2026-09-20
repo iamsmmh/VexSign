@@ -65,10 +65,18 @@ No FlareStore code was copied. VexSign uses its own models, persistence, signing
 
 ## VexSign release tags
 
-FlareStore's version numbers are used as an audit range, not as VexSign release tags. VexSign's existing release workflow creates tags in the form:
+The requested FlareStore-style compatibility tag range has been added to the VexSign repository:
+
+- `v0.0.1` through `v0.0.18`
+- `v1.0.0`
+- The repository's pre-existing `v1.0` tag was left untouched.
+
+These tags are explicitly annotated as **synthetic parity milestones** and point to the parity implementation commit. They are not claims that VexSign historically shipped those exact builds. The actual VexSign development history remains in the commit graph.
+
+For future real releases, VexSign's workflow still uses:
 
 ```text
 v<MARKETING_VERSION>
 ```
 
-For example, a VexSign `MARKETING_VERSION` of `1.3.0` is released as `v1.3.0`. FlareStore's historical tags must not be fabricated or reused for VexSign releases. The release workflow validates that the tag matches the VexSign project version before publishing.
+For example, a VexSign `MARKETING_VERSION` of `1.3.0` should be released as `v1.3.0`. The compatibility tags are for the requested versioned parity presentation; real releases should use a version bump and a tag on the corresponding development commit.
