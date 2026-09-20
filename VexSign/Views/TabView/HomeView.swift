@@ -9,6 +9,7 @@ struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ObservedObject private var updateChecker = AppUpdateChecker.shared
+    @ObservedObject private var lockManager = AppLockManager.shared
     @State private var isAddingCertificate = false
     @State private var showIPAExplorer = false
     @AppStorage("VexSign.migrationBannerDismissed_v2") private var bannerDismissed = false
@@ -19,7 +20,18 @@ struct HomeView: View {
     @FetchRequest(entity: Signed.entity(), sortDescriptors: []) private var signedApps: FetchedResults<Signed>
     @FetchRequest(entity: Imported.entity(), sortDescriptors: []) private var importedApps: FetchedResults<Imported>
 
-    private var libraryCount: Int { signedApps.count + importedApps.count }
+    private var libraryCount: Int {
+        guard lockManager.strictHidingEnabled else { return signedApps.count + importedApps.count }
+        let visibleSigned = signedApps.filter { app in
+            guard let uuid = app.uuid else { return true }
+            return !lockManager.isStrictlyHidden(uuid)
+        }.count
+        let visibleImported = importedApps.filter { app in
+            guard let uuid = app.uuid else { return true }
+            return !lockManager.isStrictlyHidden(uuid)
+        }.count
+        return visibleSigned + visibleImported
+    }
 
     private func openTab(_ tab: TabEnum) {
         let prefs = TabBarPreferences.shared
@@ -650,6 +662,7 @@ private struct HomeActionCard: View {
     let action: () -> Void
 
     @Environment(\.colorScheme) private var cs
+    @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var flareAnimations = true
 
     var body: some View {
         Button(action: action) {
@@ -691,7 +704,7 @@ private struct HomeActionCard: View {
                     .strokeBorder(Color.primary.opacity(cs == .dark ? 0.08 : 0.05), lineWidth: 1)
             )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(VexSignFlareButtonStyle(enabled: flareAnimations))
         .accessibilityLabel(Text(title))
     }
 }

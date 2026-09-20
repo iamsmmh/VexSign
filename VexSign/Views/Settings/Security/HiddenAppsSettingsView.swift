@@ -151,10 +151,16 @@ struct HiddenAppsSettingsView: View {
 
     private var privacyOptionsSection: some View {
         NBSection(.localized("Privacy Options")) {
+            Toggle(.localized("Strict Hiding Mode"), isOn: Binding(
+                get: { lock.strictHidingEnabled },
+                set: { lock.strictHidingEnabled = $0 }
+            ))
+            .tint(Color.purple)
+
             Toggle(.localized("Conceal in Notifications"), isOn: $concealNotifications)
                 .tint(Color.userTint)
         } footer: {
-            Text(.localized("Masks the names and bundle IDs of hidden applications in notification alerts and background sync status."))
+            Text(.localized("Strict mode removes hidden apps from Library counts, discovery buttons, and other app-facing summaries. The vault remains available after Face ID or passcode authentication."))
         }
     }
 

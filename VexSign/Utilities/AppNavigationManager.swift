@@ -49,7 +49,9 @@ class AppNavigationManager: ObservableObject {
             sourceIdentifier: sourceIdentifier
         )
         
-        TabSelectionObserver.shared.selectedTab = .sources
+        // Sources is a legacy storage name. The user-facing destination is the
+        // App Store tab, which now owns repository browsing and app discovery.
+        TabSelectionObserver.shared.selectedTab = .appStore
         
         navigationTimer?.invalidate()
         navigationTimer = Timer.scheduledTimer(withTimeInterval: 6.0, repeats: false) { [weak self] _ in

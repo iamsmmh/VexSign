@@ -34,6 +34,7 @@ struct WidgetStatusPayload: Codable, Equatable {
 
 	static let appGroupIdentifier = "group.com.vexsign.app"
 	static let defaultsKey = "VexSign.widgetStatusPayload"
+	static let downloadControlKey = "VexSign.downloadControlCommand"
 
 	static var sharedDefaults: UserDefaults? {
 		UserDefaults(suiteName: appGroupIdentifier)
@@ -59,6 +60,22 @@ struct WidgetStatusPayload: Codable, Equatable {
 
 	static func clear() {
 		sharedDefaults?.removeObject(forKey: defaultsKey)
+	}
+
+	/// Live Activity intents execute in the widget extension process. A Darwin
+	/// notification cannot safely carry the command back into the app, so the
+	/// shared app group is used as a tiny one-shot command mailbox.
+	static func requestDownloadControl(_ command: String) {
+		sharedDefaults?.set(command, forKey: downloadControlKey)
+		sharedDefaults?.synchronize()
+	}
+
+	static func consumeDownloadControl() -> String? {
+		guard let defaults = sharedDefaults,
+		      let command = defaults.string(forKey: downloadControlKey)
+		else { return nil }
+		defaults.removeObject(forKey: downloadControlKey)
+		return command
 	}
 
 	/// Shown in the gallery and in previews before the app has written anything.

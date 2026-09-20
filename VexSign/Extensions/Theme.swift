@@ -50,4 +50,18 @@ enum Theme {
     static var filesGradient: LinearGradient {
         LinearGradient(colors: [Color.userTint.opacity(0.22), Color.userTintDeep.opacity(0.18)], startPoint: .topLeading, endPoint: .bottomTrailing)
     }
+
+    /// Shared accent treatment used by cards, headers and touch feedback. It is
+    /// intentionally translucent so it remains legible in both appearances.
+    static var flareGradient: LinearGradient {
+        LinearGradient(
+            colors: [Color.userTint.opacity(0.28), Color.userTintDeep.opacity(0.08)],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    static var flareShadow: Color {
+        Color.userTint.opacity(0.20)
+    }
 }

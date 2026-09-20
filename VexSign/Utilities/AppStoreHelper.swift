@@ -2,132 +2,145 @@
 //  AppStoreHelper.swift
 //  VexSign
 //
-//  Created by VexSign Team on 11.10.2025.
+//  Resolves an installed app's bundle identifier to its public App Store page.
+//  The lookup is deliberately defensive: repository metadata is user supplied
+//  and Apple's response is not guaranteed to contain every field.
 //
 
 import Foundation
 import UIKit
 
 struct AppStoreHelper {
+    struct AppStoreResponse: Decodable {
+        let resultCount: Int?
+        let results: [AppStoreApp]
+    }
 
-	// MARK: - Response Models
+    struct AppStoreApp: Decodable {
+        let trackName: String?
+        let trackViewUrl: String?
+        let trackId: Int?
+        let bundleId: String?
+    }
 
-	struct AppStoreResponse: Codable {
-		let resultCount: Int
-		let results: [AppStoreApp]
-	}
+    enum AppStoreError: LocalizedError {
+        case invalidBundleId
+        case networkError(String)
+        case noData
+        case serverError(Int)
+        case notFoundOnAppStore
+        case unexpectedResponse
+        case invalidURL
+        case failedToOpen
 
-	struct AppStoreApp: Codable {
-		let trackName: String
-		let trackViewUrl: String
-		let bundleId: String
-	}
+        var errorDescription: String? {
+            switch self {
+            case .invalidBundleId:
+                return "Invalid bundle identifier"
+            case .networkError(let message):
+                return "Network error: \(message)"
+            case .noData:
+                return "No data received from the App Store"
+            case .serverError(let status):
+                return "The App Store returned HTTP \(status)"
+            case .notFoundOnAppStore:
+                return "This app is not listed on the App Store"
+            case .unexpectedResponse:
+                return "Unexpected response from the App Store"
+            case .invalidURL:
+                return "Invalid App Store URL"
+            case .failedToOpen:
+                return "Failed to open the App Store"
+            }
+        }
+    }
 
-	// MARK: - Public Methods
+    /// Looks up and opens the App Store page. Completion is always delivered on
+    /// the main queue so callers may update SwiftUI state safely.
+    static func openAppStore(
+        for bundleId: String,
+        completion: @escaping (Result<Void, AppStoreError>) -> Void
+    ) {
+        let trimmedBundleID = bundleId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedBundleID.isEmpty, trimmedBundleID.contains(".") else {
+            DispatchQueue.main.async { completion(.failure(.invalidBundleId)) }
+            return
+        }
 
-	/// Opens the App Store page for the given bundle ID.
-	static func openAppStore(for bundleId: String, completion: @escaping (Result<Void, AppStoreError>) -> Void) {
-		fetchAppStoreURL(for: bundleId) { result in
-			DispatchQueue.main.async {
-				switch result {
-				case .success(let urlString):
-					guard let url = URL(string: urlString) else {
-						completion(.failure(.invalidURL))
-						return
-					}
+        var components = URLComponents(string: "https://itunes.apple.com/lookup")
+        components?.queryItems = [
+            URLQueryItem(name: "bundleId", value: trimmedBundleID),
+            URLQueryItem(name: "country", value: Locale.current.regionCode ?? "US"),
+            URLQueryItem(name: "entity", value: "software")
+        ]
 
-					UIApplication.shared.open(url) { success in
-						if success {
-							completion(.success(()))
-						} else {
-							completion(.failure(.failedToOpen))
-						}
-					}
+        guard let lookupURL = components?.url else {
+            DispatchQueue.main.async { completion(.failure(.invalidBundleId)) }
+            return
+        }
 
-				case .failure(let error):
-					completion(.failure(error))
-				}
-			}
-		}
-	}
+        var request = URLRequest(url: lookupURL)
+        request.timeoutInterval = 15
+        request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
 
-	// MARK: - Private Methods
+        URLSession.shared.dataTask(with: request) { data, response, error in
+            let result: Result<String, AppStoreError>
+            if let error {
+                result = .failure(.networkError(error.localizedDescription))
+            } else if let http = response as? HTTPURLResponse,
+                      !(200...299).contains(http.statusCode) {
+                result = .failure(.serverError(http.statusCode))
+            } else if let data, !data.isEmpty {
+                result = decodeURL(from: data)
+            } else {
+                result = .failure(.noData)
+            }
 
-	/// Fetches the App Store URL from the iTunes Search API.
-	private static func fetchAppStoreURL(for bundleId: String, completion: @escaping (Result<String, AppStoreError>) -> Void) {
-		let urlString = "https://itunes.apple.com/lookup?bundleId=\(bundleId)"
+            DispatchQueue.main.async {
+                switch result {
+                case .failure(let error):
+                    completion(.failure(error))
+                case .success(let string):
+                    guard let url = URL(string: string) else {
+                        completion(.failure(.invalidURL))
+                        return
+                    }
+                    UIApplication.shared.open(url, options: [:]) { opened in
+                        if opened {
+                            completion(successResult())
+                        } else {
+                            completion(.failure(.failedToOpen))
+                        }
+                    }
+                }
+            }
+        }.resume()
+    }
 
-		guard let url = URL(string: urlString) else {
-			completion(.failure(.invalidBundleId))
-			return
-		}
+    private static func emptyVoid() {}
 
-		let task = URLSession.shared.dataTask(with: url) { data, response, error in
-			if let error = error {
-				completion(.failure(.networkError(error.localizedDescription)))
-				return
-			}
+    private static func successResult() -> Result<Void, AppStoreError> {
+        .success(emptyVoid())
+    }
 
-			guard let data = data else {
-				completion(.failure(.noData))
-				return
-			}
+    private static func decodeURL(from data: Data) -> Result<String, AppStoreError> {
+        do {
+            let response = try JSONDecoder().decode(AppStoreResponse.self, from: data)
+            guard response.resultCount != 0, let app = response.results.first else {
+                return .failure(.notFoundOnAppStore)
+            }
 
-			do {
-				let decoder = JSONDecoder()
-				let appStoreResponse = try decoder.decode(AppStoreResponse.self, from: data)
-
-				if appStoreResponse.resultCount == 0 {
-					completion(.failure(.notFoundOnAppStore))
-					return
-				}
-
-				guard let firstResult = appStoreResponse.results.first else {
-					completion(.failure(.unexpectedResponse))
-					return
-				}
-
-				completion(.success(firstResult.trackViewUrl))
-
-			} catch {
-				completion(.failure(.decodingError(error.localizedDescription)))
-			}
-		}
-
-		task.resume()
-	}
-
-	// MARK: - Error Types
-
-	enum AppStoreError: LocalizedError {
-		case invalidBundleId
-		case networkError(String)
-		case noData
-		case notFoundOnAppStore
-		case unexpectedResponse
-		case decodingError(String)
-		case invalidURL
-		case failedToOpen
-
-		var errorDescription: String? {
-			switch self {
-			case .invalidBundleId:
-				return "Invalid bundle identifier"
-			case .networkError(let message):
-				return "Network error: \(message)"
-			case .noData:
-				return "No data received from App Store"
-			case .notFoundOnAppStore:
-				return "App not found on App Store"
-			case .unexpectedResponse:
-				return "Unexpected response from App Store"
-			case .decodingError(let message):
-				return "Failed to decode response: \(message)"
-			case .invalidURL:
-				return "Invalid App Store URL"
-			case .failedToOpen:
-				return "Failed to open App Store"
-			}
-		}
-	}
+            // Prefer Apple's canonical web URL. A track ID is a reliable
+            // fallback for responses that omit trackViewUrl.
+            if let trackViewUrl = app.trackViewUrl, !trackViewUrl.isEmpty {
+                return .success(trackViewUrl)
+            }
+            if let trackId = app.trackId {
+                return .success("https://apps.apple.com/app/id\(trackId)")
+            }
+            return .failure(.unexpectedResponse)
+        } catch {
+            return .failure(.unexpectedResponse)
+        }
+    }
 }

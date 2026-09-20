@@ -40,6 +40,7 @@ class TabSelectionObserver: ObservableObject {
 struct DownloadButtonView: View {
 	let app: ASRepository.App
 	@ObservedObject private var downloadManager = DownloadManager.shared
+	@ObservedObject private var privacyManager = AppLockManager.shared
 	@State private var downloadProgress: Double = 0
 	@State private var downloadPhase: DownloadPhase = .queued
 	@State private var cancellable: AnyCancellable?
@@ -331,6 +332,7 @@ struct DownloadButtonView: View {
         var candidates: [(uuid: String, name: String, version: String?, type: InstalledAppInfo.AppType)] = []
 
         for s in signedApps {
+            if privacyManager.isStrictlyHidden(s.uuid ?? "") { continue }
             let identifierMatch = !appBundleId.isEmpty &&
                 identifiersMatch(appBundleId, s.identifier, s.originalIdentifier)
             let nameMatch = (s.name ?? "").lowercased() == appNameLower
@@ -341,6 +343,7 @@ struct DownloadButtonView: View {
         }
 
         for i in importedApps {
+            if privacyManager.isStrictlyHidden(i.uuid ?? "") { continue }
             let identifierMatch = !appBundleId.isEmpty &&
                 identifiersMatch(appBundleId, i.identifier, i.originalIdentifier)
             let nameMatch = (i.name ?? "").lowercased() == appNameLower

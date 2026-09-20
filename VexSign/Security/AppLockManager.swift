@@ -19,6 +19,7 @@ final class AppLockManager: ObservableObject {
 	static let enabledKey = "VexSign.security.appLockEnabled"
 	private static let lockedAppsKey = "VexSign.security.lockedAppUUIDs"
 	private static let hiddenAppsKey = "VexSign.security.hiddenAppUUIDs"
+	static let strictHidingKey = "VexSign.security.strictHiding"
 
 	/// True while the master lock overlay should cover the UI.
 	@Published private(set) var isLocked: Bool
@@ -41,6 +42,12 @@ final class AppLockManager: ObservableObject {
 	/// When true, hidden apps are shown in Library (requires biometric authentication)
 	@Published var isRevealingHiddenApps = false
 
+	/// Strict mode also removes hidden apps from counts and app-facing discovery
+	/// surfaces instead of only hiding their Library rows.
+	@Published var strictHidingEnabled: Bool {
+		didSet { UserDefaults.standard.set(strictHidingEnabled, forKey: Self.strictHidingKey) }
+	}
+
 	/// Set of app UUIDs that were authenticated this session so user isn't prompted repeatedly
 	private var sessionUnlockedUUIDs: Set<String> = []
 
@@ -52,6 +59,7 @@ final class AppLockManager: ObservableObject {
 
 		let savedHidden = UserDefaults.standard.stringArray(forKey: Self.hiddenAppsKey) ?? []
 		self.hiddenAppUUIDs = Set(savedHidden)
+		self.strictHidingEnabled = UserDefaults.standard.bool(forKey: Self.strictHidingKey)
 	}
 
 	static var isEnabled: Bool {
@@ -168,6 +176,13 @@ final class AppLockManager: ObservableObject {
 	// MARK: - LiveContainer: Hidden Apps Vault
 	func isAppHidden(_ uuid: String) -> Bool {
 		hiddenAppUUIDs.contains(uuid)
+	}
+
+	/// Use this for Home summaries and update matching. The dedicated Hidden
+	/// Apps screen intentionally uses `isAppHidden` so it can always manage
+	/// concealed entries.
+	func isStrictlyHidden(_ uuid: String) -> Bool {
+		strictHidingEnabled && !isRevealingHiddenApps && hiddenAppUUIDs.contains(uuid)
 	}
 
 	func toggleHideApp(_ uuid: String) {

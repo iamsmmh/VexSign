@@ -23,6 +23,9 @@ struct VexSignApp: App {
     @StateObject private var selfUpdate = SelfUpdateManager.shared
     @StateObject private var appLock = AppLockManager.shared
     @AppStorage("VexSign.onboardingCompleted") private var _onboardingCompleted = false
+    @AppStorage(VexSignStylePreferences.fontFamilyKey) private var fontFamily = VexSignFontFamily.system.rawValue
+    @AppStorage(VexSignStylePreferences.fontScaleKey) private var fontScale = 1.0
+    @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var flareAnimations = true
     @State private var _showOnboarding = false
     let storage = Storage.shared
 
@@ -106,7 +109,10 @@ struct VexSignApp: App {
                             .onOpenURL(perform: _handleURL)
                             .zIndex(0)
                     }
-                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: hasActiveDownloads)
+                    .animation(
+                        flareAnimations ? .spring(response: 0.4, dampingFraction: 0.8) : nil,
+                        value: hasActiveDownloads
+                    )
                 } else {
                     ZStack {
                         VariedTabbarView()
@@ -121,6 +127,8 @@ struct VexSignApp: App {
                     }
                 }
             }
+            .environment(\.font, VexSignStylePreferences.font(familyRawValue: fontFamily, scale: fontScale))
+            .buttonStyle(VexSignFlareButtonStyle(enabled: flareAnimations))
             .overlay(alignment: .bottom) {
                 InstallQueuePill()
             }
