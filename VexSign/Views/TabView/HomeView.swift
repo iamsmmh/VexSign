@@ -154,7 +154,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: Stats row — 3 compact cards
+    // MARK: Stats row — 3 compact cards (Sources → App Store)
 
     private var statsRow: some View {
         HStack(spacing: 12) {
@@ -166,10 +166,10 @@ struct HomeView: View {
                 subtitle: certificates.isEmpty ? .localized("Add one") : .localized("Ready")
             )
             HomeStatCard(
-                icon: "globe.desk.fill",
+                icon: "bag.fill",
                 tint: Color(red: 0.22, green: 0.60, blue: 0.96),
                 value: "\(sources.count)",
-                title: .localized("Sources"),
+                title: .localized("App Store"),
                 subtitle: sources.isEmpty ? .localized("Add source") : "\(sources.count) " + .localized("Active")
             )
             HomeStatCard(
@@ -198,12 +198,28 @@ struct HomeView: View {
                 ) { openTab(.library) }
 
                 HomeActionCard(
-                    title: .localized("Sources"),
+                    title: .localized("App Store"),
                     subtitle: sources.isEmpty ? .localized("Browse catalog") : .localized("Explore apps"),
-                    systemImage: "globe.desk.fill",
+                    systemImage: "bag.fill",
                     tint: Color(red: 0.18, green: 0.62, blue: 0.96),
                     background: Color(red: 0.18, green: 0.62, blue: 0.96).opacity(0.12)
-                ) { openTab(.sources) }
+                ) { openTab(.appStore) }
+
+                HomeActionCard(
+                    title: .localized("Files"),
+                    subtitle: .localized("Ksign-style browser"),
+                    systemImage: "folder.fill",
+                    tint: Color(red: 0.55, green: 0.47, blue: 0.96),
+                    background: Color(red: 0.55, green: 0.47, blue: 0.96).opacity(0.12)
+                ) { openTab(.files) }
+
+                HomeActionCard(
+                    title: .localized("Downloads"),
+                    subtitle: .localized("Queue & progress"),
+                    systemImage: "arrow.down.circle.fill",
+                    tint: Color(red: 0.20, green: 0.66, blue: 0.44),
+                    background: Color(red: 0.20, green: 0.66, blue: 0.44).opacity(0.12)
+                ) { openTab(.downloads) }
 
                 HomeActionCard(
                     title: .localized("Import Certificate"),
@@ -264,19 +280,21 @@ struct HomeView: View {
         }
     }
 
-    // MARK: Tools
+    // MARK: Tools — Logs moved to Settings (single nav bar, no double NBNavigationView)
 
     private var toolsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             HomeSectionHeader(title: .localized("Tools"), icon: "wrench.and.screwdriver.fill", tint: Color.userTint)
 
             VStack(spacing: 0) {
-                Button { openTab(.tweaks) } label: {
+                // Tweaks — now reachable here; tab no longer in main bar (moved to suitable place)
+                NavigationLink { TweakLibraryList().navigationTitle(.localized("Tweaks")) } label: {
                     HomeToolRow(icon: "wrench.and.screwdriver.fill", iconTint: Color(red: 0.96, green: 0.46, blue: 0.18), title: .localized("Tweaks"), subtitle: .localized("Inject and manage tweaks"))
                 }
                 Divider().padding(.leading, 52).opacity(0.6)
-                Button { openTab(.logs) } label: {
-                    HomeToolRow(icon: "list.bullet.rectangle.fill", iconTint: Color(red: 0.45, green: 0.45, blue: 0.50), title: .localized("Logs"), subtitle: .localized("Signing & install activity"))
+                // Logs — single nav bar: push LogsHistory (no nested NBNavigationView)
+                NavigationLink { LogsHistoryView() } label: {
+                    HomeToolRow(icon: "text.alignleft", iconTint: Color(red: 0.45, green: 0.45, blue: 0.50), title: .localized("Logs"), subtitle: .localized("Activity logs • now in Settings"))
                 }
                 Divider().padding(.leading, 52).opacity(0.6)
                 NavigationLink { IPAExplorerHomeView() } label: {

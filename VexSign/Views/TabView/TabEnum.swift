@@ -1,52 +1,67 @@
 //
 //  TabEnum.swift
-//  VexSign — Settings replaces “More”; organized tab order
+//  VexSign — Files · Library · Home · App Store · Downloads · Settings
+//  App Store merges Sources; single navigation bar per tab; Logs moved to Settings.
 //
 import SwiftUI
 import NimbleViews
 
 enum TabEnum: String, CaseIterable, Hashable, Codable {
-    case home
-    case sources
+    // Primary 6 — requested order
+    case files
     case library
+    case home
+    case appStore
+    case downloads
+    case settings
+    // Legacy / hidden — kept for migration, not in default bar. Logs lives in Settings.
+    case sources
     case logs
     case tweaks
-    case settings
     case certificates
 
     var title: String {
         switch self {
-        case .home:         return .localized("Home")
-        case .sources:      return .localized("Sources")
+        case .files:        return .localized("Files")
         case .library:      return .localized("Library")
+        case .home:         return .localized("Home")
+        case .appStore:     return .localized("App Store")
+        case .downloads:    return .localized("Downloads")
+        case .settings:     return .localized("Settings")
+        // legacy titles (still localized if user has them hidden)
+        case .sources:      return .localized("Sources")
         case .logs:         return .localized("Logs")
         case .tweaks:       return .localized("Tweaks")
-        case .settings:     return .localized("Settings")
         case .certificates: return .localized("Certificates")
         }
     }
 
     var icon: String {
         switch self {
-        case .home:         return "house.fill"
-        case .sources:      return "globe.desk.fill"
+        case .files:        return "folder.fill"
         case .library:      return "square.grid.2x2.fill"
+        case .home:         return "house.fill"
+        case .appStore:     return "bag.fill" // Apple App Store bag — official-like
+        case .downloads:    return "arrow.down.circle.fill"
+        case .settings:     return "gearshape.2.fill"
+        case .sources:      return "globe.desk.fill"
         case .logs:         return "list.bullet.rectangle.fill"
         case .tweaks:       return "wrench.and.screwdriver.fill"
-        case .settings:     return "gearshape.2.fill"
         case .certificates: return "checkmark.seal.fill"
         }
     }
 
-    /// Outline variant for unselected state if needed
     var iconOutline: String {
         switch self {
-        case .home:         return "house"
-        case .sources:      return "globe.desk"
+        case .files:        return "folder"
         case .library:      return "square.grid.2x2"
+        case .home:         return "house"
+        case .appStore:     return "bag"
+        case .downloads:    return "arrow.down.circle"
+        case .settings:     return "gearshape.2"
+        case .sources:      return "globe.desk"
         case .logs:         return "list.bullet.rectangle"
         case .tweaks:       return "wrench.and.screwdriver"
-        case .settings:     return "gearshape.2"
         case .certificates: return "checkmark.seal"
         }
     }
@@ -54,23 +69,27 @@ enum TabEnum: String, CaseIterable, Hashable, Codable {
     @ViewBuilder
     static func view(for tab: TabEnum) -> some View {
         switch tab {
-        case .home:         HomeView()
-        case .sources:      SourcesView()
+        case .files:        FilesTabView()
         case .library:      LibraryView()
+        case .home:         HomeView()
+        case .appStore:     AppStoreView()
+        case .downloads:    DownloadsTabView()
+        case .settings:     SettingsView()
+        // legacy — still reachable if user customized, but not in default bar
+        case .sources:      SourcesView()
         case .logs:         LogsView()
         case .tweaks:       TweaksView()
-        case .settings:     SettingsView()
         case .certificates: NBNavigationView(.localized("Certificates")) { CertificatesView() }
         }
     }
 
-    /// Organized default order — Settings is always last, Home always first.
-    /// This matches the screenshot: no “More” overflow; Settings is its own tab.
+    /// Requested order: Files, Library, Home, App Store, Downloads, Settings
     static var defaultTabs: [TabEnum] {
-        [.home, .sources, .library, .logs, .tweaks, .settings]
+        [.files, .library, .home, .appStore, .downloads, .settings]
     }
 
+    /// Hidden by default, user can surface via customization if needed
     static var customizableTabs: [TabEnum] {
-        [.certificates]
+        [.sources, .logs, .tweaks, .certificates]
     }
 }
