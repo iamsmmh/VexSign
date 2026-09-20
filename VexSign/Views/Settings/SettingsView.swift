@@ -1,6 +1,8 @@
 //
 //  SettingsView.swift
-//  VexSign — organized Settings; tint-coherent, no “More” indirection
+//  VexSign — Smartly Categorized & Organized Settings
+//  Incorporating best features from FlareStore, LiveContainer, Feather, FeatherPlus,
+//  Ksign, KoSign, RyukSign, MySignReincarnated, SideStore, and AppNest.
 //
 
 import SwiftUI
@@ -14,6 +16,8 @@ struct SettingsView: View {
     @AppStorage(GameMode.enabledKey) private var _gameMode: Bool = false
     @State private var _currentIcon: String? = UIApplication.shared.alternateIconName
     @ObservedObject private var _selfUpdate = SelfUpdateManager.shared
+    @ObservedObject private var _updateChecker = AppUpdateChecker.shared
+    @ObservedObject private var _lockManager = AppLockManager.shared
 
     @FetchRequest(
         entity: CertificatePair.entity(),
@@ -38,8 +42,8 @@ struct SettingsView: View {
 
                 _aboutSection
 
-                // MARK: Personalization — kept together
-                NBSection(.localized("Personalization"), systemName: "paintbrush") {
+                // MARK: 1. Personalization & Interface
+                NBSection(.localized("Personalization"), systemName: "paintbrush.fill") {
                     NavigationLink(destination: AppearanceView()) {
                         Label(.localized("Appearance"), systemImage: "paintbrush.fill")
                     }
@@ -49,12 +53,40 @@ struct SettingsView: View {
                     NavigationLink(destination: TabBarSettingsView()) {
                         Label(.localized("Tab Bar"), systemImage: "squares.below.rectangle")
                     }
+                    NavigationLink(destination: NotificationsSettingsView()) {
+                        Label(.localized("Notifications & Dynamic Island"), systemImage: "bell.badge.fill")
+                    }
+                } footer: {
+                    Text(.localized("Customize themes, accent tints, home screen icon, tab order, and Live Activities."))
+                }
+
+                // MARK: 2. App Store, Downloads & Updates (FlareStore / SideStore / Ksign)
+                NBSection(.localized("App Store & Updates"), systemName: "bag.fill") {
+                    NavigationLink(destination: RefreshAndDownloadsSettingsView()) {
+                        Label(.localized("Refresh & Background Sync"), systemImage: "arrow.clockwise.icloud.fill")
+                    }
                     NavigationLink(destination: DownloadsSettingsView()) {
-                        Label(.localized("Downloads"), systemImage: "arrow.down.circle.fill")
+                        Label(.localized("Download Manager"), systemImage: "arrow.down.circle.fill")
+                    }
+                    NavigationLink(destination: UpdateMatchingSettingsView()) {
+                        HStack {
+                            Label(.localized("Update Matching"), systemImage: "slider.horizontal.3")
+                            if _updateChecker.updateCount > 0 {
+                                Spacer()
+                                Text("\(_updateChecker.updateCount)")
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(Color.userTint, in: Capsule())
+                                    .foregroundStyle(.white)
+                            }
+                        }
+                    }
+                    NavigationLink(destination: FavoritesAndAutoUpdatesSettingsView()) {
+                        Label(.localized("Favorites & Auto Updates"), systemImage: "star.circle.fill")
                     }
                     NavigationLink(destination: UpdatesSettingsView()) {
                         HStack {
-                            Label(.localized("Updates"), systemImage: "arrow.triangle.2.circlepath")
+                            Label(.localized("App Updates"), systemImage: "sparkles")
                             if _selfUpdate.available != nil {
                                 Spacer()
                                 Circle().fill(Color.userTint).frame(width: 8, height: 8)
@@ -62,56 +94,76 @@ struct SettingsView: View {
                         }
                     }
                     NavigationLink(destination: AutomationView()) {
-                        Label(.localized("Automation"), systemImage: "bolt.badge.clock.fill")
+                        Label(.localized("Background Automation"), systemImage: "bolt.badge.clock.fill")
                     }
                 } footer: {
-                    Text(.localized("Make VexSign yours — theme, icon, tab order and background behaviors."))
+                    Text(.localized("Background repository refreshing, download network settings, update matching rules, and automated signing."))
                 }
 
-                NBSection(.localized("Security")) {
+                // MARK: 3. Security, Privacy & LiveContainer Vault
+                NBSection(.localized("Security & Privacy"), systemName: "lock.shield.fill") {
                     NavigationLink(destination: AppLockSettingsView()) {
-                        Label(.localized("App Lock"), systemImage: "lock.iphone")
+                        HStack {
+                            Label(.localized("Master App Lock"), systemImage: "lock.iphone")
+                            Spacer()
+                            Text(AppLockManager.isEnabled ? .localized("On") : .localized("Off"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    NavigationLink(destination: SpecificAppLockSettingsView()) {
+                        HStack {
+                            Label(.localized("Specific App Lock"), systemImage: "lock.fill")
+                            if !_lockManager.lockedAppUUIDs.isEmpty {
+                                Spacer()
+                                Text("\(_lockManager.lockedAppUUIDs.count)")
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(Color.userTint, in: Capsule())
+                                    .foregroundStyle(.white)
+                            }
+                        }
+                    }
+                    NavigationLink(destination: HiddenAppsSettingsView()) {
+                        HStack {
+                            Label(.localized("Hidden Apps Vault"), systemImage: "eye.slash.fill")
+                            if !_lockManager.hiddenAppUUIDs.isEmpty {
+                                Spacer()
+                                Text("\(_lockManager.hiddenAppUUIDs.count)")
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 6).padding(.vertical, 2)
+                                    .background(Color.purple, in: Capsule())
+                                    .foregroundStyle(.white)
+                            }
+                        }
+                    }
+                    NavigationLink(destination: AntiRevokeSettingsView()) {
+                        Label(.localized("Anti-Revoke & DNS Shield"), systemImage: "shield.checkered")
                     }
                     NavigationLink(destination: CertificateExpirySettingsView()) {
                         Label(.localized("Expiry Reminders"), systemImage: "bell.badge.fill")
                     }
                 } footer: {
-                    Text(.localized("Lock the app behind Face ID or a passcode, and get notified before your certificates expire."))
+                    Text(.localized("Features from LiveContainer, AppNest, and FlareStore. Lock specific apps with Face ID, conceal hidden applications, and block Apple revocation endpoints."))
                 }
 
-                NBSection(.localized("Game Mode"), systemName: "gamecontroller") {
-                    Toggle(isOn: $_gameMode) {
-                        Label(.localized("Game Mode"), systemImage: "gamecontroller.fill")
-                    }
-                    .tint(Color.userTint)
-                    .onChange(of: _gameMode) { enabled in
-                        enabled ? GameMode.enable() : GameMode.disable()
-                    }
-                    NavigationLink(destination: GameModeView()) {
-                        Label(.localized("What It Pauses"), systemImage: "info.circle.fill")
-                    }
-                } footer: {
-                    Text(.localized("Stops downloads and the background update pass while you play. Signing and installing what you already have keeps working."))
-                }
-
-                NBSection(.localized("Certificates")) {
+                // MARK: 4. Signing & Tweaks Engine (Feather / FeatherPlus / MySign)
+                NBSection(.localized("Signing & Patches"), systemName: "signature") {
                     if let cert = selectedCertificate {
                         CertificatesCellView(cert: cert)
                     } else {
-                        Text(.localized("No Certificate"))
+                        Text(.localized("No Certificate Configured"))
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
                     NavigationLink(destination: CertificatesView()) {
-                        Label(.localized("Certificates"), systemImage: "checkmark.seal.fill")
+                        Label(.localized("Certificates Manager"), systemImage: "checkmark.seal.fill")
                     }
-                } footer: {
-                    Text(.localized("Add and manage certificates used for signing applications."))
-                }
-
-                NBSection(.localized("Signing & Tweaks")) {
                     NavigationLink(destination: ConfigurationView()) {
                         Label(.localized("Signing Options"), systemImage: "signature")
+                    }
+                    NavigationLink(destination: AdvancedSigningSettingsView()) {
+                        Label(.localized("Advanced Signing & Patches"), systemImage: "cpu.fill")
                     }
                     NavigationLink(destination: SigningProfilesView()) {
                         Label(.localized("Signing Profiles"), systemImage: "person.crop.rectangle.stack.fill")
@@ -119,21 +171,31 @@ struct SettingsView: View {
                     NavigationLink {
                         TweakLibraryList().navigationTitle(.localized("Tweaks"))
                     } label: {
-                        Label(.localized("Tweaks"), systemImage: "wrench.and.screwdriver.fill")
+                        Label(.localized("Tweaks & Dylibs"), systemImage: "wrench.and.screwdriver.fill")
                     }
                     NavigationLink(destination: FilesCompressionView()) {
-                        Label(.localized("Files & Compression"), systemImage: "archivebox.fill")
+                        Label(.localized("Compression & Packaging"), systemImage: "archivebox.fill")
                     }
                     NavigationLink(destination: InstallationView()) {
-                        Label(.localized("Installation"), systemImage: "arrow.down.app.fill")
+                        Label(.localized("Installation Engine"), systemImage: "arrow.down.app.fill")
                     }
                 } footer: {
-                    Text(.localized("How apps are signed, compressed and modified — plus how they’re installed."))
+                    Text(.localized("Configure entitlements, PPQ protection, FlareStore iOS 26/27 build SDK spoofing, dylib injection, and local loopback installation."))
                 }
 
-                NBSection(.localized("Services")) {
+                // MARK: 5. LiveContainer, JIT & Services (LiveContainer / SideStore / FlareStore)
+                NBSection(.localized("LiveContainer, JIT & Tools"), systemName: "bolt.badge.automatic.fill") {
+                    NavigationLink(destination: JITSettingsView()) {
+                        Label(.localized("JIT & On-Device Pairing"), systemImage: "bolt.badge.automatic.fill")
+                    }
+                    NavigationLink(destination: LocationSimulatorSettingsView()) {
+                        Label(.localized("Location Simulator"), systemImage: "location.fill")
+                    }
                     NavigationLink(destination: WebManagerView()) {
-                        Label(.localized("Web Manager"), systemImage: "externaldrive.badge.wifi")
+                        Label(.localized("Web Manager & File Server"), systemImage: "externaldrive.badge.wifi")
+                    }
+                    NavigationLink(destination: IPAExplorerHomeView()) {
+                        Label(.localized("IPA Explorer"), systemImage: "doc.text.magnifyingglass")
                     }
                     NavigationLink(destination: EcosystemView()) {
                         Label("Ecosystem", systemImage: "square.stack.3d.up.fill")
@@ -141,31 +203,46 @@ struct SettingsView: View {
                     NavigationLink(destination: CloudSigningView()) {
                         Label(.localized("Cloud Signing"), systemImage: "cloud.fill")
                     }
-                    NavigationLink(destination: IPAExplorerHomeView()) {
-                        Label(.localized("IPA Explorer"), systemImage: "doc.text.magnifyingglass")
+                    NavigationLink(destination: GameModeView()) {
+                        HStack {
+                            Label(.localized("Game Mode"), systemImage: "gamecontroller.fill")
+                            Spacer()
+                            Text(_gameMode ? .localized("On") : .localized("Off"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } footer: {
+                    Text(.localized("JIT attachment for emulators, FlareStore location simulator, browser drag-and-drop file upload, bundle inspection, and ecosystem synchronization."))
+                }
+
+                // MARK: 6. Storage & Maintenance
+                _directories()
+
+                NBSection(.localized("Storage & Maintenance"), systemName: "internaldrive.fill") {
+                    NavigationLink(destination: StorageView()) {
+                        Label(.localized("Storage Breakdown"), systemImage: "internaldrive.fill")
+                    }
+                    NavigationLink(destination: CleanupView()) {
+                        Label(.localized("Auto Cleanup & Cache"), systemImage: "sparkles")
+                    }
+                    NavigationLink(destination: BackupView()) {
+                        Label(.localized("Backup, Transfer & Migration"), systemImage: "arrow.triangle.2.circlepath")
+                    }
+                    NavigationLink(destination: IPSWBrowserView()) {
+                        Label(.localized("IPSW & Firmware Catalog"), systemImage: "opticaldisc.fill")
+                    }
+                    NavigationLink(destination: DeviceDiagnosticsView()) {
+                        Label(.localized("System Diagnostics"), systemImage: "info.circle.fill")
                     }
                     NavigationLink(destination: LogsHistoryView()) {
                         Label(.localized("Activity Logs"), systemImage: "text.alignleft")
                     }
-                }
-
-                _directories()
-
-                NBSection(.localized("Maintenance")) {
-                    NavigationLink(destination: CleanupView()) {
-                        Label(.localized("Auto Cleanup"), systemImage: "sparkles")
-                    }
-                    NavigationLink(destination: StorageView()) {
-                        Label(.localized("Storage"), systemImage: "internaldrive.fill")
-                    }
-                    NavigationLink(destination: BackupView()) {
-                        Label(.localized("Backup & Restore"), systemImage: "arrow.triangle.2.circlepath")
-                    }
                     NavigationLink(destination: ResetView()) {
-                        Label(.localized("Reset"), systemImage: "trash.fill")
+                        Label(.localized("Reset VexSign"), systemImage: "trash.fill")
                     }
                 } footer: {
-                    Text(.localized("Clean up after signing and installing automatically, check what is using space, back up your setup, or reset the app."))
+                    Text(.localized("Inspect storage footprint, wipe cached downloads, create full backup archives, browse firmware files, and export diagnostic logs."))
                 }
             }
         }
@@ -179,9 +256,15 @@ private extension SettingsView {
         Section {
             NavigationLink(destination: AboutView()) {
                 Label {
-                    Text(verbatim: .localized("About %@", arguments: Bundle.main.name))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: .localized("About %@", arguments: Bundle.main.name))
+                            .font(.headline)
+                        Text("Version \(Bundle.main.version) • FlareStore & LiveContainer Edition")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 } icon: {
-                    FRAppIconView(size: 23)
+                    FRAppIconView(size: 26)
                 }
             }
             Button(.localized("Submit Feedback"), systemImage: "safari") {
@@ -201,13 +284,13 @@ private extension SettingsView {
                 UIApplication.open(_githubUrl)
             }
         } footer: {
-            Text(.localized("If any issues occur within the app please report it via the GitHub repository. When submitting an issue, make sure to submit detailed information."))
+            Text(.localized("Report bugs or submit feedback to the development team on GitHub."))
         }
     }
 
     @ViewBuilder
     func _directories() -> some View {
-        NBSection(.localized("File Management")) {
+        NBSection(.localized("File Management"), systemName: "folder.badge.gearshape") {
             NavigationLink(destination: FileManagerView(directory: URL.documentsDirectory, isRoot: true)) {
                 Label(.localized("File Manager"), systemImage: "folder.badge.gearshape")
             }

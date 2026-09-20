@@ -84,6 +84,22 @@ extension Storage {
 			saveContext()
 		}
 	}
+
+	func updateAppName(for app: AppInfoPresentable, name: String) {
+		if let imported = app as? Imported {
+			imported.name = name
+			saveContext()
+		} else if let signed = app as? Signed {
+			signed.name = name
+			saveContext()
+		}
+	}
+
+	func updateAppName(uuid: String, newName: String) {
+		if let target = app(withUuid: uuid) {
+			updateAppName(for: target, name: newName)
+		}
+	}
 }
 
 // MARK: - Helpers

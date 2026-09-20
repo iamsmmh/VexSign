@@ -15,6 +15,8 @@ struct LibraryCellView: View {
 	@Environment(\.editMode) private var editMode
 	@ObservedObject private var skippedUpdates = SkippedUpdatesManager.shared
 	@ObservedObject private var appStoreTracker = AppStoreUpdateTracker.shared
+	@ObservedObject private var updateChecker = AppUpdateChecker.shared
+	@ObservedObject private var lockManager = AppLockManager.shared
 
 	var certInfo: Date.ExpirationInfo? {
 		Storage.shared.getCertificate(from: app)?.expiration?.expirationInfo()
@@ -29,6 +31,8 @@ struct LibraryCellView: View {
 	@State private var _explorerApp: AnyApp?
 	/// Clone sheet target, so "Clone…" can ask for a name and bundle ID.
 	@State private var _cloneApp: AnyApp?
+	/// LiveContainer / AppNest customization sheet
+	@State private var _customizingApp: AnyApp?
 
 	@Binding var selectedInfoAppPresenting: AnyApp?
 	@Binding var selectedSigningAppPresenting: AnyApp?
@@ -89,10 +93,32 @@ struct LibraryCellView: View {
 		.onTapGesture {
 			if isEditing {
 				_toggleSelection()
+			} else if let uuid = app.uuid, lockManager.isAppLocked(uuid), !lockManager.isSessionUnlocked(uuid) {
+				lockManager.authenticateForApp(uuid: uuid, name: app.name ?? .localized("Application")) { success in
+					if success {
+						selectedInfoAppPresenting = AnyApp(app)
+					}
+				}
+			} else {
+				selectedInfoAppPresenting = AnyApp(app)
 			}
 		}
 		.swipeActions {
 			if !isEditing {
+				if let update = updateChecker.hasUpdate(for: app), let url = update.downloadURL {
+					Button {
+						_ = DownloadManager.shared.startDownload(
+							from: url,
+							id: update.app.currentUniqueId,
+							appName: update.displayName,
+							appDescription: update.app.localizedDescription
+						)
+						Toast.info(.localized("Downloading update..."), systemImage: "arrow.down.circle")
+					} label: {
+						Label(.localized("Update"), systemImage: "arrow.triangle.2.circlepath")
+					}
+					.tint(Color.userTint)
+				}
 				if SigningProfileStore.shared.profile(forBundleID: app.identifier) != nil {
 					Button {
 						Task { await AutoSignManager.shared.sign(app) }
@@ -110,12 +136,40 @@ struct LibraryCellView: View {
 		.sheet(item: $_cloneApp) { target in
 			AppCloneSheet(app: target.base)
 		}
+		.sheet(item: $_customizingApp) { item in
+			AppCustomizationSheet(app: item.base)
+		}
 		.contextMenu {
 			if !isEditing {
 				_contextActions(for: app)
 				Divider()
+				Button {
+					_customizingApp = AnyApp(app)
+				} label: {
+					Label(.localized("Customize App..."), systemImage: "slider.horizontal.2.square")
+				}
+				Divider()
 				_contextActionsExtra(for: app)
 				Divider()
+				if let uuid = app.uuid {
+					Button {
+						lockManager.toggleAppLock(uuid)
+					} label: {
+						Label(
+							lockManager.isAppLocked(uuid) ? .localized("Unlock App") : .localized("Lock with Face ID"),
+							systemImage: lockManager.isAppLocked(uuid) ? "lock.open" : "lock"
+						)
+					}
+					Button {
+						lockManager.toggleHideApp(uuid)
+					} label: {
+						Label(
+							lockManager.isAppHidden(uuid) ? .localized("Unhide App") : .localized("Hide App"),
+							systemImage: lockManager.isAppHidden(uuid) ? "eye" : "eye.slash"
+						)
+					}
+					Divider()
+				}
 				if let onSelectMore {
 					Button(.localized("Select"), systemImage: "checkmark.circle") {
 						onSelectMore()
@@ -141,10 +195,29 @@ struct LibraryCellView: View {
 			.animation(.easeInOut(duration: 0.3), value: isHighlighted)
 	}
 	
-	/// "v2.1" pill when the App Store has a newer public version (opt-in tracking).
+	/// Pill when an update is available (from AltSource repositories or App Store).
 	@ViewBuilder
 	private var _appStoreBadge: some View {
-		if
+		if let uuid = app.uuid, lockManager.isAppLocked(uuid) {
+			Image(systemName: "lock.fill")
+				.font(.system(size: 10, weight: .bold))
+				.foregroundStyle(.secondary)
+				.padding(4)
+				.background(Color.secondary.opacity(0.12), in: Circle())
+		}
+
+		if let update = updateChecker.hasUpdate(for: app) {
+			HStack(spacing: 3) {
+				Image(systemName: "arrow.triangle.2.circlepath")
+					.font(.system(size: 8, weight: .bold))
+				Text(String.localized("v%@", arguments: update.sourceVersion ?? ""))
+					.font(.caption2.weight(.bold))
+			}
+			.padding(.horizontal, 7)
+			.padding(.vertical, 3)
+			.background(Color.userTint.opacity(0.18), in: Capsule())
+			.foregroundStyle(Color.userTint)
+		} else if
 			let info = appStoreTracker.info(for: app.identifier),
 			appStoreTracker.hasNewerVersion(than: app)
 		{

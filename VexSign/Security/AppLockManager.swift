@@ -2,31 +2,56 @@
 //  AppLockManager.swift
 //  VexSign
 //
-//  Optional Face ID / Touch ID / passcode gate. The app locks whenever it leaves
-//  the foreground (and on cold start while enabled) and unlocks through
-//  LocalAuthentication, which falls back to the device passcode automatically.
-//
-//  If the device has no passcode at all, evaluation is impossible — the manager
-//  turns itself off rather than trapping the user behind an unpickable lock.
+//  Enhanced App Lock & Privacy Manager featuring:
+//  - Master App Lock (Face ID / Touch ID / Passcode)
+//  - Specific App Lock (Per-app biometric lock ported from LiveContainer / AppNest)
+//  - Hidden Apps Vault (Conceal apps with Face ID reveal from LiveContainer)
 //
 
 import Foundation
 import LocalAuthentication
+import SwiftUI
 
 @MainActor
 final class AppLockManager: ObservableObject {
 	static let shared = AppLockManager()
 
 	static let enabledKey = "VexSign.security.appLockEnabled"
+	private static let lockedAppsKey = "VexSign.security.lockedAppUUIDs"
+	private static let hiddenAppsKey = "VexSign.security.hiddenAppUUIDs"
 
-	/// True while the lock overlay should cover the UI.
+	/// True while the master lock overlay should cover the UI.
 	@Published private(set) var isLocked: Bool
 	@Published private(set) var isAuthenticating = false
 	@Published private(set) var lastMessage: String?
 
+	// MARK: - LiveContainer: Specific App Lock & Hidden Apps
+	@Published var lockedAppUUIDs: Set<String> {
+		didSet {
+			UserDefaults.standard.set(Array(lockedAppUUIDs), forKey: Self.lockedAppsKey)
+		}
+	}
+
+	@Published var hiddenAppUUIDs: Set<String> {
+		didSet {
+			UserDefaults.standard.set(Array(hiddenAppUUIDs), forKey: Self.hiddenAppsKey)
+		}
+	}
+
+	/// When true, hidden apps are shown in Library (requires biometric authentication)
+	@Published var isRevealingHiddenApps = false
+
+	/// Set of app UUIDs that were authenticated this session so user isn't prompted repeatedly
+	private var sessionUnlockedUUIDs: Set<String> = []
+
 	private init() {
-		// Cold starts begin locked too, not just backgrounded ones.
-		isLocked = Self.isEnabled
+		isLocked = UserDefaults.standard.bool(forKey: Self.enabledKey)
+
+		let savedLocked = UserDefaults.standard.stringArray(forKey: Self.lockedAppsKey) ?? []
+		self.lockedAppUUIDs = Set(savedLocked)
+
+		let savedHidden = UserDefaults.standard.stringArray(forKey: Self.hiddenAppsKey) ?? []
+		self.hiddenAppUUIDs = Set(savedHidden)
 	}
 
 	static var isEnabled: Bool {
@@ -45,13 +70,14 @@ final class AppLockManager: ObservableObject {
 		}
 	}
 
-	/// Locks when the app goes to the background (no-op while already locked).
+	// MARK: - Master App Lock
 	func lockIfNeeded() {
 		guard Self.isEnabled, !isLocked, !isAuthenticating else { return }
 		isLocked = true
+		sessionUnlockedUUIDs.removeAll()
+		isRevealingHiddenApps = false
 	}
 
-	/// Prompts for unlock when the app becomes active while locked.
 	func authenticateIfNeeded() {
 		guard Self.isEnabled, isLocked else { return }
 		authenticate()
@@ -65,7 +91,6 @@ final class AppLockManager: ObservableObject {
 
 		var error: NSError?
 		guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
-			// No device passcode — keeping the lock on would brick the app, so disable it.
 			UserDefaults.standard.set(false, forKey: Self.enabledKey)
 			lastMessage = error?.localizedDescription ?? String.localized("No device passcode is set, so App Lock cannot run.")
 			isLocked = false
@@ -85,5 +110,105 @@ final class AppLockManager: ObservableObject {
 				}
 			}
 		}
+	}
+
+	// MARK: - LiveContainer: Specific App Lock
+	func isAppLocked(_ uuid: String) -> Bool {
+		lockedAppUUIDs.contains(uuid)
+	}
+
+	func isSessionUnlocked(_ uuid: String) -> Bool {
+		sessionUnlockedUUIDs.contains(uuid)
+	}
+
+	func toggleAppLock(_ uuid: String) {
+		if lockedAppUUIDs.contains(uuid) {
+			lockedAppUUIDs.remove(uuid)
+			sessionUnlockedUUIDs.remove(uuid)
+		} else {
+			lockedAppUUIDs.insert(uuid)
+		}
+	}
+
+	func authenticateForApp(uuid: String, name: String, completion: @escaping (Bool) -> Void) {
+		// If app is not specifically locked or was already unlocked this session, pass through
+		guard isAppLocked(uuid) else {
+			completion(true)
+			return
+		}
+
+		if sessionUnlockedUUIDs.contains(uuid) {
+			completion(true)
+			return
+		}
+
+		let context = LAContext()
+		context.localizedCancelTitle = String.localized("Cancel")
+
+		var error: NSError?
+		guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+			// If device has no passcode, allow access
+			completion(true)
+			return
+		}
+
+		let reason = String.localized("Unlock %@", arguments: name)
+		context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { [weak self] success, _ in
+			DispatchQueue.main.async {
+				if success {
+					self?.sessionUnlockedUUIDs.insert(uuid)
+					completion(true)
+				} else {
+					completion(false)
+				}
+			}
+		}
+	}
+
+	// MARK: - LiveContainer: Hidden Apps Vault
+	func isAppHidden(_ uuid: String) -> Bool {
+		hiddenAppUUIDs.contains(uuid)
+	}
+
+	func toggleHideApp(_ uuid: String) {
+		if hiddenAppUUIDs.contains(uuid) {
+			hiddenAppUUIDs.remove(uuid)
+		} else {
+			hiddenAppUUIDs.insert(uuid)
+		}
+	}
+
+	func authenticateToRevealHidden(completion: @escaping (Bool) -> Void) {
+		if isRevealingHiddenApps {
+			// Toggle off without prompt
+			isRevealingHiddenApps = false
+			completion(false)
+			return
+		}
+
+		let context = LAContext()
+		context.localizedCancelTitle = String.localized("Cancel")
+
+		var error: NSError?
+		guard context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error) else {
+			isRevealingHiddenApps = true
+			completion(true)
+			return
+		}
+
+		context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: String.localized("Reveal Hidden Applications")) { [weak self] success, _ in
+			DispatchQueue.main.async {
+				if success {
+					self?.isRevealingHiddenApps = true
+					completion(true)
+				} else {
+					completion(false)
+				}
+			}
+		}
+	}
+
+	func hideHiddenApps() {
+		isRevealingHiddenApps = false
 	}
 }

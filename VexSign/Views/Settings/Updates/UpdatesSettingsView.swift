@@ -28,6 +28,12 @@ struct UpdatesSettingsView: View {
 			_appStoreSection
 			if !_manager.ignoredVersions.isEmpty { _ignoredSection }
 			Section {
+				NavigationLink(destination: UpdateMatchingSettingsView()) {
+					Label(.localized("Update Matching"), systemImage: "slider.horizontal.3")
+				}
+				NavigationLink(destination: FavoritesAndAutoUpdatesSettingsView()) {
+					Label(.localized("Favorites & Auto Updates"), systemImage: "star.circle.fill")
+				}
 				NavigationLink(destination: AllVersionsView()) {
 					Label(.localized("All Versions"), systemImage: "square.stack.3d.up")
 				}
