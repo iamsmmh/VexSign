@@ -92,7 +92,11 @@ enum UnifiedTaskPhase: String, Codable, CaseIterable {
 
 /// A single task. Reference type so in-place progress updates publish
 /// through the center without diffing the whole list.
-final class UnifiedTask: Identifiable {
+///
+/// `@unchecked Sendable` mirrors the existing `Download` model: instances
+/// are created and mutated on the main actor, but references are handed
+/// across actor boundaries by signing/install flows running off-main.
+final class UnifiedTask: Identifiable, @unchecked Sendable {
 	let id: String
 	let kind: UnifiedTaskKind
 	var title: String
