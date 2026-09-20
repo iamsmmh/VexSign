@@ -43,9 +43,20 @@ struct AppStoreView: View {
 
     private var filteredSources: [AltSource] {
         let base = nonExcludedSources
-        guard !searchText.isEmpty else { return base.sorted { ($0.name ?? "") < ($1.name ?? "") } }
-        return base.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
-            .sorted { ($0.name ?? "") < ($1.name ?? "") }
+        let searched: [AltSource] = searchText.isEmpty ? base : base.filter { ($0.name ?? "").localizedCaseInsensitiveContains(searchText) }
+        let sorted = searched.sorted { ($0.name ?? "") < ($1.name ?? "") }
+        // Category wiring — Apps shows non-premium, Categories shows premium, Updates filtered by checker
+        switch selectedCategory {
+        case .updates:
+            // Show all when searching, otherwise only if updates exist (handled by updatesCard + empty)
+            return sorted
+        case .apps:
+            return sorted.filter { !VexSignAPI.isPremiumSource($0.sourceURL ?? URL(string: "https://example.com")!) }
+        case .categories:
+            return sorted.filter { VexSignAPI.isPremiumSource($0.sourceURL ?? URL(string: "https://example.com")!) }
+        case .discover:
+            return sorted
+        }
     }
 
     private var updateCount: Int { updateChecker.updateCount }
@@ -71,9 +82,10 @@ struct AppStoreView: View {
                 .padding(.top, 14)
                 .padding(.bottom, 28)
             }
-            .background(Color(uiColor: .systemGroupedBackground))
+            .background(Theme.background)
             .scrollIndicators(.hidden)
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: Text(.localized("Search App Store")))
+            .accessibilityElement(children: .contain)
             .refreshable { await viewModel.fetchSources(sources, refresh: true) }
             .toolbar { toolbarContent }
             .sheet(isPresented: $isAddingPresenting) {

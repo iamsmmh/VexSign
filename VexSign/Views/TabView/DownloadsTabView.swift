@@ -95,14 +95,16 @@ struct DownloadsTabView: View {
             VStack(spacing: 10) {
                 HStack(spacing: 12) {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.userTint.opacity(0.12)).frame(width: 44, height: 44)
-                        Image(systemName: "arrow.down.circle.fill").font(.system(size: 22, weight: .semibold)).foregroundStyle(Color.userTint)
+                        RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Theme.tintSoft).frame(width: 44, height: 44)
+                        Image(systemName: "arrow.down.circle.fill").font(.system(size: 22, weight: .semibold)).foregroundStyle(Theme.tint)
+                            .accessibilityHidden(true)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(.localized("Downloads")).font(.headline)
                         Text(downloadManager.downloads.isEmpty ? .localized("No downloads yet") : .localized("%lld total • %lld active", arguments: downloadManager.downloads.count, activeCount)).font(.caption).foregroundStyle(.secondary)
                         if downloadManager.currentDownloadSpeed > 0 {
-                            Text(downloadManager.currentDownloadSpeed.formattedByteCount + "/s").font(.caption2.weight(.medium)).foregroundStyle(Color.userTint).monospacedDigit()
+                            Text(downloadManager.currentDownloadSpeed.formattedByteCount + "/s").font(.caption2.weight(.medium)).foregroundStyle(Theme.tint).monospacedDigit()
+                                .accessibilityLabel(Text("\(downloadManager.currentDownloadSpeed.formattedByteCount) per second"))
                         }
                     }
                     Spacer()
@@ -111,7 +113,8 @@ struct DownloadsTabView: View {
                             Text("\(downloadManager.downloads.count)").font(.title3.bold()).monospacedDigit().foregroundStyle(.primary)
                             Text(.localized("items")).font(.caption2).foregroundStyle(.secondary)
                         }
-                        .padding(.horizontal, 10).padding(.vertical, 6).background(Color(uiColor: .quaternarySystemFill), in: Capsule())
+                        .padding(.horizontal, 10).padding(.vertical, 6).background(Theme.quaternary, in: Capsule())
+                        .accessibilityElement(children: .combine)
                     }
                 }
                 if !downloadManager.downloads.isEmpty {
@@ -124,12 +127,14 @@ struct DownloadsTabView: View {
                             Text(summary.phase.title).font(.caption2).foregroundStyle(.secondary)
                         }
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(Text("\(Int(summary.progress * 100)) percent, \(summary.phase.title)"))
                 }
             }
             .padding(.vertical, 6)
         }
         .listRowInsets(EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16))
-        .listRowBackground(Color(uiColor: .secondarySystemGroupedBackground))
+        .listRowBackground(Theme.card)
     }
 
     private var filterPills: some View {
@@ -285,8 +290,9 @@ private struct DownloadRow: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 DownloadPhaseRing(phase: model.phase, progress: model.phaseProgress, size: 28, lineWidth: 2.6)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(download.fileName).font(.subheadline.weight(.semibold)).lineLimit(1)
+                    Text(download.fileName).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.7).accessibilityLabel(Text(download.fileName))
                     HStack(spacing: 4) {
                         Image(systemName: model.phase.icon).font(.caption2)
                         Text(model.phase.title).font(.caption)
@@ -295,19 +301,38 @@ private struct DownloadRow: View {
                         }
                     }
                     .foregroundStyle(model.phase.tint)
+                    .accessibilityElement(children: .combine)
                 }
                 Spacer()
-                Menu {
-                    if download.isPaused {
-                        Button(.localized("Resume"), systemImage: "play.fill") { DownloadManager.shared.resumeDownload(download) }
-                    } else if download.isActive {
-                        Button(.localized("Pause"), systemImage: "pause.fill") { DownloadManager.shared.pauseDownload(download) }
+                // Completed → Open in Files (Ksign-like)
+                if model.phase == .completed {
+                    Button {
+                        if let url = FileManager.default.downloadStaging.toSharedDocumentsURL() { UIApplication.open(url) }
+                        Toast.info(.localized("Opened staging folder"), systemImage: "folder")
+                    } label: {
+                        Label(.localized("Open"), systemImage: "folder.fill").font(.caption.weight(.semibold))
                     }
-                    if download.canCancel {
-                        Button(.localized("Cancel"), systemImage: "xmark", role: .destructive) { DownloadManager.shared.cancelDownload(download) }
+                    .buttonStyle(.bordered).tint(Theme.tint).controlSize(.mini)
+                    .accessibilityLabel(Text(.localized("Open in Files")))
+                } else {
+                    Menu {
+                        if download.isPaused {
+                            Button(.localized("Resume"), systemImage: "play.fill") { DownloadManager.shared.resumeDownload(download) }
+                        } else if download.isActive {
+                            Button(.localized("Pause"), systemImage: "pause.fill") { DownloadManager.shared.pauseDownload(download) }
+                        }
+                        if download.canCancel {
+                            Button(.localized("Cancel"), systemImage: "xmark", role: .destructive) { DownloadManager.shared.cancelDownload(download) }
+                        }
+                        if model.phase == .completed {
+                            Button(.localized("Open in Files"), systemImage: "folder") {
+                                if let url = FileManager.default.downloadStaging.toSharedDocumentsURL() { UIApplication.open(url) }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle").font(.body).foregroundStyle(.secondary)
                     }
-                } label: {
-                    Image(systemName: "ellipsis.circle").font(.body).foregroundStyle(.secondary)
+                    .accessibilityLabel(Text(.localized("Actions")))
                 }
             }
             DownloadPhaseBar(phase: model.phase, progress: model.phaseProgress)
@@ -323,8 +348,11 @@ private struct DownloadRow: View {
                     Text(DownloadManager.shared.currentDownloadSpeed.formattedByteCount + "/s").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text("\(Int(model.phaseProgress * 100)) percent, \(model.phase.title)"))
         }
         .padding(.vertical, 4)
         .onAppear { model.bind(to: download) }
+        // Persistence hint — DownloadManager keeps downloads in UserDefaults staging; clearing only removes UI
     }
 }
