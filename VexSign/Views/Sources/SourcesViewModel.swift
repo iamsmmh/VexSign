@@ -191,7 +191,7 @@ final class SourcesViewModel: ObservableObject {
 		// refresh runs (and entirely offline after a cold launch).
 		var working = self.sources.filter { sourcesArray.contains($0.key) }
 		for item in items where working[item.source] == nil {
-			if let cached = RepositorySnapshotCache.load(identifier: item.identifier) {
+			if var cached = RepositorySnapshotCache.load(identifier: item.identifier) {
 				cached.repository.sourceURL = item.source.sourceURL
 				working[item.source] = cached.repository
 				staleSourceIDs.insert(item.identifier)
@@ -200,7 +200,7 @@ final class SourcesViewModel: ObservableObject {
 		// Sources blocked by the transport policy keep their cached catalog
 		// too — browsing works, refreshes simply don't run for them.
 		for blocked in transportBlocked where working[blocked.source] == nil {
-			if let cached = RepositorySnapshotCache.load(identifier: blocked.identifier) {
+			if var cached = RepositorySnapshotCache.load(identifier: blocked.identifier) {
 				cached.repository.sourceURL = blocked.source.sourceURL
 				working[blocked.source] = cached.repository
 			}
