@@ -39,7 +39,7 @@ struct VisionRootView: View {
 				VisionConnectView()
 					.frame(width: 520)
 			}
-			.ornament(attachmentAnchor: .scene(bottomTrailing)) {
+			.ornament(attachmentAnchor: .scene(.bottomTrailing)) {
 				HStack(spacing: 12) {
 					if store.isRefreshing {
 						ProgressView()

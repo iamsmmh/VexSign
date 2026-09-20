@@ -26,7 +26,7 @@ struct VexSignWatchApp: App {
 
 // MARK: - Delegate
 
-final class WatchAppDelegate: NSObject, WKApplicationDelegateDelegate {
+final class WatchAppDelegate: NSObject, WKApplicationDelegate {
 	func applicationDidFinishLaunching() {
 		WatchSessionStore.shared.activate()
 	}
