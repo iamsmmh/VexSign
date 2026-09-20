@@ -20,9 +20,9 @@ struct TabbarView: View {
 
     private var tabSelectionBinding: Binding<TabEnum> {
         Binding(
-            get: { _visibleDefaultTabs.contains(tabSelection.selectedTab) ? tabSelection.selectedTab : .library },
+            get: { _visibleDefaultTabs.contains(tabSelection.selectedTab) ? tabSelection.selectedTab : .home },
             set: { newValue in
-                if newValue == tabSelection.selectedTab && newValue == .sources {
+                if newValue == tabSelection.selectedTab && (newValue == .appStore || newValue == .sources) {
                     tabSelection.sourcesRetapped.toggle()
                 }
                 tabSelection.selectedTab = newValue
@@ -31,8 +31,9 @@ struct TabbarView: View {
     }
 
     private func _badge(for tab: TabEnum) -> Int {
-        if tab == .sources && _showSourcesUpdateBadge { return updateChecker.updateCount }
+        if (tab == .appStore || tab == .sources) && _showSourcesUpdateBadge { return updateChecker.updateCount }
         if tab == .tweaks { return _tweakManager.defaultInjectCount }
+        if tab == .downloads { return DownloadManager.shared.downloads.filter { $0.isActive }.count }
         return 0
     }
 

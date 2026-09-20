@@ -45,17 +45,17 @@ struct ExtendedTabbarView: View {
         Binding(
             get: { selectedTab },
             set: { newValue in
-                if newValue == selectedTab, case .main(.sources) = newValue {
-                    tabSelection.sourcesRetapped.toggle()
-                }
+                if newValue == selectedTab, case .main(.appStore) = newValue { tabSelection.sourcesRetapped.toggle() }
+                if newValue == selectedTab, case .main(.sources) = newValue { tabSelection.sourcesRetapped.toggle() }
                 selectedTab = newValue
             }
         )
     }
 
     private func _badgeCount(for tab: TabEnum) -> Int {
-        if tab == .sources && _showSourcesUpdateBadge { return updateChecker.updateCount }
+        if (tab == .appStore || tab == .sources) && _showSourcesUpdateBadge { return updateChecker.updateCount }
         if tab == .tweaks { return _tweakManager.defaultInjectCount }
+        if tab == .downloads { return DownloadManager.shared.downloads.filter { $0.isActive }.count }
         return 0
     }
 
