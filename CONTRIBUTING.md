@@ -55,6 +55,11 @@ Set your own team / enable automatic signing in Xcode's target settings, or use 
 
 - Keep contributions in their own branch, not `main`.
 - Don't be afraid of reviewers requesting changes.
+- Every PR is compiled by the `Release` workflow; the resulting unsigned IPA is attached to the run as an artifact if you want to try it on a device.
+
+## Releasing
+
+Releases are cut by pushing a tag (`vX.Y.Z`, matching `MARKETING_VERSION`); CI builds, verifies and publishes automatically. To try a build from any branch without publishing, run the `Release` workflow manually with `build_only` left ticked. See [docs/RELEASING.md](docs/RELEASING.md).
 
 ## Contributing to Zsign
 

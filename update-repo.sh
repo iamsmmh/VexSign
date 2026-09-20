@@ -119,10 +119,10 @@ if [ -z "$release_body" ] || [ "$release_body" = "null" ]; then
   version_description="VexSign ${version}."
   news_caption="See release notes for what's new."
 else
-  # Strip the leading H2 ("## VexSign vX.Y.Z") which duplicates the version
+  # Strip the leading H2 ("## VexSign vX.Y[.Z]") which duplicates the version
   # label in the source UI, then trim blank lines at the top.
   cleaned_body="$(printf '%s' "$release_body" \
-    | sed -E '1{/^##[[:space:]]*VexSign[[:space:]]+v?[0-9]+\.[0-9]+\.[0-9]+/d;}' \
+    | sed -E '1{/^##[[:space:]]*VexSign[[:space:]]+v?[0-9]+\.[0-9]+(\.[0-9]+)?/d;}' \
     | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}')"
   version_description="$cleaned_body"
   # First non-empty, non-markdown-heading line for the news caption, truncated.
