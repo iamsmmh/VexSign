@@ -55,6 +55,17 @@ enum FR {
 
 			await SigningLiveActivityManager.shared.start(appName: app.name ?? "App")
 
+			// Unified task pipeline: one record for the whole sign operation.
+			let task = await MainActor.run {
+				UnifiedTaskCenter.shared.begin(
+					kind: .sign,
+					title: app.name ?? .localized("App"),
+					subtitle: .localized("Signing"),
+					phase: .signing,
+					subjectID: app.uuid
+				)
+			}
+
 			let keepAlive = BackgroundTaskManager(
 				taskName: "Signing",
 				expirationTitle: .localized("Signing continuing"),
@@ -81,6 +92,7 @@ enum FR {
 				log.success(.localized("Signed successfully"))
 				await SigningLiveActivityManager.shared.complete(appName: app.name)
 				await MainActor.run {
+					UnifiedTaskCenter.shared.transition(task, to: .completed, progress: 1)
 					completion(.success(signed))
 				}
 			} catch {
@@ -88,6 +100,7 @@ enum FR {
 				log.error(error.localizedDescription)
 				await SigningLiveActivityManager.shared.cancel()
 				await MainActor.run {
+					UnifiedTaskCenter.shared.transition(task, to: .failed, error: error.localizedDescription)
 					completion(.failure(error))
 				}
 			}
@@ -232,6 +245,20 @@ enum FR {
 			if showAlerts {
 				DispatchQueue.main.async {
 					Toast.error(.localized("Invalid URL"), duration: .sticky)
+				}
+			}
+			competion(.failure(error))
+			return
+		}
+
+		// Transport policy: repositories must be HTTPS unless the user has
+		// explicitly opted into insecure HTTP for local repositories.
+		do {
+			try SourceURLPolicy.validate(url)
+		} catch {
+			if showAlerts {
+				DispatchQueue.main.async {
+					Toast.error(error.localizedDescription, duration: .sticky)
 				}
 			}
 			competion(.failure(error))

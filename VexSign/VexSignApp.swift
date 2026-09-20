@@ -22,11 +22,10 @@ struct VexSignApp: App {
     @StateObject private var tabSelection = TabSelectionObserver.shared
     @StateObject private var selfUpdate = SelfUpdateManager.shared
     @StateObject private var appLock = AppLockManager.shared
+    /// Single observable source of truth for theme/font/animation preferences,
+    /// injected into the environment so every view updates on change.
+    @StateObject private var appearance = AppearanceStore.shared
     @AppStorage("VexSign.onboardingCompleted") private var _onboardingCompleted = false
-    @AppStorage(VexSignStylePreferences.visualThemeKey) private var visualTheme = VexSignVisualTheme.system.rawValue
-    @AppStorage(VexSignStylePreferences.fontFamilyKey) private var fontFamily = VexSignFontFamily.system.rawValue
-    @AppStorage(VexSignStylePreferences.fontScaleKey) private var fontScale = 1.0
-    @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var flareAnimations = true
     @State private var _showOnboarding = false
     let storage = Storage.shared
 
@@ -128,13 +127,10 @@ struct VexSignApp: App {
                     }
                 }
             }
-            .environment(\.font, VexSignStylePreferences.font(familyRawValue: fontFamily, scale: fontScale))
-            .preferredColorScheme(
-                visualTheme == VexSignVisualTheme.luna.rawValue || visualTheme == VexSignVisualTheme.flare.rawValue
-                    ? .dark
-                    : nil
-            )
-            .buttonStyle(VexSignFlareButtonStyle(enabled: flareAnimations))
+            .environmentObject(appearance)
+            .environment(\.font, appearance.font)
+            .preferredColorScheme(appearance.prefersDarkSurfaces ? .dark : nil)
+            .buttonStyle(VexSignFlareButtonStyle(enabled: appearance.animationsEnabled))
             .vexSignWebMotion()
             .overlay(alignment: .bottom) {
                 InstallQueuePill()
@@ -163,7 +159,7 @@ struct VexSignApp: App {
 
                 UIApplication.topViewController()?.view.window?.tintColor = UIColor(Theme.tint)
             }
-            .onChange(of: visualTheme) { _ in
+            .onChange(of: appearance.visualTheme) { _ in
                 UIApplication.topViewController()?.view.window?.tintColor = UIColor(Theme.tint)
             }
             .onChange(of: scenePhase) { newPhase in
@@ -191,7 +187,11 @@ struct VexSignApp: App {
                 _showOnboarding = true
             }
             .sheet(isPresented: $_showOnboarding) {
+                // The wizard reads certificates/sources via @FetchRequest, so
+                // it needs the managed object context in its own environment
+                // (the sheet does not inherit the tab content's injection).
                 OnboardingView()
+                    .environment(\.managedObjectContext, storage.context)
             }
             .sheet(isPresented: $selfUpdate.presentUpdatePrompt) {
                 if let release = selfUpdate.available {

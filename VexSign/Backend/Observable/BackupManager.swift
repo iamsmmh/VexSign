@@ -350,7 +350,17 @@ final class BackupManager {
 			var skipped = 0
 			for source in manifest.sources {
 				if Storage.shared.sourceExists(source.identifier) { skipped += 1; continue }
-				Storage.shared.addSource(source.url, name: source.name, identifier: source.identifier, iconURL: source.iconURL) { _ in }
+				// Restoring the user's own configuration is not a new trust
+				// decision: the transport policy is bypassed so a previously
+				// saved (e.g. LAN HTTP) repository still restores. Refreshes
+				// still respect the SourceURLPolicy until the user opts in.
+				Storage.shared.addSource(
+					source.url,
+					name: source.name,
+					identifier: source.identifier,
+					iconURL: source.iconURL,
+					enforceTransportPolicy: false
+				) { _ in }
 				added += 1
 			}
 			summary.record(.sources, added: added, skipped: skipped)

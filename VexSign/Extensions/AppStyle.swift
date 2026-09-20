@@ -80,20 +80,44 @@ enum VexSignStylePreferences {
 /// A restrained FlareStore-inspired press treatment: a tiny scale/opacity
 /// change and no layout-affecting geometry. It remains instantaneous when the
 /// user enables Reduce Motion or turns Flare animations off.
+///
+/// Style values are captured at init from the `AppearanceStore` snapshot
+/// instead of via `@AppStorage`: property wrappers like `@AppStorage` are only
+/// guaranteed to update inside views, and a `ButtonStyle` is not a view. The
+/// environment (Reduce Motion) is read inside the body view below for the
+/// same reason.
 struct VexSignFlareButtonStyle: ButtonStyle {
     var enabled = true
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage(VexSignStylePreferences.visualThemeKey) private var visualTheme = VexSignVisualTheme.system.rawValue
+    var isFlareTheme = AppearanceStore.snapshot().isFlare
+
+    init(enabled: Bool = true) {
+        self.enabled = enabled
+        self.isFlareTheme = AppearanceStore.snapshot().isFlare
+    }
 
     func makeBody(configuration: Configuration) -> some View {
-        let isWebTheme = visualTheme == VexSignVisualTheme.flare.rawValue
-        let pressedScale: CGFloat = isWebTheme ? 0.965 : 0.97
-        let response: Double = isWebTheme ? 0.30 : 0.24
-        let damping: Double = isWebTheme ? 0.68 : 0.72
+        _FlarePressBody(
+            configuration: configuration,
+            enabled: enabled,
+            isFlareTheme: isFlareTheme
+        )
+    }
+}
 
-        return configuration.label
+private struct _FlarePressBody: View {
+    let configuration: VexSignFlareButtonStyle.Configuration
+    let enabled: Bool
+    let isFlareTheme: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        let pressedScale: CGFloat = isFlareTheme ? 0.965 : 0.97
+        let response: Double = isFlareTheme ? 0.30 : 0.24
+        let damping: Double = isFlareTheme ? 0.68 : 0.72
+
+        configuration.label
             .scaleEffect(configuration.isPressed && enabled && !reduceMotion ? pressedScale : 1)
-            .opacity(configuration.isPressed && enabled ? (isWebTheme ? 0.82 : 0.86) : 1)
+            .opacity(configuration.isPressed && enabled ? (isFlareTheme ? 0.82 : 0.86) : 1)
             .animation(
                 enabled && !reduceMotion
                     ? .spring(response: response, dampingFraction: damping)

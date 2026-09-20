@@ -5,7 +5,7 @@
 //  Covers the logic behind the features that were added on top of the signing
 //  core: PPQ/PPQLess classification, the JIT entitlement builder, the batch
 //  certificate result mapping, direct-install verification, App Store lookups,
-//  the IPSW catalog models, the widget payload and Minimal Mode.
+//  the IPSW catalog models, the widget payload and the immutable tab structure.
 //
 //  Everything here is pure (no network, no device), so it runs on any host.
 //
@@ -359,22 +359,61 @@ final class MissingFeatureTests: XCTestCase {
 										   availableBytes: nil, lastUpdated: Date()).certTint, .red)
 	}
 
-	// MARK: - Minimal Mode
+	// MARK: - Tab structure
 
-	func testMinimalModeKeepsOnlyHomeAndSettings() {
+	/// The six primary tabs are an immutable navigation structure: fixed
+	/// order, always visible, never hideable or reorderable.
+	func testPrimaryTabsAreImmutableAndAlwaysVisible() {
 		let preferences = TabBarPreferences.shared
-		let wasMinimal = preferences.isMinimal
-		addTeardownBlock { preferences.setMinimal(wasMinimal) }
 
-		preferences.setMinimal(true)
-		XCTAssertTrue(preferences.isMinimal)
-		XCTAssertEqual(Set(preferences.visibleTabs), Set(TabBarPreferences.minimalTabs))
-		XCTAssertTrue(preferences.visibleTabs.contains(.settings), "Settings must stay reachable to turn it off")
-		XCTAssertTrue(TabBarPreferences.minimalTabs.contains(preferences.resolvedLaunchTab))
+		XCTAssertEqual(
+			TabBarPreferences.primaryTabs,
+			[.files, .library, .home, .appStore, .downloads, .settings],
+			"The required order is Files → Library → Home → App Store → Downloads → Settings"
+		)
 
-		preferences.setMinimal(false)
-		XCTAssertFalse(preferences.isMinimal)
-		XCTAssertTrue(preferences.visibleTabs.contains(.library) || preferences.isHidden(.library))
+		// Every primary tab is visible in the resolved bar, in order.
+		let leading = Array(preferences.visibleTabs.prefix(TabBarPreferences.primaryTabs.count))
+		XCTAssertEqual(leading, TabBarPreferences.primaryTabs)
+
+		// Hiding a primary tab must be a no-op.
+		let hiddenBefore = preferences.isHidden(.appStore)
+		preferences.setHidden(.appStore, true)
+		XCTAssertFalse(preferences.isHidden(.appStore), "Primary tabs can never be hidden")
+		XCTAssertTrue(preferences.visibleTabs.contains(.appStore))
+		preferences.setHidden(.appStore, false)
+		XCTAssertEqual(preferences.isHidden(.appStore), hiddenBefore)
+
+		// Reordering must never touch the primary order.
+		let secondary = preferences.order
+		if !secondary.isEmpty {
+			preferences.moveSecondary(from: IndexSet(integer: secondary.count - 1), to: 0)
+			let leadingAfterMove = Array(preferences.visibleTabs.prefix(TabBarPreferences.primaryTabs.count))
+			XCTAssertEqual(leadingAfterMove, TabBarPreferences.primaryTabs)
+			XCTAssertTrue(preferences.visibleTabs.count >= TabBarPreferences.primaryTabs.count)
+		}
+
+		// Only legacy/secondary tabs are customizable.
+		for tab in TabBarPreferences.primaryTabs {
+			XCTAssertFalse(TabBarPreferences.hideableTabs.contains(tab))
+			XCTAssertFalse(TabBarPreferences.secondaryTabs.contains(tab))
+		}
+		XCTAssertTrue(TabBarPreferences.secondaryTabs.contains(.sources))
+	}
+
+	func testLegacyTabsRemainCustomizable() {
+		let preferences = TabBarPreferences.shared
+		let wasHidden = preferences.isHidden(.sources)
+		addTeardownBlock { preferences.setHidden(.sources, wasHidden) }
+
+		preferences.setHidden(.sources, true)
+		XCTAssertTrue(preferences.isHidden(.sources))
+		XCTAssertFalse(preferences.visibleTabs.contains(.sources), "A hidden legacy tab leaves the bar")
+		XCTAssertTrue(preferences.visibleTabs.contains(.library), "Primary tabs stay visible regardless")
+
+		preferences.setHidden(.sources, false)
+		XCTAssertFalse(preferences.isHidden(.sources))
+		XCTAssertTrue(preferences.visibleTabs.contains(.sources))
 	}
 
 	// MARK: - Fixtures

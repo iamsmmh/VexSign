@@ -86,6 +86,29 @@ Nothing else happens: no release, no tag, no `app-repo.json` change. Pull
 requests against `main` get exactly this treatment automatically, so a PR's
 run page also has an installable IPA.
 
+## Synthetic compatibility tags (validation-only runs)
+
+The repository history carries **synthetic milestone tags** — `v0.0.1` through
+`v0.0.18`, `v1.0.0` — annotated like:
+
+```
+VexSign v0.0.18 FlareStore parity milestone (synthetic tag)
+```
+
+They mark parity milestones and intentionally do **not** match
+`MARKETING_VERSION` (currently `1.0`). Pushing or re-pushing one therefore
+must not fail the version checks and must never publish a release. The
+workflow detects the phrase *synthetic tag* in the tag annotation and:
+
+- runs the **full build + packaging + validation** for the tagged commit;
+- attaches the IPA to the run as an **artifact** (same as `build_only`);
+- publishes **nothing** and does not touch `app-repo.json`;
+- reports itself as a **compatibility milestone** in the run summary.
+
+Real releases are unaffected: a tag whose annotation does not say *synthetic
+tag* still has to match `MARKETING_VERSION` exactly, before *and* after the
+build.
+
 ## Manual publish (escape hatch)
 
 Unticking `build_only` publishes `v<MARKETING_VERSION>` from the head of the

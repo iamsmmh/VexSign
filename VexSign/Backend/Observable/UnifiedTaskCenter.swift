@@ -1,0 +1,409 @@
+//
+//  UnifiedTaskCenter.swift
+//  VexSign
+//
+//  One model for every long-running operation: downloads, imports, signing,
+//  installations and updates. Each task moves through the same pipeline —
+//
+//      queued → downloading → extracting → signing → installing → completed
+//                                    ↘ failed / cancelled (from any stage)
+//
+//  — so progress, failure stage, retry and history are consistent everywhere:
+//  the Task Center UI, the Downloads tab and the Dynamic Island all read the
+//  same state instead of three ad-hoc ones.
+//
+//  Downloads are mirrored from `DownloadManager` (which already models
+//  download → import → sign phases); signing and installation flows report
+//  in through `begin(...)`/`transition(...)` at their natural boundaries.
+//  History persists the last 200 finished tasks as JSON — titles and outcome
+//  metadata only, never credentials or file contents.
+//
+
+import Foundation
+import Combine
+import OSLog
+
+// MARK: - Model
+
+enum UnifiedTaskKind: String, Codable, CaseIterable {
+	case download
+	case importIPA = "import"
+	case sign
+	case install
+	case update
+	case export
+
+	var title: String {
+		switch self {
+		case .download: .localized("Download")
+		case .importIPA: .localized("Import")
+		case .sign: .localized("Sign")
+		case .install: .localized("Install")
+		case .update: .localized("Update")
+		case .export: .localized("Export")
+		}
+	}
+
+	var icon: String {
+		switch self {
+		case .download: "arrow.down.circle.fill"
+		case .importIPA: "square.and.arrow.down.fill"
+		case .sign: "signature"
+		case .install: "iphone.badge.plus"
+		case .update: "arrow.triangle.2.circlepath"
+		case .export: "square.and.arrow.up.fill"
+		}
+	}
+}
+
+enum UnifiedTaskPhase: String, Codable, CaseIterable {
+	case queued
+	case downloading
+	case extracting
+	case signing
+	case installing
+	case completed
+	case failed
+	case cancelled
+
+	/// Paused is a sub-state of downloading surfaced by the task center.
+	case paused
+
+	var title: String {
+		switch self {
+		case .queued: .localized("Queued")
+		case .downloading: .localized("Downloading")
+		case .extracting: .localized("Extracting")
+		case .signing: .localized("Signing")
+		case .installing: .localized("Installing")
+		case .completed: .localized("Completed")
+		case .failed: .localized("Failed")
+		case .cancelled: .localized("Cancelled")
+		case .paused: .localized("Paused")
+		}
+	}
+
+	var isTerminal: Bool {
+		self == .completed || self == .failed || self == .cancelled
+	}
+
+	var isInProgress: Bool { !isTerminal }
+}
+
+/// A single task. Reference type so in-place progress updates publish
+/// through the center without diffing the whole list.
+final class UnifiedTask: Identifiable {
+	let id: String
+	let kind: UnifiedTaskKind
+	var title: String
+	var subtitle: String?
+	var phase: UnifiedTaskPhase
+	/// 0…1; negative means "indeterminate".
+	var progress: Double
+	var failureStage: UnifiedTaskPhase?
+	var errorText: String?
+	/// Set at init; `var` only so history snapshots can be restored verbatim.
+	var createdAt: Date
+	var updatedAt: Date
+	/// Identifies the originating flow (download id, app uuid, …) for retry.
+	var subjectID: String?
+
+	init(
+		id: String = UUID().uuidString,
+		kind: UnifiedTaskKind,
+		title: String,
+		subtitle: String? = nil,
+		phase: UnifiedTaskPhase = .queued,
+		progress: Double = 0,
+		subjectID: String? = nil
+	) {
+		self.id = id
+		self.kind = kind
+		self.title = title
+		self.subtitle = subtitle
+		self.phase = phase
+		self.progress = progress
+		self.createdAt = Date()
+		self.updatedAt = Date()
+		self.subjectID = subjectID
+	}
+
+	/// Persistable snapshot for the history file.
+	struct Snapshot: Codable {
+		var id: String
+		var kind: String
+		var title: String
+		var subtitle: String?
+		var phase: String
+		var failureStage: String?
+		var errorText: String?
+		var createdAt: Date
+		var updatedAt: Date
+		var subjectID: String?
+	}
+
+	var snapshot: Snapshot {
+		Snapshot(
+			id: id,
+			kind: kind.rawValue,
+			title: title,
+			subtitle: subtitle,
+			phase: phase.rawValue,
+			failureStage: failureStage?.rawValue,
+			errorText: errorText,
+			createdAt: createdAt,
+			updatedAt: updatedAt,
+			subjectID: subjectID
+		)
+	}
+
+	static func from(_ snapshot: Snapshot) -> UnifiedTask {
+		let task = UnifiedTask(
+			id: snapshot.id,
+			kind: UnifiedTaskKind(rawValue: snapshot.kind) ?? .download,
+			title: snapshot.title,
+			subtitle: snapshot.subtitle,
+			phase: UnifiedTaskPhase(rawValue: snapshot.phase) ?? .completed,
+			subjectID: snapshot.subjectID
+		)
+		task.failureStage = snapshot.failureStage.flatMap { UnifiedTaskPhase(rawValue: $0) }
+		task.errorText = snapshot.errorText
+		task.createdAt = snapshot.createdAt
+		task.updatedAt = snapshot.updatedAt
+		return task
+	}
+}
+
+// MARK: - Center
+
+@MainActor
+final class UnifiedTaskCenter: ObservableObject {
+	static let shared = UnifiedTaskCenter()
+
+	/// In-flight (and very recently finished) tasks, newest first.
+	@Published private(set) var tasks: [UnifiedTask] = []
+	/// Persisted history of finished tasks, newest first.
+	@Published private(set) var history: [UnifiedTask] = []
+
+	/// Registered retry handlers (in-memory only — a retry needs the live flow).
+	private var retryHandlers: [String: () -> Void] = [:]
+	private var downloadMirrors: [String: UnifiedTask] = [:]
+	private var cancellables = Set<AnyCancellable>()
+
+	private static let historyLimit = 200
+	private static var historyFileURL: URL {
+		let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+			?? FileManager.default.temporaryDirectory
+		return base.appendingPathComponent("UnifiedTaskHistory.json")
+	}
+
+	private init() {
+		_loadHistory()
+		_mirrorDownloads()
+	}
+
+	// MARK: - Task lifecycle (explicit flows: sign, install, export, update)
+
+	@discardableResult
+	func begin(
+		kind: UnifiedTaskKind,
+		title: String,
+		subtitle: String? = nil,
+		phase: UnifiedTaskPhase = .queued,
+		subjectID: String? = nil
+	) -> UnifiedTask {
+		let task = UnifiedTask(kind: kind, title: title, subtitle: subtitle, phase: phase, subjectID: subjectID)
+		tasks.insert(task, at: 0)
+		return task
+	}
+
+	func transition(_ task: UnifiedTask, to phase: UnifiedTaskPhase, progress: Double? = nil, error: String? = nil) {
+		guard !task.phase.isTerminal else { return }
+		if phase.isTerminal, phase == .failed {
+			task.failureStage = task.phase
+		}
+		task.phase = phase
+		if let progress { task.progress = progress }
+		task.errorText = error
+		task.updatedAt = Date()
+		if phase.isTerminal {
+			_finalize(task)
+		} else {
+			objectWillChange.send()
+		}
+	}
+
+	func update(_ task: UnifiedTask, progress: Double) {
+		guard !task.phase.isTerminal else { return }
+		task.progress = progress
+		task.updatedAt = Date()
+		objectWillChange.send()
+	}
+
+	func cancel(_ task: UnifiedTask) {
+		guard !task.phase.isTerminal else { return }
+		transition(task, to: .cancelled)
+	}
+
+	func registerRetry(_ task: UnifiedTask, handler: @escaping () -> Void) {
+		guard !task.phase.isTerminal || task.phase == .failed || task.phase == .cancelled else { return }
+		retryHandlers[task.id] = handler
+	}
+
+	/// Retry a failed/cancelled task when its flow registered a handler.
+	/// Returns false when no live handler exists (e.g. after a relaunch).
+	@discardableResult
+	func retry(_ task: UnifiedTask) -> Bool {
+		guard let handler = retryHandlers[task.id] else { return false }
+		// Move back to the front as a fresh attempt.
+		retryHandlers.removeValue(forKey: task.id)
+		if let index = tasks.firstIndex(where: { $0.id == task.id }) {
+			tasks.remove(at: index)
+		} else if let index = history.firstIndex(where: { $0.id == task.id }) {
+			history.remove(at: index)
+		}
+		task.phase = .queued
+		task.progress = 0
+		task.failureStage = nil
+		task.errorText = nil
+		task.updatedAt = Date()
+		tasks.insert(task, at: 0)
+		objectWillChange.send()
+		handler()
+		return true
+	}
+
+	/// The exact stage a task failed at, for "show exact failure stage".
+	var failureDescription: String {
+		let failed = (tasks + history).filter { $0.phase == .failed }
+		guard let latest = failed.first else { return "" }
+		if let stage = latest.failureStage {
+			return String.localized("Failed at %@: %@", arguments: stage.title, latest.errorText ?? .localized("Unknown error"))
+		}
+		return latest.errorText ?? .localized("Unknown error")
+	}
+
+	private func _finalize(_ task: UnifiedTask) {
+		if let index = tasks.firstIndex(where: { $0.id == task.id }) {
+			tasks.remove(at: index)
+		}
+		history.insert(task, at: 0)
+		if history.count > Self.historyLimit {
+			history = Array(history.prefix(Self.historyLimit))
+		}
+		_persistHistory()
+	}
+
+	// MARK: - Download mirroring
+
+	/// Downloads, imports and their signing phase already live in
+	/// `DownloadManager`; mirroring them keeps one source of truth while the
+	/// task center presents the unified pipeline.
+	private func _mirrorDownloads() {
+		DownloadManager.shared.$downloads
+			.receive(on: RunLoop.main)
+			.sink { [weak self] downloads in
+				self?._syncMirrored(downloads: downloads)
+			}
+			.store(in: &cancellables)
+	}
+
+	private func _syncMirrored(downloads: [Download]) {
+		let activeIDs = Set(downloads.map { $0.id })
+
+		// Drop mirrors whose download disappeared without a terminal phase.
+		for (downloadID, task) in downloadMirrors where !activeIDs.contains(downloadID) {
+			if !task.phase.isTerminal {
+				task.phase = .completed
+				_finalize(task)
+			}
+			downloadMirrors.removeValue(forKey: downloadID)
+		}
+
+		for download in downloads {
+			let task: UnifiedTask
+			if let existing = downloadMirrors[download.id] {
+				task = existing
+			} else {
+				let isArchive = download.onlyArchiving
+				task = begin(
+					kind: isArchive ? .importIPA : .download,
+					title: download.fileName,
+					subtitle: download.appDescription,
+					phase: .queued,
+					subjectID: download.id
+				)
+				registerRetry(task) { [weak download] in
+					guard let download else { return }
+					if let resumeData = download.resumeData, !resumeData.isEmpty {
+						DownloadManager.shared.resumeDownload(download)
+					}
+				}
+				downloadMirrors[download.id] = task
+			}
+
+			// Map the download's phase onto the unified pipeline.
+			let newPhase: UnifiedTaskPhase
+			switch download.phase {
+			case .queued: newPhase = .queued
+			case .downloading: newPhase = .downloading
+			case .paused: newPhase = .paused
+			case .importing: newPhase = .extracting
+			case .signing: newPhase = .signing
+			case .completed: newPhase = .completed
+			}
+
+			if newPhase.isTerminal {
+				if !task.phase.isTerminal {
+					transition(task, to: .completed)
+				}
+			} else if task.phase != newPhase {
+				transition(task, to: newPhase, progress: download.phaseProgress)
+			} else {
+				update(task, progress: download.phaseProgress)
+			}
+		}
+	}
+
+	// MARK: - Persistence
+
+	private func _loadHistory() {
+		guard let data = try? Data(contentsOf: Self.historyFileURL),
+		      let snapshots = try? JSONDecoder().decode([UnifiedTask.Snapshot].self, from: data) else {
+			return
+		}
+		history = snapshots.map { UnifiedTask.from($0) }
+	}
+
+	private func _persistHistory() {
+		let snapshots = history.map { $0.snapshot }
+		if let data = try? JSONEncoder().encode(snapshots) {
+			do {
+				try data.write(to: Self.historyFileURL, options: .atomic)
+			} catch {
+				Logger.misc.warning("Task history persist failed: \(error.localizedDescription, privacy: .public)")
+			}
+		}
+	}
+
+	/// Clears the persisted history (Settings → Diagnostics).
+	func clearHistory() {
+		history = []
+		try? FileManager.default.removeItem(at: Self.historyFileURL)
+		objectWillChange.send()
+	}
+
+	// MARK: - Introspection for UI
+
+	var activeTasks: [UnifiedTask] {
+		tasks.filter { $0.phase.isInProgress }
+	}
+
+	var failedTasks: [UnifiedTask] {
+		tasks.filter { $0.phase == .failed }
+	}
+
+	var hasActivity: Bool {
+		!activeTasks.isEmpty
+	}
+}

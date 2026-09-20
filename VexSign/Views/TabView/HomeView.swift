@@ -47,7 +47,7 @@ struct HomeView: View {
     }
 
     private var isFlareWebTheme: Bool {
-        UserDefaults.standard.string(forKey: VexSignStylePreferences.visualThemeKey) == VexSignVisualTheme.flare.rawValue
+        appearance.isFlare
     }
 
     private var updateCount: Int { updateChecker.updateCount }
@@ -297,6 +297,8 @@ struct HomeView: View {
         .onDrop(of: [UTType.fileURL.identifier, UTType.item.identifier], isTargeted: $isDropTargeted) { providers in
             handleDrop(providers)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(.localized("Import IPA or TIPA")))
         .accessibilityHint(Text(.localized("Choose an IPA or TIPA file from Files, or drop one here.")))
     }
 
@@ -371,6 +373,18 @@ struct HomeView: View {
             .buttonStyle(VexSignFlareButtonStyle())
 
             NavigationLink {
+                TaskCenterView()
+            } label: {
+                HomeFeatureRow(
+                    icon: "list.bullet.rectangle.fill",
+                    title: .localized("Task Center"),
+                    subtitle: .localized("Downloads, imports, signing and installs"),
+                    tint: FlarePalette.pink
+                )
+            }
+            .buttonStyle(VexSignFlareButtonStyle())
+
+            NavigationLink {
                 IPSWBrowserView(inNavigationStack: false)
             } label: {
                 HomeFeatureRow(
@@ -387,11 +401,9 @@ struct HomeView: View {
     // MARK: - Working actions
 
     private func openTab(_ tab: TabEnum) {
-        let prefs = TabBarPreferences.shared
-        if prefs.isMinimal, !TabBarPreferences.minimalTabs.contains(tab) {
-            prefs.setMinimal(false)
-        }
-        prefs.setHidden(tab, false)
+        // Primary tabs are always visible; only a hidden legacy tab needs to
+        // be surfaced again before switching to it.
+        TabBarPreferences.shared.setHidden(tab, false)
         TabSelectionObserver.shared.selectedTab = tab
     }
 
@@ -513,7 +525,7 @@ struct HomeView: View {
 
 private enum FlarePalette {
     private static var visualTheme: VexSignVisualTheme {
-        VexSignVisualTheme(rawValue: UserDefaults.standard.string(forKey: VexSignStylePreferences.visualThemeKey) ?? "") ?? .system
+        AppearanceStore.snapshot().visualTheme
     }
 
     private static var isBase: Bool { visualTheme == .system }
@@ -571,6 +583,8 @@ private struct FlareGridBackground: View {
             context.stroke(path, with: .color(FlarePalette.grid), lineWidth: 0.8)
         }
         .background(FlarePalette.background)
+        // Purely decorative — keep it out of VoiceOver and Reduce Motion.
+        .accessibilityHidden(true)
     }
 }
 

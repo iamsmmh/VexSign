@@ -9,6 +9,7 @@
 import Foundation
 import SWCompression
 import Compression
+import OSLog
 
 /// Decompresses or untars `fileURL` in place (the URL is updated to point at the result).
 ///
@@ -28,8 +29,26 @@ func extractFile(at fileURL: inout URL) throws {
 		let tarContainer = try TarContainer.open(container: data)
 		let standardizedExtractionDir = extractionDirectory.standardizedFileURL.path
 		for entry in tarContainer {
+			// Security: archive entries are untrusted input.
+			//  1. Reject absolute paths and any `..` component (path traversal).
+			//  2. Never materialize symlinks/hardlinks/devices — a symlink that
+			//     escapes the extraction directory is a classic archive attack.
+			//  3. Only plain files and directories are written; anything else is
+			//     skipped (and logged) rather than interpreted.
+			guard _isSafeArchiveEntryName(entry.info.name) else {
+				_ = SECURE_ARCHIVE_LOG.skipped(entry.info.name, reason: "unsafe path")
+				continue
+			}
+			guard entry.info.type == .directory || entry.info.type == .regular else {
+				_ = SECURE_ARCHIVE_LOG.skipped(entry.info.name, reason: "non-regular entry (link/device/fifo)")
+				continue
+			}
+
 			let entryPath = extractionDirectory.appendingPathComponent(entry.info.name)
+			// Backstop: the resolved destination must stay inside the
+			// extraction directory even if a name slipped past the checks.
 			guard entryPath.standardizedFileURL.path.hasPrefix(standardizedExtractionDir) else {
+				_ = SECURE_ARCHIVE_LOG.skipped(entry.info.name, reason: "resolved outside extraction directory")
 				continue
 			}
 			if entry.info.type == .directory {
@@ -61,6 +80,40 @@ func extractFile(at fileURL: inout URL) throws {
 	let outputURL = fileURL.deletingPathExtension()
 	try decompressed.write(to: outputURL)
 	fileURL = outputURL
+}
+
+// MARK: - Secure extraction helpers
+
+/// Validates an archive entry name before anything is written to disk.
+///
+/// An entry is safe when it is relative, has no `..` component, no drive
+/// letter (Windows-style), no backslash separator trickery and no NUL byte.
+/// This is deliberately conservative: rather than resolving and re-checking a
+/// suspicious path, the entry is rejected outright.
+func _isSafeArchiveEntryName(_ name: String) -> Bool {
+	if name.isEmpty { return false }
+	if name.hasPrefix("/") { return false }             // absolute path
+	if name.contains("\0") { return false }             // NUL byte
+	if name.contains("\\") { return false }             // backslash separator / drive letters
+	if name.hasPrefix("~") { return false }             // home-relative
+	let components = name.split(separator: "/", omittingEmptySubsequences: true)
+	if components.isEmpty { return false }
+	for component in components {
+		if component == ".." { return false }           // parent traversal
+		if component == "." { continue }
+	}
+	return true
+}
+
+/// Central logging for skipped archive entries. Surfaces in the unified log
+/// (and the Diagnostics Center) so a malicious archive is visible instead of
+/// silently dropping entries.
+enum SECURE_ARCHIVE_LOG {
+	@discardableResult
+	static func skipped(_ name: String, reason: String) -> Bool {
+		Logger.security.warning("Archive entry skipped (\(reason, privacy: .public)): \(name, privacy: .public)")
+		return false
+	}
 }
 
 // MARK: - Format detection

@@ -58,12 +58,15 @@ VexSign brings signing, IPA editing, repository discovery and device utilities i
 
 - **AltStore-compatible repositories** through AltSourceKit, including the existing encrypted ESign parsing support.
 - **Source management and preferences**, repository refresh and app update tracking.
+- **HTTPS-only repository transport**, with an explicit opt-in for local HTTP repositories.
+- **Source health dashboard** — last successful refresh, failure reasons, retry counts, rate-limit status, priority and duplicate-app resolution.
 - **Discovery** with multi-term search, suggestions, favorites, categories and collections.
 - **Featured, recommended, locally ranked trending and recently updated views** with app cards and carousels.
 - **Bundle-ID grouping and multi-source version selection** for apps offered by multiple repositories.
-- **Offline discovery index** and cached repository snapshots.
+- **Offline repository catalog** — the last successful snapshot of every source is kept on disk, clearly marked as a saved copy when a refresh fails, so browsing keeps working with no network.
 - **Conditional repository sync** using ETag / Last-Modified, unchanged-content detection and coalesced refreshes.
 - **Last-known-good source retention** when refreshes fail, plus opt-in startup/background refresh.
+- **Per-app update rules** — ignore a version, ignore or prefer a source, pin a certificate, disable automatic updates and preserve custom signing options across updates.
 - **Premium activation, restore and device recovery** through the configured backend, with premium catalog filters.
 - **App self-update checking** and controls for skipped source updates.
 
