@@ -121,8 +121,8 @@ struct CheckCertificatesIntent: AppIntent {
 
 	/// Off by default: turning it on sends certificate identifiers to the
 	/// configured responder, which is exactly what the in-app switch says.
-	@Parameter(title: "Ask the responder too (sends certificate identifiers off-device)")
-	var online: Bool = false
+	@Parameter(title: "Ask the responder too (sends certificate identifiers off-device)", default: false)
+	var online: Bool
 
 	@MainActor
 	func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -152,8 +152,8 @@ struct OpenVexSignIntent: AppIntent {
 
 	static var openAppWhenRun: Bool = true
 
-	@Parameter(title: "Section", requestValueDialog: "Where should VexSign open?")
-	var section: VexSignSection = .home
+	@Parameter(title: "Section", requestValueDialog: "Where should VexSign open?", default: .home)
+	var section: VexSignSection
 
 	@MainActor
 	func perform() async throws -> some IntentResult {
@@ -203,8 +203,8 @@ struct SetGameModeIntent: AppIntent {
 	static var title: LocalizedStringResource = "Set Game Mode"
 	static var description = IntentDescription("Turns Game Mode on or off. It pauses downloads and background work only.")
 
-	@Parameter(title: "Enabled")
-	var enabled: Bool = true
+	@Parameter(title: "Enabled", default: true)
+	var enabled: Bool
 
 	@MainActor
 	func perform() async throws -> some IntentResult & ProvidesDialog {
