@@ -1,33 +1,64 @@
 name: Release
 
+# How this workflow is meant to be used
+# --------------------------------------
+# * Real releases: push a tag.
+#       git tag -a v1.2.0 -m "VexSign v1.2.0" && git push origin v1.2.0
+#   The tag pins the exact commit, the built app's CFBundleShortVersionString
+#   must equal the tag (minus the leading "v" and any -pre-release suffix), and
+#   the GitHub release is created for that tag at that commit. The same tag
+#   therefore always means the same source and the same version - and the
+#   Update Repository workflow syncs app-repo.json automatically afterwards.
+#
+# * Testing changes: run the workflow manually with `build_only` left at
+#   `true` (the default). It compiles, packages and validates the IPA from
+#   whatever branch you picked and attaches it to the run as a workflow
+#   artifact. Nothing is published and no tag is created. Pull requests get
+#   exactly the same build-only treatment so `main` never merges red.
+#
+# * `build_only = false` on a manual run is an escape hatch (e.g. to create a
+#   draft release and review the notes before publishing). It publishes
+#   v<MARKETING_VERSION> from the exact commit that was built, and refuses to
+#   run if that tag already exists so a published release is never silently
+#   overwritten by a branch build. Prefer pushing a tag.
+#
+# See docs/RELEASING.md for the full procedure.
+
 on:
-  # Manual build (specify Xcode version if needed).
   workflow_dispatch:
     inputs:
       build_only:
-        description: "Build and validate the IPA without publishing a release"
+        description: >-
+          Build and validate the IPA without publishing anything (the IPA is
+          attached to the run as an artifact). Untick only for a manual
+          publish - real releases should be published by pushing a tag.
         required: false
         type: boolean
         default: true
       xcode:
         description: >-
           Xcode version to build with (e.g. "26.3", "16.4"). Leave empty to use
-          the newest Xcode installed on the runner image.
+          the RELEASE_XCODE repository variable, or failing that the newest
+          Xcode installed on the runner image.
         required: false
         default: ''
       prerelease:
-        description: "Mark as prerelease?"
+        description: "Manual publish only: mark the release as a pre-release"
         required: false
         type: boolean
         default: false
       draft:
-        description: "Create as draft?"
+        description: "Manual publish only: create the release as a draft"
         required: false
         type: boolean
         default: false
-  # Push a tag like v1.2.0 to publish automatically.
+  # Push a release tag to publish automatically. The tag must be
+  # v<MARKETING_VERSION>, optionally followed by a -pre-release suffix:
+  # v1.2, v1.2.0, v1.2.0-beta.1, v1.2-rc1.
   push:
     tags:
+      - 'v[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+-*'
       - 'v[0-9]+.[0-9]+.[0-9]+'
       - 'v[0-9]+.[0-9]+.[0-9]+-*'
   # Compile-check every PR so `main` never merges red. PR runs do NOT publish.
@@ -40,10 +71,13 @@ permissions:
   # log CDN is not reachable from every reviewer environment).
   pull-requests: write
 
-# Only one release build at a time; never cancel a run already uploading.
+# Publishing runs (tag pushes and manual publishes) share one group, so two
+# releases can never race each other and a publish in flight is never
+# cancelled. Build-only and PR runs are grouped per ref instead: they don't
+# queue behind a release, and a newer push to the same PR cancels the stale run.
 concurrency:
-  group: create-release
-  cancel-in-progress: false
+  group: ${{ (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.build_only)) && 'release-publish' || format('release-{0}', github.ref) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -57,9 +91,108 @@ jobs:
           # (we diff against the previous release tag).
           fetch-depth: 0
 
+      # Decide up front whether this run publishes and, if so, under which tag.
+      # Everything that can be validated without building (tag shape, tag vs.
+      # MARKETING_VERSION, tag already taken) fails here, before we spend ten
+      # minutes of macOS runner time.
+      - name: Resolve release mode
+        id: mode
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          BUILD_ONLY: ${{ inputs.build_only }}
+          INPUT_PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG_RE='^v[0-9]+\.[0-9]+(\.[0-9]+)?(-[0-9A-Za-z.]+)?$'
+
+          # MARKETING_VERSION as committed in the project. Empty when the
+          # targets disagree - then only the authoritative post-build check
+          # (against the built Info.plist) applies.
+          PROJECT_VERSION="$(grep -oE 'MARKETING_VERSION = [^;]+;' VexSign.xcodeproj/project.pbxproj \
+            | sed -E 's/^MARKETING_VERSION = "?([^";]*)"?;$/\1/' | sort -u)"
+          if [ "$(printf '%s\n' "${PROJECT_VERSION}" | grep -c .)" -ne 1 ]; then
+            echo "::warning::Targets disagree on MARKETING_VERSION ($(printf '%s' "${PROJECT_VERSION}" | tr '\n' ' ')); the version check will run after the build only."
+            PROJECT_VERSION=""
+          fi
+
+          MODE="build-only"
+          case "${EVENT_NAME}" in
+            push)          MODE="tag" ;;
+            pull_request)  MODE="pull-request" ;;
+            workflow_dispatch)
+              if [ "${BUILD_ONLY}" = "false" ]; then
+                # Dispatching a publish *on a tag* re-publishes that tag from
+                # the same source; from a branch it cuts v<MARKETING_VERSION>.
+                if [ "${REF_TYPE}" = "tag" ]; then MODE="tag"; else MODE="manual"; fi
+              fi ;;
+          esac
+
+          PUBLISH=false
+          RELEASE_TAG=""
+          case "${MODE}" in
+            tag)
+              RELEASE_TAG="${REF_NAME}"
+              if ! printf '%s' "${RELEASE_TAG}" | grep -qE "${RELEASE_TAG_RE}"; then
+                echo "::error::'${RELEASE_TAG}' is not a release tag. Release tags are v<MARKETING_VERSION>, e.g. v1.2.0 or v1.2.0-beta.1."
+                exit 1
+              fi
+              PUBLISH=true
+              ;;
+            manual)
+              if [ -z "${PROJECT_VERSION}" ]; then
+                echo "::error::Cannot derive a release tag because the targets disagree on MARKETING_VERSION. Fix the project or push a tag instead."
+                exit 1
+              fi
+              RELEASE_TAG="v${PROJECT_VERSION}"
+              if git ls-remote --exit-code --tags origin "refs/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+                echo "::error::${RELEASE_TAG} already exists on origin; refusing to overwrite a published release with a branch build. Bump MARKETING_VERSION for a new release, or re-run the workflow run that belongs to the ${RELEASE_TAG} tag."
+                exit 1
+              fi
+              PUBLISH=true
+              ;;
+          esac
+
+          EXPECTED_VERSION=""
+          PRERELEASE=false
+          if [ -n "${RELEASE_TAG}" ]; then
+            EXPECTED_VERSION="${RELEASE_TAG#v}"
+            EXPECTED_VERSION="${EXPECTED_VERSION%%-*}"
+            case "${RELEASE_TAG}" in *-*) PRERELEASE=true ;; esac
+            if [ "${EVENT_NAME}" = "workflow_dispatch" ] && [ "${INPUT_PRERELEASE}" = "true" ]; then
+              PRERELEASE=true
+            fi
+
+            if [ -n "${PROJECT_VERSION}" ] && [ "${PROJECT_VERSION}" != "${EXPECTED_VERSION}" ]; then
+              echo "::error::${RELEASE_TAG} does not match the project's MARKETING_VERSION (${PROJECT_VERSION}). A release tag must be v<MARKETING_VERSION>, optionally followed by -<pre-release>. Bump the version (Xcode > VexSign target > General > Version, or: agvtool new-marketing-version ${EXPECTED_VERSION}), commit, and move the tag onto that commit: git tag -f ${RELEASE_TAG} && git push -f origin ${RELEASE_TAG}"
+              exit 1
+            fi
+          fi
+
+          case "${MODE}" in
+            tag)          echo "Mode: publish release ${RELEASE_TAG} from tag (commit ${GITHUB_SHA})" ;;
+            manual)       echo "Mode: MANUAL publish of ${RELEASE_TAG} from ${REF_NAME} (commit ${GITHUB_SHA}) - prefer pushing a tag for real releases" ;;
+            pull-request) echo "Mode: pull request build - nothing will be published" ;;
+            *)            echo "Mode: build only (${REF_NAME}) - nothing will be published" ;;
+          esac
+
+          {
+            echo "mode=${MODE}"
+            echo "publish=${PUBLISH}"
+            echo "release_tag=${RELEASE_TAG}"
+            echo "release_version=${RELEASE_TAG#v}"
+            echo "expected_version=${EXPECTED_VERSION}"
+            echo "prerelease=${PRERELEASE}"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Select Xcode
         env:
-          REQUESTED_XCODE: ${{ inputs.xcode }}
+          # Manual input wins; otherwise the RELEASE_XCODE repository variable
+          # (set it to pin tag releases to a known toolchain); otherwise the
+          # newest Xcode on the runner image.
+          REQUESTED_XCODE: ${{ inputs.xcode || vars.RELEASE_XCODE || '' }}
         run: |
           set -euo pipefail
 
@@ -89,6 +222,7 @@ jobs:
           echo "iOS SDK: $(xcrun --sdk iphoneos --show-sdk-version)"
 
       - name: Compile VexSign
+        id: build
         run: |
           set -euo pipefail
 
@@ -108,7 +242,7 @@ jobs:
           mv packages/*.ipa upload/
 
       - name: Surface build errors
-        if: failure()
+        if: failure() && steps.build.outcome == 'failure'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -126,8 +260,13 @@ jobs:
             "${{ github.event.pull_request.number }}"
           exit 0
 
-      - name: Get Version
+      # Authoritative version check: what the packaged app actually reports
+      # must be what the release tag promises.
+      - name: Verify built version
         id: get_version
+        env:
+          RELEASE_TAG: ${{ steps.mode.outputs.release_tag }}
+          EXPECTED_VERSION: ${{ steps.mode.outputs.expected_version }}
         run: |
           set -euo pipefail
 
@@ -143,14 +282,36 @@ jobs:
             echo "::error::Could not read CFBundleShortVersionString from ${plists[0]}."
             exit 1
           fi
+          BUILD="$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "${plists[0]}" 2>/dev/null || true)"
 
-          echo "Building release for version ${VERSION}"
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          if [ -n "${EXPECTED_VERSION}" ] && [ "${VERSION}" != "${EXPECTED_VERSION}" ]; then
+            echo "::error::The built app reports CFBundleShortVersionString ${VERSION}, but ${RELEASE_TAG} promises ${EXPECTED_VERSION}. Bump MARKETING_VERSION to ${EXPECTED_VERSION}, commit, and move the tag onto that commit."
+            exit 1
+          fi
+
+          echo "Built VexSign ${VERSION} (build ${BUILD:-?}) from ${GITHUB_SHA}"
+          {
+            echo "version=${VERSION}"
+            echo "short_sha=$(git rev-parse --short=7 HEAD)"
+          } >> "$GITHUB_OUTPUT"
+
+      # Every successful build - PR, build-only or release - leaves a
+      # downloadable IPA on the run page. This is how you test a change
+      # without publishing it.
+      - name: Upload IPA artifact
+        id: artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: VexSign-${{ steps.get_version.outputs.version }}-${{ steps.get_version.outputs.short_sha }}
+          path: upload/*.ipa
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Generate Changelog
         id: changelog
-        if: github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.build_only)
+        if: steps.mode.outputs.publish == 'true'
+        env:
+          VERSION: ${{ steps.mode.outputs.release_version }}
         run: |
           set -euo pipefail
           bash tools/generate-changelog.sh > "$RUNNER_TEMP/CHANGELOG.md"
@@ -162,19 +323,55 @@ jobs:
           echo "--- end ---"
 
       - name: Create Release
-        if: github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.build_only)
+        id: release
+        if: steps.mode.outputs.publish == 'true'
         uses: softprops/action-gh-release@v3
         with:
-          name: VexSign v${{ env.VERSION }}
-          tag_name: v${{ env.VERSION }}
-          # On a tag push, the ref is refs/tags/vX.Y.Z; create the release
-          # against that tag. On manual dispatch from main, target main.
-          target_commitish: ${{ github.ref_type == 'tag' && github.ref_name || github.event.repository.default_branch }}
+          name: VexSign ${{ steps.mode.outputs.release_tag }}
+          tag_name: ${{ steps.mode.outputs.release_tag }}
+          # Always the exact commit that was built. For a tag push the tag
+          # already exists and this is ignored; for a manual publish GitHub
+          # creates the tag here instead of at whatever the branch head is by
+          # the time the build finishes.
+          target_commitish: ${{ github.sha }}
           body: ${{ steps.changelog.outputs.changelog }}
           files: |
             upload/*.ipa
           fail_on_unmatched_files: true
-          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || false }}
-          prerelease: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease || contains(github.ref_name, '-') }}
+          draft: ${{ github.event_name == 'workflow_dispatch' && inputs.draft == true }}
+          prerelease: ${{ steps.mode.outputs.prerelease == 'true' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        if: always() && steps.get_version.outcome == 'success'
+        env:
+          MODE: ${{ steps.mode.outputs.mode }}
+          PUBLISH: ${{ steps.mode.outputs.publish }}
+          RELEASE_TAG: ${{ steps.mode.outputs.release_tag }}
+          VERSION: ${{ steps.get_version.outputs.version }}
+          SHORT_SHA: ${{ steps.get_version.outputs.short_sha }}
+          ARTIFACT_URL: ${{ steps.artifact.outputs.artifact-url }}
+          RELEASE_URL: ${{ steps.release.outputs.url }}
+          RELEASE_OUTCOME: ${{ steps.release.outcome }}
+        run: |
+          {
+            echo "## VexSign ${VERSION} (\`${SHORT_SHA}\`)"
+            echo
+            case "${MODE}" in
+              tag)          echo "**Release from tag** \`${RELEASE_TAG}\`" ;;
+              manual)       echo "**Manual publish** of \`${RELEASE_TAG}\` - for real releases, push a tag instead" ;;
+              pull-request) echo "**Pull request build** - nothing published" ;;
+              *)            echo "**Build only** - nothing published" ;;
+            esac
+            echo
+            if [ -n "${ARTIFACT_URL}" ]; then
+              echo "- IPA artifact: ${ARTIFACT_URL} (kept for 14 days)"
+            fi
+            if [ "${PUBLISH}" = "true" ]; then
+              case "${RELEASE_OUTCOME}" in
+                success) echo "- GitHub release: ${RELEASE_URL}" ;;
+                *)       echo "- GitHub release: **not created** (step outcome: ${RELEASE_OUTCOME:-skipped}) - the IPA artifact above is still available" ;;
+              esac
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -191,6 +191,7 @@ The packaged IPA is written to `packages/VexSign.ipa` and requires signing befor
 - [`server/`](server/) — Python premium and repository backend.
 - [`cloud-signing/`](cloud-signing/) — separate cloud orchestration services.
 - [`docs/ECOSYSTEM.md`](docs/ECOSYSTEM.md) — implementation scope and release considerations.
+- [`docs/RELEASING.md`](docs/RELEASING.md) — how releases are cut (tag push) and how to test a build without publishing.
 
 Want to contribute? Read [Contributing](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md), or [open an issue](https://github.com/iamsmmh/VexSign/issues).
 

@@ -5,15 +5,24 @@
 # release body and (via update-repo.sh) the versionDescription fields in
 # app-repo.json.
 #
-# Commits since the previous v* tag are grouped by conventional-commit prefix,
-# contributors are listed, and a short install/repo footer is appended. When
-# no previous tag exists (first release or shallow checkout) we fall back to
-# all reachable commits.
+# Commits since the previous release tag are grouped by conventional-commit
+# prefix, contributors are listed, and a short install/repo footer is appended.
+# When no previous tag exists (first release or shallow checkout) we fall back
+# to all reachable commits.
+#
+# "Previous release" is the nearest release tag reachable from HEAD - i.e. it
+# follows commit ancestry, not tag creation date - so the notes for a given
+# tag are the same no matter when or where they are generated. A stable
+# release skips pre-release tags (v1.2.0 lists everything since v1.1.0, not
+# just since v1.2.0-rc.1); a pre-release diffs against whatever came last.
+# Release tags are v<MAJOR>.<MINOR>[.<PATCH>][-<pre-release>], e.g. v1.0,
+# v1.2.0, v1.2.0-beta.1.
 #
 # Environment:
-#   VERSION       version being released (e.g. "1.2.0"). Auto-detected when
-#                 unset (tag ref, or CFBundleShortVersionString from a built
-#                 Payload/*.app, or "0.0.0" as a last resort).
+#   VERSION       version being released (e.g. "1.2.0" or "1.2.0-beta.1").
+#                 Auto-detected when unset (tag ref, or
+#                 CFBundleShortVersionString from a built Payload/*.app, or
+#                 "0.0.0" as a last resort).
 #   PREVIOUS_TAG  override the previous-release tag.
 #   BASE_SHA      override the start of the commit range.
 
@@ -22,12 +31,14 @@ set -e
 # Robustness: require git and avoid failing on missing tags / shallow clones
 command -v git >/dev/null 2>&1 || { echo "git not available; skipping changelog"; exit 0; }
 
+RELEASE_TAG_RE='^v[0-9]+\.[0-9]+(\.[0-9]+)?(-[0-9A-Za-z.]+)?$'
+
 # ---------------------------------------------------------------------------
 # Resolve version
 # ---------------------------------------------------------------------------
 VERSION="${VERSION:-}"
 if [ -z "$VERSION" ]; then
-    if [ -n "${GITHUB_REF_NAME:-}" ] && printf '%s' "$GITHUB_REF_NAME" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+'; then
+    if [ -n "${GITHUB_REF_NAME:-}" ] && printf '%s' "$GITHUB_REF_NAME" | grep -qE "$RELEASE_TAG_RE"; then
         VERSION="${GITHUB_REF_NAME#v}"
     elif ls Payload/*.app/Info.plist >/dev/null 2>&1; then
         VERSION="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' Payload/*.app/Info.plist 2>/dev/null || true)"
@@ -35,18 +46,42 @@ if [ -z "$VERSION" ]; then
 fi
 [ -n "$VERSION" ] || VERSION="0.0.0"
 
+case "$VERSION" in
+    *-*) IS_PRERELEASE=1 ;;
+    *)   IS_PRERELEASE=0 ;;
+esac
+
 # ---------------------------------------------------------------------------
 # Resolve commit range
 # ---------------------------------------------------------------------------
 RANGE=""
 PREVIOUS_TAG="${PREVIOUS_TAG:-}"
 
+# Drop the tag being released and, for stable releases, pre-release tags.
+filter_candidate_tags() {
+    grep -E "$RELEASE_TAG_RE" | grep -vxF "v${VERSION}" | {
+        if [ "$IS_PRERELEASE" -eq 1 ]; then cat; else grep -v -- '-'; fi
+    } || true
+}
+
 if [ -n "${BASE_SHA:-}" ]; then
     RANGE="${BASE_SHA}..HEAD"
 elif [ -z "$PREVIOUS_TAG" ]; then
-    PREVIOUS_TAG="$(git tag --sort=-creatordate --list 'v[0-9]*.[0-9]*.[0-9]*' \
-        | grep -vE "^v${VERSION}$" 2>/dev/null \
-        | head -n 1 || true)"
+    # Nearest release tag in HEAD's ancestry. `git describe` only takes glob
+    # patterns, so the exact shape is enforced by the regex filter afterwards.
+    if [ "$IS_PRERELEASE" -eq 1 ]; then
+        PREVIOUS_TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' \
+            --exclude "v${VERSION}" HEAD 2>/dev/null | filter_candidate_tags | head -n 1)"
+    else
+        PREVIOUS_TAG="$(git describe --tags --abbrev=0 --match 'v[0-9]*' \
+            --exclude "v${VERSION}" --exclude 'v*-*' HEAD 2>/dev/null | filter_candidate_tags | head -n 1)"
+    fi
+    # Nothing reachable (shallow clone, or a release branch that never had a
+    # tag): fall back to the newest release tag by creation date.
+    if [ -z "$PREVIOUS_TAG" ]; then
+        PREVIOUS_TAG="$(git tag --sort=-creatordate --list 'v[0-9]*' 2>/dev/null \
+            | filter_candidate_tags | head -n 1)"
+    fi
 fi
 
 if [ -z "$RANGE" ]; then
