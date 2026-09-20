@@ -159,5 +159,4 @@ struct WebToolsView: View {
 		let normalized = base.hasSuffix("/") ? String(base.dropLast()) : base
 		return URL(string: normalized + tool.path)
 	}
-
 }

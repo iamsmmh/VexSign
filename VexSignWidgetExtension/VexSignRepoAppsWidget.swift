@@ -312,8 +312,7 @@ struct IconView: View {
 			   let folder = WidgetRepoPayload.iconCacheURL,
 			   let image = UIImage(contentsOfFile: folder.appendingPathComponent(file).path) {
 				Image(uiImage: image)
-					.resizable()
-					.aspectRatio(contentMode: .fill)
+					.resizable().scaledToFill()
 			} else {
 				Image(systemName: "app.dashed")
 					.font(.system(size: size * 0.45))
