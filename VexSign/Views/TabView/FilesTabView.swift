@@ -122,7 +122,7 @@ struct FilesTabView: View {
                             Capsule().fill(LinearGradient(colors: [Theme.tint, Theme.tintDeep], startPoint: .leading, endPoint: .trailing)).frame(width: geo.size.width * pct, height: 6)
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(Text(.localized("Storage used %lld%%", arguments: Int(pct*100))))
+                        .accessibilityLabel(Text(verbatim: String.localized("Storage used %lld%%", arguments: Int(pct*100))))
                     }
                     .frame(height: 6)
                     .accessibilityHidden(true)

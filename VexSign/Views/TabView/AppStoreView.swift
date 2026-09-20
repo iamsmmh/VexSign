@@ -274,7 +274,7 @@ struct AppStoreView: View {
     private var emptySearch: some View {
         VStack(spacing: 10) {
             Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.secondary)
-            Text(.localized("No results for “%@”", arguments: searchText)).font(.subheadline.weight(.medium))
+            Text(verbatim: String.localized("No results for “%@”", arguments: searchText)).font(.subheadline.weight(.medium))
             Text(.localized("Try a different search term.")).font(.caption).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 30)
