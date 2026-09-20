@@ -12,6 +12,8 @@ import NimbleViews
 import NimbleExtensions
 
 struct IPSWBrowserView: View {
+	var inNavigationStack: Bool = true
+
 	@State private var _devices: [IPSWDevice] = []
 	@State private var _firmwares: [IPSWFirmware] = []
 	@State private var _selectedDevice: IPSWDevice?
@@ -22,27 +24,41 @@ struct IPSWBrowserView: View {
 	@State private var _error: String?
 
 	var body: some View {
-		NBNavigationView(.localized("Firmware"), displayMode: .inline) {
-			List {
-				if let error = _error {
-					Section {
-						Text(error)
-							.font(.footnote)
-							.foregroundStyle(.red)
+		if inNavigationStack {
+			NBNavigationView(.localized("Firmware"), displayMode: .inline) {
+				_content
+					.toolbar {
+						NBToolbarButton(role: .close)
 					}
+			}
+			.task {
+				await _loadDevices()
+			}
+		} else {
+			_content
+				.navigationTitle(.localized("Firmware"))
+				.navigationBarTitleDisplayMode(.inline)
+				.task {
+					await _loadDevices()
 				}
+		}
+	}
 
-				_deviceSection
-				_firmwareSection
+	@ViewBuilder
+	private var _content: some View {
+		List {
+			if let error = _error {
+				Section {
+					Text(error)
+						.font(.footnote)
+						.foregroundStyle(.red)
+				}
 			}
-			.searchable(text: $_deviceQuery, prompt: .localized("Search Devices"))
-			.toolbar {
-				NBToolbarButton(role: .close)
-			}
+
+			_deviceSection
+			_firmwareSection
 		}
-		.task {
-			await _loadDevices()
-		}
+		.searchable(text: $_deviceQuery, prompt: .localized("Search Devices"))
 	}
 
 	// MARK: Sections

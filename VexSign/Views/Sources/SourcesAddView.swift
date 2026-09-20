@@ -43,6 +43,7 @@ struct SourcesAddView: View {
 		"https://pokemmo.com/altstore",
 		"https://provenance-emu.com/apps.json",
 		"https://community-apps.sidestore.io/sidecommunity.json",
+		"https://raw.githubusercontent.com/Nyasami/Ksign/refs/heads/main/repo.json",
 		"https://alt.getutm.app",
 		"https://raw.githubusercontent.com/paigely/Navic/refs/heads/master/app-repo.json",
 		"https://stikdebug.xyz/index.json",

@@ -8,6 +8,7 @@ import CoreData
 struct HomeView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @ObservedObject private var updateChecker = AppUpdateChecker.shared
     @State private var isAddingCertificate = false
     @State private var showIPAExplorer = false
     @AppStorage("VexSign.migrationBannerDismissed_v2") private var bannerDismissed = false
@@ -39,6 +40,9 @@ struct HomeView: View {
                 VStack(spacing: Theme.Spacing.section) {
                     if !bannerDismissed { migrationBanner }
                     hero
+                    if updateChecker.updateCount > 0 {
+                        homeUpdatesSection
+                    }
                     statsRow
                     quickActions
                     manageSection
@@ -64,6 +68,11 @@ struct HomeView: View {
             }
             .sheet(isPresented: $isAddingCertificate) {
                 CertificatesAddView()
+            }
+            .task {
+                if updateChecker.availableUpdates.isEmpty {
+                    await updateChecker.checkNow()
+                }
             }
         }
     }
@@ -189,6 +198,140 @@ struct HomeView: View {
                 .clipShape(RoundedRectangle(cornerRadius: NBRadius.large, style: .continuous))
                 .padding(.horizontal, 1)
         }
+    }
+
+    // MARK: - Updates Available Card for Home (App & Quantity)
+    private var homeUpdatesSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle()
+                        .fill(Color.userTint.opacity(0.14))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: "arrow.triangle.2.circlepath")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(Color.userTint)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(.localized("Updates Available"))
+                            .font(.headline)
+                        Text("\(updateChecker.updateCount)")
+                            .font(.caption2.weight(.bold))
+                            .padding(.horizontal, 7).padding(.vertical, 2)
+                            .background(Color.userTint, in: Capsule())
+                            .foregroundStyle(.white)
+                    }
+
+                    Text(.localized("New versions detected from your repository sources"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                NavigationLink(destination: UpdatesView()) {
+                    HStack(spacing: 3) {
+                        Text(.localized("See All"))
+                            .font(.caption.weight(.semibold))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundStyle(Color.userTint)
+                }
+                .buttonStyle(.plain)
+            }
+
+            VStack(spacing: 8) {
+                ForEach(updateChecker.availableUpdates.prefix(3)) { item in
+                    HStack(spacing: 12) {
+                        AsyncImage(url: item.iconURL) { phase in
+                            if let img = phase.image {
+                                img.resizable().aspectRatio(contentMode: .fit)
+                            } else {
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .fill(Color.userTint.opacity(0.12))
+                                    .overlay(
+                                        Image(systemName: "app.fill")
+                                            .font(.system(size: 16))
+                                            .foregroundStyle(Color.userTint)
+                                    )
+                            }
+                        }
+                        .frame(width: 42, height: 42)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(item.displayName)
+                                .font(.subheadline.weight(.semibold))
+                                .lineLimit(1)
+                            HStack(spacing: 4) {
+                                Text(item.installedVersion ?? "1.0")
+                                    .foregroundStyle(.secondary)
+                                Image(systemName: "arrow.right")
+                                    .font(.system(size: 8))
+                                    .foregroundStyle(.secondary)
+                                Text(item.sourceVersion ?? "1.1")
+                                    .foregroundStyle(Color.userTint)
+                                    .fontWeight(.bold)
+                                Text("• \(item.sourceName)")
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            .font(.caption2)
+                        }
+
+                        Spacer()
+
+                        if let url = item.downloadURL {
+                            Button {
+                                _ = DownloadManager.shared.startDownload(
+                                    from: url,
+                                    id: item.app.currentUniqueId,
+                                    appName: item.displayName,
+                                    appDescription: item.app.localizedDescription
+                                )
+                                Toast.info(.localized("Download started"), systemImage: "arrow.down.circle")
+                            } label: {
+                                Text(.localized("UPDATE"))
+                                    .font(.caption2.weight(.bold))
+                                    .padding(.horizontal, 12).padding(.vertical, 6)
+                                    .background(Color.userTint, in: Capsule())
+                                    .foregroundStyle(.white)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(10)
+                    .background(Color(uiColor: .tertiarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+
+                if updateChecker.updateCount > 1 {
+                    NavigationLink(destination: UpdatesView()) {
+                        HStack {
+                            Spacer()
+                            Label(
+                                String.localized("Update All (%lld Apps)", arguments: updateChecker.updateCount),
+                                systemImage: "arrow.triangle.2.circlepath"
+                            )
+                            .font(.subheadline.weight(.semibold))
+                            Spacer()
+                        }
+                        .padding(.vertical, 10)
+                        .background(Color.userTint.opacity(0.12), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .foregroundStyle(Color.userTint)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .padding(16)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.userTint.opacity(0.2), lineWidth: 1)
+        )
     }
 
     // MARK: Stats row — 3 compact cards (Sources → App Store)
@@ -340,6 +483,15 @@ struct HomeView: View {
                 Divider().padding(.leading, 52).opacity(0.6)
                 NavigationLink { EcosystemView() } label: {
                     HomeToolRow(icon: "square.stack.3d.up.fill", iconTint: Color(red: 0.20, green: 0.66, blue: 0.44), title: "Ecosystem", subtitle: .localized("Repository sync & health"))
+                }
+                Divider().padding(.leading, 52).opacity(0.6)
+                NavigationLink { UpdateMatchingSettingsView() } label: {
+                    HomeToolRow(
+                        icon: "slider.horizontal.3",
+                        iconTint: Color.userTint,
+                        title: .localized("Update Matching"),
+                        subtitle: updateChecker.updateCount > 0 ? "\(updateChecker.updateCount) " + .localized("updates available") : .localized("Rules, developer & beta filters")
+                    )
                 }
             }
             .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))

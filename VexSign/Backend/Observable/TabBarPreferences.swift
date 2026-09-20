@@ -9,7 +9,7 @@ final class TabBarPreferences: ObservableObject {
     static let shared = TabBarPreferences()
 
     /// Home & Settings are permanent; everything else can be hidden.
-    static let hideableTabs: [TabEnum] = [.files, .library, .appStore, .downloads, .sources, .logs, .tweaks]
+    static let hideableTabs: [TabEnum] = [.files, .library, .appStore, .downloads]
 
     /// Minimal keeps just Home + Settings
     static let minimalTabs: [TabEnum] = [.home, .settings]
@@ -56,9 +56,14 @@ final class TabBarPreferences: ObservableObject {
                     decoded[idx] = .appStore
                 }
             }
-            // Drop legacy tabs that are no longer default but were saved — they become hidden customizable
-            loadedOrder = decoded
-            if !loadedOrder.contains(.home) { loadedOrder.insert(.home, at: 0) }
+            var sanitized: [TabEnum] = []
+            for tab in decoded where TabEnum.defaultTabs.contains(tab) && !sanitized.contains(tab) {
+                sanitized.append(tab)
+            }
+            for tab in TabEnum.defaultTabs where !sanitized.contains(tab) {
+                sanitized.append(tab)
+            }
+            loadedOrder = sanitized
             loadedHidden = Set(stored.hidden.compactMap { TabEnum(rawValue: $0) })
             loadedLaunch = TabEnum(rawValue: stored.defaultLaunch) ?? .home
             // If old launch was Sources, map to App Store
@@ -68,7 +73,7 @@ final class TabBarPreferences: ObservableObject {
             loadedMinimal = stored.minimal
         } else if defaults.object(forKey: "VexSign.showTweaksTab") != nil,
                   defaults.bool(forKey: "VexSign.showTweaksTab") == false {
-            loadedHidden = [.tweaks]
+            loadedHidden = []
         }
 
         self.order = loadedOrder
