@@ -207,7 +207,7 @@ final class CloudSigningClient: ObservableObject {
 			throw NSError(domain: "CloudSigningClient", code: -2, userInfo: [NSLocalizedDescriptionKey: "Certificate files missing"])
 		}
 
-		let password = cert.requireSigningPassword()
+		let password = try cert.requireSigningPassword()
 
 		progress(0.1, "Uploading application package…")
 		let ipaUpload = try await upload(fileURL: ipaURL, kind: .ipa)

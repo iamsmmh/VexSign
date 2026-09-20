@@ -154,11 +154,11 @@ enum DiagnosticBundleExporter {
 			let item: [String: Any] = [
 				"nickname": cert.nickname ?? "Unnamed",
 				"teamName": prov?.TeamName ?? "Unknown",
-				"teamID": prov?.TeamIdentifier?.first ?? "Unknown",
-				"hasPasswordConfigured": cert.password != nil && !cert.password!.isEmpty,
+				"teamID": prov?.TeamIdentifier.first ?? "Unknown",
+				"hasPasswordConfigured": !(cert.signingPassword ?? "").isEmpty,
 				"provisionExpiration": prov?.ExpirationDate.description ?? "Unknown",
-				"isRevoked": cert.isRevoked,
-				"creationDate": cert.creationDate?.description ?? "Unknown"
+				"isRevoked": cert.revoked,
+				"creationDate": cert.date?.description ?? "Unknown"
 			]
 			summaries.append(item)
 		}
