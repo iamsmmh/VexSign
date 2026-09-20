@@ -4,6 +4,11 @@ on:
   # Manual build (specify Xcode version if needed).
   workflow_dispatch:
     inputs:
+      build_only:
+        description: "Build and validate the IPA without publishing a release"
+        required: false
+        type: boolean
+        default: true
       xcode:
         description: >-
           Xcode version to build with (e.g. "26.3", "16.4"). Leave empty to use
@@ -145,7 +150,7 @@ jobs:
 
       - name: Generate Changelog
         id: changelog
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.build_only)
         run: |
           set -euo pipefail
           bash tools/generate-changelog.sh > "$RUNNER_TEMP/CHANGELOG.md"
@@ -157,7 +162,7 @@ jobs:
           echo "--- end ---"
 
       - name: Create Release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && !(github.event_name == 'workflow_dispatch' && inputs.build_only)
         uses: softprops/action-gh-release@v3
         with:
           name: VexSign v${{ env.VERSION }}
