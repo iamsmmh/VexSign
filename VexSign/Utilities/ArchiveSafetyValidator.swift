@@ -1,0 +1,97 @@
+//
+//  ArchiveSafetyValidator.swift
+//  VexSign
+//
+//  Validates untrusted ZIP metadata before the extraction backends run. ZIP
+//  archives can contain traversal paths, symlinks or extreme expansion ratios;
+//  rejecting those entries before Zip.unzipFile prevents them from writing
+//  outside the intended workspace.
+//
+
+import Foundation
+import ZIPFoundation
+
+struct ArchiveSafetyValidator {
+    enum ValidationError: LocalizedError {
+        case unreadable
+        case absolutePath(String)
+        case traversalPath(String)
+        case symbolicLink(String)
+        case tooManyEntries
+        case tooLarge
+
+        var errorDescription: String? {
+            switch self {
+            case .unreadable:
+                return .localized("This archive could not be inspected safely.")
+            case .absolutePath(let path):
+                return .localized("The archive contains an unsafe absolute path: %@", arguments: path)
+            case .traversalPath(let path):
+                return .localized("The archive contains an unsafe path: %@", arguments: path)
+            case .symbolicLink(let path):
+                return .localized("The archive contains an unsupported symbolic link: %@", arguments: path)
+            case .tooManyEntries:
+                return .localized("The archive contains too many files to extract safely.")
+            case .tooLarge:
+                return .localized("The archive expands beyond the safe extraction limit.")
+            }
+        }
+    }
+
+    // These limits are deliberately generous for IPA files while preventing
+    // accidental archive bombs from consuming unbounded storage.
+    private static let maxEntries = 50_000
+    private static let maxUncompressedBytes: UInt64 = 8 * 1024 * 1024 * 1024
+
+    static func validate(_ archiveURL: URL) throws {
+        let archive: Archive
+        do {
+            archive = try Archive(url: archiveURL, accessMode: .read)
+        } catch {
+            throw ValidationError.unreadable
+        }
+
+        let root = archiveURL.deletingLastPathComponent()
+        var entryCount = 0
+        var uncompressedBytes: UInt64 = 0
+
+        for entry in archive {
+            entryCount += 1
+            guard entryCount <= maxEntries else { throw ValidationError.tooManyEntries }
+
+            let path = entry.path.replacingOccurrences(of: "\\", with: "/")
+            if path.hasPrefix("/") || path.hasPrefix("~") {
+                throw ValidationError.absolutePath(path)
+            }
+            if path.unicodeScalars.contains(where: { $0.value == 0 }) {
+                throw ValidationError.traversalPath(path)
+            }
+
+            let components = path.split(separator: "/", omittingEmptySubsequences: true)
+            guard !components.contains(where: { $0 == ".." || $0 == "." }) else {
+                throw ValidationError.traversalPath(path)
+            }
+
+            if entry.type == .symlink {
+                throw ValidationError.symbolicLink(path)
+            }
+
+            guard entry.uncompressedSize <= maxUncompressedBytes - min(uncompressedBytes, maxUncompressedBytes) else {
+                throw ValidationError.tooLarge
+            }
+            uncompressedBytes += entry.uncompressedSize
+
+            // Also verify the normalized destination stays contained. This is
+            // defense in depth for unusual Unicode or separator combinations.
+            let relativePath = components.map(String.init).joined(separator: "/")
+            let candidate = root.appendingPathComponent(relativePath)
+                .standardizedFileURL.path
+            let rootPath = root.standardizedFileURL.path.hasSuffix("/")
+                ? root.standardizedFileURL.path
+                : root.standardizedFileURL.path + "/"
+            if !candidate.hasPrefix(rootPath) && candidate != root.standardizedFileURL.path {
+                throw ValidationError.traversalPath(path)
+            }
+        }
+    }
+}

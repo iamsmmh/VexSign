@@ -71,6 +71,39 @@ struct SourcesView: View {
 		}
 	}
 
+	private struct SourceHealthSummary {
+		let healthy: Int
+		let failed: Int
+		let stale: Int
+		let neverFetched: Int
+	}
+
+	private var _health: SourceHealthSummary {
+		let staleAfter: TimeInterval = 24 * 60 * 60
+		var healthy = 0
+		var failed = 0
+		var stale = 0
+		var neverFetched = 0
+
+		for source in _sources {
+			let id = source.identifier ?? source.sourceURL?.absoluteString ?? ""
+			if SourcePreferences.lastError(for: id) != nil {
+				failed += 1
+				continue
+			}
+			guard let fetched = SourcePreferences.lastFetch(for: id) else {
+				neverFetched += 1
+				continue
+			}
+			if Date().timeIntervalSince(fetched) > staleAfter {
+				stale += 1
+			} else {
+				healthy += 1
+			}
+		}
+		return SourceHealthSummary(healthy: healthy, failed: failed, stale: stale, neverFetched: neverFetched)
+	}
+
 	@FetchRequest(
 		entity: AltSource.entity(),
 		sortDescriptors: [NSSortDescriptor(keyPath: \AltSource.name, ascending: true)],
@@ -144,6 +177,7 @@ struct SourcesView: View {
 	@ViewBuilder
 	private var sourcesListView: some View {
 		NBListAdaptable {
+			sourceHealthSection
 			if !_filteredSources.isEmpty {
 				allRepositoriesSection
 				updatesSection
@@ -178,6 +212,44 @@ struct SourcesView: View {
 		} message: {
 			Text("This action cannot be undone.")
 		}
+	}
+
+	@ViewBuilder
+	private var sourceHealthSection: some View {
+		let health = _health
+		NBSection(.localized("Source Health"), secondary: "\(_sources.count)", systemName: "waveform.path.ecg") {
+			HStack(spacing: 8) {
+				healthPill(.localized("%lld healthy", arguments: health.healthy), color: .green)
+				healthPill(.localized("%lld failed", arguments: health.failed), color: health.failed > 0 ? .red : .secondary)
+				healthPill(.localized("%lld stale", arguments: health.stale + health.neverFetched), color: health.stale + health.neverFetched > 0 ? .orange : .secondary)
+			}
+
+			if health.failed > 0 || health.stale > 0 || health.neverFetched > 0 {
+				Button {
+					Task { await viewModel.fetchSources(_sources, refresh: true) }
+				} label: {
+					Label(.localized("Refresh All Sources"), systemImage: "arrow.clockwise")
+				}
+				.font(.subheadline.weight(.semibold))
+			}
+
+			if let latest = _sources.compactMap({
+				SourcePreferences.lastFetch(for: $0.identifier ?? $0.sourceURL?.absoluteString ?? "")
+			}).max() {
+				Text(String.localized("Last refresh %@", arguments: latest.formatted(date: .abbreviated, time: .shortened)))
+					.font(.caption)
+					.foregroundStyle(.secondary)
+			}
+		}
+	}
+
+	private func healthPill(_ title: String, color: Color) -> some View {
+		Text(title)
+			.font(.caption2.weight(.semibold))
+			.foregroundStyle(color)
+			.padding(.horizontal, 8)
+			.padding(.vertical, 5)
+			.background(color.opacity(0.13), in: Capsule())
 	}
 
 	private var deleteDialogTitle: String {

@@ -33,10 +33,9 @@ struct GuidesView: View {
 						}
 					}
 				}
+			} footer: {
+				Text(.localized("Guides are written for VexSign's iPhone and iPad workflows. Certificate and install outcomes still depend on Apple's current device and profile rules."))
 			}
-		} footer: {
-			Text(.localized("Guides are written for VexSign's iPhone and iPad workflows. Certificate and install outcomes still depend on Apple's current device and profile rules."))
-		}
 		}
 	}
 }

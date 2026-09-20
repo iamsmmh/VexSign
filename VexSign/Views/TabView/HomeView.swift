@@ -387,11 +387,7 @@ struct HomeView: View {
     // MARK: - Working actions
 
     private func openTab(_ tab: TabEnum) {
-        let prefs = TabBarPreferences.shared
-        if prefs.isMinimal, !TabBarPreferences.minimalTabs.contains(tab) {
-            prefs.setMinimal(false)
-        }
-        prefs.setHidden(tab, false)
+        // The primary shell is immutable; Home only changes the current selection.
         TabSelectionObserver.shared.selectedTab = tab
     }
 
