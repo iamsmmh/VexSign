@@ -14,5 +14,6 @@ struct VexSignWidgetExtensionBundle: WidgetBundle {
         DownloadLiveActivity()
         SigningLiveActivity()
         VexSignStatusWidget()
+        VexSignRepoAppsWidget()
     }
 }

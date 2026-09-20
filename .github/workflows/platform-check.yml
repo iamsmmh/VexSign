@@ -1,0 +1,130 @@
+name: Platform check
+
+# Compiles the companion targets — Apple TV, Apple Vision Pro and Apple Watch —
+# which `build-check.yml` does not cover because it only builds the iOS scheme.
+# These are unsigned simulator-agnostic builds: they prove the sources type-check
+# for each SDK, nothing more.
+#
+# The companions are mirrors of the iPhone app (see docs/PLATFORMS.md), so this
+# job also guards the shared code: VexSign/Companion/* is compiled into the iOS,
+# tvOS, visionOS and watchOS targets, and a change that only breaks one of them
+# shows up here rather than on a device.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'VexSignTV/**'
+      - 'VexSignVision/**'
+      - 'VexSignWatch/**'
+      - 'VexSignWatchWidgets/**'
+      - 'VexSign/Companion/**'
+      - 'VexSign.xcodeproj/**'
+      - '.github/workflows/platform-check.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'VexSignTV/**'
+      - 'VexSignVision/**'
+      - 'VexSignWatch/**'
+      - 'VexSignWatchWidgets/**'
+      - 'VexSign/Companion/**'
+      - 'VexSign.xcodeproj/**'
+      - '.github/workflows/platform-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-check-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.label }}
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: xcodebuild · VexSignTV · tvOS
+            scheme: VexSignTV
+            destination: 'generic/platform=tvOS Simulator'
+          - label: xcodebuild · VexSignVision · visionOS
+            scheme: VexSignVision
+            destination: 'generic/platform=visionOS Simulator'
+          - label: xcodebuild · VexSignWatch · watchOS
+            scheme: VexSignWatch
+            destination: 'generic/platform=watchOS Simulator'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # Zsign and IDeviceKitten are local package references in the project;
+          # xcodebuild resolves them even for a target that does not link them.
+          submodules: recursive
+
+      - name: Paths
+        run: echo "DERIVED_DATA=${RUNNER_TEMP}/DerivedData-${{ matrix.scheme }}" >> "$GITHUB_ENV"
+
+      - name: Select Xcode
+        env:
+          REQUESTED_XCODE: ${{ vars.BUILD_XCODE || '' }}
+        run: bash .github/scripts/select_xcode.sh
+
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/DerivedData-${{ matrix.scheme }}/SourcePackages
+          key: spm-${{ matrix.scheme }}-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            spm-${{ matrix.scheme }}-
+
+      - name: Build (Debug, unsigned)
+        id: build
+        run: |
+          set -uo pipefail
+          echo "BUILD_LOG=${RUNNER_TEMP}/${{ matrix.scheme }}-build.log" >> "$GITHUB_ENV"
+          xcodebuild \
+            -workspace VexSign.xcworkspace \
+            -scheme "${{ matrix.scheme }}" \
+            -configuration Debug \
+            -destination '${{ matrix.destination }}' \
+            -derivedDataPath "$DERIVED_DATA" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            build 2>&1 | tee "${RUNNER_TEMP}/${{ matrix.scheme }}-build.log"
+          status=${PIPESTATUS[0]}
+          echo "exit_code=${status}" >> "$GITHUB_OUTPUT"
+          if [ "${status}" -ne 0 ]; then
+            echo "::error::xcodebuild (${{ matrix.scheme }}) exited with status ${status}."
+          fi
+          exit "${status}"
+
+      # Inline annotations so a compile error in a companion target can be read
+      # from the PR page. Warnings are not gated here: these targets have no
+      # committed baseline, and the iOS build check owns that gate.
+      - name: Report diagnostics
+        if: always() && steps.build.outcome != 'skipped'
+        run: |
+          python3 .github/scripts/xcodebuild_report.py \
+            --log "$BUILD_LOG" \
+            --build-exit "${{ steps.build.outputs.exit_code || 1 }}" \
+            --warnings-as-errors false \
+            --baseline "${RUNNER_TEMP}/${{ matrix.scheme }}-baseline.json" \
+            --workspace "$GITHUB_WORKSPACE"
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: platform-build-log-${{ matrix.scheme }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/${{ matrix.scheme }}-build.log
+          if-no-files-found: ignore
+          retention-days: 14

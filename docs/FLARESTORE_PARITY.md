@@ -59,9 +59,37 @@ The complete public history was read from **v0.0.1 through v1.3.0**. The changel
 - Optional Flare visual theme with dark glass surfaces, violet/cyan web accents, native font sizing, animated highlight motion and spring press feedback. Base/Ksign-style surfaces and Luna remain selectable.
 - Screenshot-matched Home dashboard presentation: dark magenta grid, repository/certificate/app metrics, update card, IPA/TIPA drag-and-drop import, direct URL downloads, Quick Sign, certificate management, repository creation and IPSW Browser actions.
 
+### Companion platforms (mirrors, not signers)
+
+`VexSignTV` (tvOS 17), `VexSignVision` (visionOS 2) and `VexSignWatch` (watchOS 10, plus a
+complication widget) exist as **companion mirrors**: they show certificate state, library and
+update counts, and the watch can trigger four passes on the phone. They do not sideload, sign or
+pair devices — no certificate store, no IPA storage and no `installd` exists on those platforms,
+so FlareStore's Apple TV on-device sideloading remains out of scope. See
+[PLATFORMS.md](PLATFORMS.md).
+
+### Web tools parity
+
+FlareStore's browser suite is covered by the self-hosted backend under `/tools`:
+
+| FlareStore web tool | VexSign |
+| --- | --- |
+| Web signer | **Signer Console** (`/tools/signer`) — relays uploads to the phone's Web Manager and streams the signed IPA back, with a queue. Signing still happens on-device. |
+| Repository creator | **Repository Creator** (`/tools/repo-creator`) |
+| Repository decoder | **Repository Decoder** (`/tools/repo-decoder`) — normalises AltStore/SideStore/flat/apps.json/appdata-XML and re-exports |
+| App installer | **App Installer** (`/tools/app-installer`) — OTA manifest, install link and a reachability probe |
+| Certificate status checker | **Certificate Status Checker** (`/tools/cert-check`) |
+| UDID grabber | **UDID Grabber** (`/tools/udid`) |
+
+See [WEBTOOLS.md](WEBTOOLS.md). What is *not* covered, and cannot be: browser-side signing without
+the app (there is no Zsign in the Python backend — the signer console drives the phone), 365-day
+certificates and unlimited App IDs (Apple's limits, not a code gap).
+
 ### Deliberately excluded
 
-Mac-only device manager, Mac remote signing, Discord presence, Apple TV on-device sideloading/pairing UI, Apple Watch application/preview, visionOS-only previews, website-only workflows, and platform-specific build tooling without an iOS/iPadOS foundation.
+Mac-only device manager, Mac remote signing, Discord presence, Apple TV on-device
+sideloading/pairing UI, visionOS immersive-only previews, and platform-specific build tooling
+without an iOS/iPadOS foundation.
 
 No FlareStore code was copied. VexSign uses its own models, persistence, signing hooks and SwiftUI views.
 

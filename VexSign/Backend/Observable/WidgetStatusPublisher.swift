@@ -23,6 +23,10 @@ enum WidgetStatusPublisher {
 			return
 		}
 
+		// The repository widget keeps its own (heavier) snapshot: its icons have to
+		// be fetched into the app group before the extension can show them.
+		WidgetRepoPublisher.publish()
+
 		WidgetCenter.shared.reloadAllTimelines()
 	}
 

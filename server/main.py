@@ -51,7 +51,10 @@ from pydantic import BaseModel
 import db
 import admin
 import repo_store
+import request_base
+import web_tools
 from admin import router as admin_router
+from web_tools import router as web_tools_router
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -101,6 +104,10 @@ app = FastAPI(
 # Distributor admin API (token-gated; disabled when ADMIN_TOKEN is unset).
 app.include_router(admin_router)
 
+# Browser tools: repository creator, certificate status checker, UDID grabber.
+# Public by design (no keys, no private data); see web_tools.py.
+app.include_router(web_tools_router)
+
 
 @app.exception_handler(RequestValidationError)
 async def _validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
@@ -130,14 +137,10 @@ class ValidateBody(BaseModel):
 def _first_forwarded(value: str | None, default: str) -> str:
     """First entry of a (possibly chained) forwarding header.
 
-    Proxies append to `X-Forwarded-Proto` / `X-Forwarded-Host`, so behind two
-    proxies the value looks like `"https, http"` — using it verbatim produced
-    broken feed URLs such as `https,http://host/repo/premium.json`. The first
-    entry is the client-facing one.
+    Kept as a local alias: the implementation moved to `request_base` so the
+    browser tools build their callback URLs the exact same way.
     """
-    if not value:
-        return default
-    return value.split(",")[0].strip() or default
+    return request_base._first_forwarded(value, default)
 
 
 def _base_url(request: Request) -> str:
@@ -148,20 +151,7 @@ def _base_url(request: Request) -> str:
     sandbox previews), so the URLs handed to the app are always the public
     ones it can actually reach.
     """
-    override = (os.environ.get("PUBLIC_BASE_URL") or "").strip()
-    if override:
-        return override.rstrip("/")
-
-    proto = _first_forwarded(request.headers.get("x-forwarded-proto"), request.url.scheme)
-    proto = proto.strip().lower() or request.url.scheme
-    host = _first_forwarded(
-        request.headers.get("x-forwarded-host"), request.headers.get("host", "localhost")
-    )
-    # Render / e2b proxies terminate TLS; if they omit X-Forwarded-Proto we'd
-    # otherwise hand the app a cleartext URL that iOS (ATS) rejects.
-    if host.endswith((".e2b.app", ".onrender.com")) and proto == "http":
-        proto = "https"
-    return f"{proto}://{host}".rstrip("/")
+    return request_base.base_url(request)
 
 
 def _urls_payload(request: Request, count: int) -> dict:
@@ -351,6 +341,7 @@ def _public_endpoints() -> list[str]:
         "GET /repo/premium.json",
         "GET /repo/source.json     (self-hosted source, add it in VexSign)",
         "GET /repo/appdata         (legacy AltServer XML feed)",
+        "GET /tools                (browser tools: repo creator, cert check, UDID)",
     ]
 
 
@@ -419,6 +410,12 @@ def _landing_page(base: str, endpoints: list[str], show_admin: bool) -> str:
     <span class="muted">Public self-hosted source. Empty until the first IPA is uploaded.</span></p>
     <p><code>{safe_base}/repo/premium.json</code><br>
     <span class="muted">Gated premium feed &mdash; redeem a key in the app first.</span></p>
+  </div>
+  <div class="card">
+    <strong>Browser tools</strong>
+    <p><a href="{safe_base}/tools">/tools</a> &mdash; build a repository feed,
+    read a provisioning profile's expiry, or grab a device UDID.
+    <span class="muted">Nothing is uploaded or stored; private keys are never accepted.</span></p>
   </div>
   <div class="card">
     <strong>Endpoints</strong>
