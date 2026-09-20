@@ -57,21 +57,30 @@ docker run -p 8080:8080 -e ADMIN_TOKEN=<secret> -v vexsign-repo:/data vexsign-se
 
 ## Browser tools
 
-`GET /tools` serves three pages for the parts of the workflow that happen outside
+`GET /tools` serves six pages for the parts of the workflow that happen outside
 the app. They are public (no key, no admin token) and keep nothing: no writes to
 the database, no logs of what you upload.
 
 | Page | Purpose |
 | --- | --- |
+| `/tools/signer` | Queue IPAs and get signed ones back — a relay to the phone's Web Manager |
 | `/tools/repo-creator` | Build, validate and export an AltStore-compatible feed, plus OTA manifests |
+| `/tools/repo-decoder` | Read any feed dialect, normalise it, export it in another schema |
+| `/tools/app-installer` | OTA install link from a hosted IPA, plus a reachability probe |
 | `/tools/cert-check` | Read a provisioning profile's validity window, team, entitlements and device scope |
 | `/tools/udid` | Read a device UDID through a one-time enrolment profile |
 
 | Endpoint | Purpose |
 | --- | --- |
+| `POST /api/tools/sign/proxy` | Read-only relay for the phone's `/api/{status,library,updates}` |
+| `POST /api/tools/sign/sign` | Relay an IPA to the phone, stream the signed IPA back |
 | `POST /api/tools/repo/validate` | Lint a repository draft (same rules as the app's builder) |
 | `POST /api/tools/repo/export` | `source.json` (AltStore / flat) or `apps.json` |
 | `POST /api/tools/repo/ota` | OTA manifest + `itms-services://` install link |
+| `POST /api/tools/repo/decode` | Normalise any feed dialect (URL or pasted text) |
+| `POST /api/tools/repo/convert` | Re-export a feed in another schema |
+| `POST /api/tools/install/manifest` | OTA manifest + install link for a hosted IPA |
+| `POST /api/tools/install/probe` | Check a hosted IPA is actually installable |
 | `POST /api/tools/cert/inspect` | Parse an uploaded `.mobileprovision` / public certificate |
 | `GET /api/tools/cert/revoked-list` | The curated local revocation list |
 | `GET /api/tools/udid/profile?token=…` | The enrolment `.mobileconfig` |
@@ -80,6 +89,16 @@ the database, no logs of what you upload.
 
 Honest limits, in one place:
 
+- **Signer console** does not sign: it relays to the phone's Web Manager, so the
+  phone must be reachable *from this server* (self-host on your LAN or a tailnet —
+  a public deployment cannot reach a phone behind NAT). Targets are restricted to
+  private / loopback / link-local / CGNAT addresses unless
+  `VEXSIGN_ALLOW_PUBLIC_TARGETS=1`. The relay is read-only (`status`, `library`,
+  `updates`), so `POST /api/cleanup` is not reachable from a browser tab.
+- **Repo decoder** fetches public feeds (that is the point), caps them at 4 MiB,
+  and stores nothing.
+- **App installer** hosts nothing and refuses cleartext on both the IPA and the
+  manifest URL.
 - **Repo creator** validates and exports. It never hosts your IPAs or the manifest —
   the OTA link points at whatever https URL you supply.
 - **Cert checker** never accepts a `.p12` or a password (the endpoint has no such
@@ -97,6 +116,11 @@ The pages are also reachable from the app: **Settings → Ecosystem → Web Tool
 Tests for this surface live in `server/tests/`:
 
 ```sh
-pip install -r requirements.txt pytest httpx
-python -m pytest tests/ -q
+pip install -r requirements.txt   # httpx is pinned there: the tools fetch/relay/probe
+pip install pytest
+python -m pytest tests/ -q        # 85 tests
 ```
+
+`VEXSIGN_ALLOW_PUBLIC_TARGETS=1` relaxes the signer relay's private-network guard;
+`PUBLIC_BASE_URL` overrides the base used for generated URLs (see
+`request_base.py`).

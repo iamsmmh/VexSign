@@ -132,8 +132,15 @@ limits.
 Served by the backend under `/tools`, and linked from **Settings → Ecosystem →
 Web Tools**:
 
+- **Signer Console** — queue IPAs in a browser and get signed ones back; the
+  page relays to the phone's Web Manager, so signing still happens on-device.
 - **Repository Creator** — build, validate and export a source feed plus OTA
   manifests in the browser.
+- **Repository Decoder** — read any feed (AltStore, SideStore, flat schema,
+  `apps.json`, legacy appdata XML), see what it contains, export it in another
+  dialect.
+- **App Installer** — turn a hosted IPA into an `itms-services://` link and
+  probe the URL so a spinner that never resolves is caught here instead.
 - **Certificate Status Checker** — expiry, team, entitlements and device scope
   from a provisioning profile; never accepts a `.p12` or a password.
 - **UDID Grabber** — one-time enrolment profile, in-memory session, no storage.

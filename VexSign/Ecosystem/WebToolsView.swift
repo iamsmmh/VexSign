@@ -2,11 +2,11 @@
 //  WebToolsView.swift
 //  VexSign
 //
-//  Ecosystem → Web Tools. The three browser tools the backend serves: a
-//  repository creator, a certificate status checker and a UDID grabber. They are
-//  the same code whether you run the server yourself or use a hosted deployment —
-//  this screen is only a launcher plus the address, so nothing about them is
-//  duplicated inside the app.
+//  Ecosystem → Web Tools. The six browser tools the backend serves: a signing
+//  console, a repository creator, a repository decoder, an app installer, a
+//  certificate status checker and a UDID grabber. They are the same code whether
+//  you run the server yourself or use a hosted deployment — this screen is only a
+//  launcher plus the address, so nothing about them is duplicated inside the app.
 //
 
 import SwiftUI
@@ -28,11 +28,32 @@ struct WebToolsView: View {
 
 	private let _tools: [Tool] = [
 		Tool(
+			id: "signer",
+			path: "/tools/signer",
+			title: .localized("Signer Console"),
+			detail: .localized("Queue IPAs in a browser and get signed ones back. Signing still happens here on the device — the page relays to your Web Manager, so the server has to be able to reach it."),
+			systemImage: "hammer"
+		),
+		Tool(
 			id: "repo",
 			path: "/tools/repo-creator",
 			title: .localized("Repository Creator"),
 			detail: .localized("Build, validate and export a source feed, plus OTA manifests. Exports to your device — nothing is uploaded."),
 			systemImage: "shippingbox"
+		),
+		Tool(
+			id: "decoder",
+			path: "/tools/repo-decoder",
+			title: .localized("Repository Decoder"),
+			detail: .localized("Read any source feed — AltStore, SideStore, flat schema, apps.json or legacy XML — see what it contains and export it in another dialect."),
+			systemImage: "doc.text.viewfinder"
+		),
+		Tool(
+			id: "installer",
+			path: "/tools/app-installer",
+			title: .localized("App Installer"),
+			detail: .localized("Turn a hosted IPA into an install link, and probe the URL first so a download that never starts is caught here."),
+			systemImage: "square.and.arrow.down.on.square"
 		),
 		Tool(
 			id: "cert",
@@ -120,7 +141,7 @@ struct WebToolsView: View {
 	private var _honestySection: some View {
 		Section {
 			Label {
-				Text(.localized("These tools run on the server, not on your device. They do not sign anything, never see a private key, and the repository creator does not host your IPAs — it hands you a file to upload yourself."))
+				Text(.localized("These tools run on the server, not on your device. None of them hold a private key: signing always happens on the phone, and the Signer Console only relays to it. The repository creator and app installer host nothing — they hand you files to upload yourself."))
 					.font(.caption)
 					.foregroundStyle(.secondary)
 			} icon: {

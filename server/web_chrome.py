@@ -82,10 +82,28 @@ PAGE_CSS = """
 
 TOOLS = [
     (
+        "/tools/signer",
+        "Signer Console",
+        "Drive the phone's on-device signer from a browser: queue IPAs, get signed ones back.",
+        "hammer",
+    ),
+    (
         "/tools/repo-creator",
         "Repository Creator",
         "Build, validate and export an AltStore-compatible source feed in the browser.",
         "shippingbox",
+    ),
+    (
+        "/tools/repo-decoder",
+        "Repository Decoder",
+        "Read any source feed, normalise its dialects and export it in another schema.",
+        "doc.text.viewfinder",
+    ),
+    (
+        "/tools/app-installer",
+        "App Installer",
+        "Build an OTA install link from a hosted IPA, and check the URL will really install.",
+        "square.and.arrow.down.on.square",
     ),
     (
         "/tools/cert-check",
