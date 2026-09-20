@@ -57,8 +57,8 @@
         {
           "glass" : false,
           "hidden" : false,
-          "image-name" : "vexsign 5.png",
-          "name" : "vexsign 5",
+          "image-name" : "vexsign-overlay.png",
+          "name" : "vexsign-overlay",
           "opacity" : 0.14
         }
       ],
