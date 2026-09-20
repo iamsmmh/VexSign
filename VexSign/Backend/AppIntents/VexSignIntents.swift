@@ -100,6 +100,11 @@ struct OpenIPAExplorerIntent: AppIntent {
 // MARK: - Shortcuts provider
 
 /// Binds the intents into the Shortcuts gallery.
+///
+/// Apple caps an app at ten `AppShortcut` phrases; the two that are missing here
+/// (`SetGameModeIntent`, `LibrarySummaryIntent`) are still fully usable from the
+/// Shortcuts app and from automations — they just do not get a Siri phrase of
+/// their own. `ShortcutsSettingsView` lists all of them.
 @available(iOS 17.0, *)
 struct VexSignShortcutsProvider: AppShortcutsProvider {
 	@AppShortcutsBuilder
@@ -123,10 +128,142 @@ struct VexSignShortcutsProvider: AppShortcutsProvider {
 			systemImageName: "signature"
 		)
 		AppShortcut(
+			intent: SignAppIntent(),
+			phrases: ["Sign an app with \(.applicationName)"],
+			shortTitle: "Sign App",
+			systemImageName: "signature"
+		)
+		AppShortcut(
+			intent: InstallAppIntent(),
+			phrases: ["Install an app with \(.applicationName)"],
+			shortTitle: "Install App",
+			systemImageName: "square.and.arrow.down"
+		)
+		AppShortcut(
+			intent: RefreshSourcesIntent(),
+			phrases: ["Refresh my repositories in \(.applicationName)"],
+			shortTitle: "Refresh Repositories",
+			systemImageName: "arrow.clockwise"
+		)
+		AppShortcut(
+			intent: CheckCertificatesIntent(),
+			phrases: ["Check my certificates in \(.applicationName)"],
+			shortTitle: "Check Certificates",
+			systemImageName: "checkmark.shield"
+		)
+		AppShortcut(
+			intent: OpenVexSignIntent(),
+			phrases: ["Open \(.applicationName)"],
+			shortTitle: "Open VexSign",
+			systemImageName: "square.grid.2x2"
+		)
+		AppShortcut(
+			intent: DownloadFromURLIntent(),
+			phrases: ["Download a file with \(.applicationName)"],
+			shortTitle: "Download File",
+			systemImageName: "arrow.down.circle"
+		)
+		AppShortcut(
 			intent: OpenIPAExplorerIntent(),
 			phrases: ["Open the IPA Explorer in \(.applicationName)"],
 			shortTitle: "Open IPA Explorer",
 			systemImageName: "doc.text.magnifyingglass"
 		)
 	}
+}
+
+// MARK: - Catalogue for the settings UI
+
+/// One row per intent, so Settings can show what exists without hard-coding a
+/// second list that drifts away from the provider above.
+@available(iOS 17.0, *)
+enum VexSignShortcutCatalogue {
+	struct Entry: Identifiable {
+		let id: String
+		let title: String
+		let detail: String
+		let systemImage: String
+		/// Siri phrase, when the intent is in `VexSignShortcutsProvider`.
+		let phrase: String?
+	}
+
+	static let entries: [Entry] = [
+		Entry(
+			id: "updateAll",
+			title: .localized("Update All"),
+			detail: .localized("Checks every repository and signs + queues everything with an update."),
+			systemImage: "arrow.triangle.2.circlepath",
+			phrase: "Update all apps in VexSign"
+		),
+		Entry(
+			id: "signApp",
+			title: .localized("Sign App"),
+			detail: .localized("Signs one library app you pick with your saved options."),
+			systemImage: "signature",
+			phrase: "Sign an app with VexSign"
+		),
+		Entry(
+			id: "signLatest",
+			title: .localized("Sign Latest Download"),
+			detail: .localized("Signs the most recently added unsigned app."),
+			systemImage: "square.and.arrow.down.on.square",
+			phrase: "Sign my latest download in VexSign"
+		),
+		Entry(
+			id: "installApp",
+			title: .localized("Install App"),
+			detail: .localized("Queues a signed app for installation."),
+			systemImage: "square.and.arrow.down",
+			phrase: "Install an app with VexSign"
+		),
+		Entry(
+			id: "refreshSources",
+			title: .localized("Refresh Repositories"),
+			detail: .localized("Re-fetches every repository, or just one."),
+			systemImage: "arrow.clockwise",
+			phrase: "Refresh my repositories in VexSign"
+		),
+		Entry(
+			id: "checkCertificates",
+			title: .localized("Check Certificates"),
+			detail: .localized("Local expiry and revocation pass over every certificate."),
+			systemImage: "checkmark.shield",
+			phrase: "Check my certificates in VexSign"
+		),
+		Entry(
+			id: "cleanNow",
+			title: .localized("Clean Now"),
+			detail: .localized("Runs the cleanup sweep immediately."),
+			systemImage: "sparkles",
+			phrase: "Clean VexSign storage now"
+		),
+		Entry(
+			id: "download",
+			title: .localized("Download File"),
+			detail: .localized("Starts a download from a URL. Game Mode still refuses it."),
+			systemImage: "arrow.down.circle",
+			phrase: "Download a file with VexSign"
+		),
+		Entry(
+			id: "openSection",
+			title: .localized("Open VexSign"),
+			detail: .localized("Opens the app at a chosen place, including the IPA Explorer."),
+			systemImage: "square.grid.2x2",
+			phrase: "Open VexSign"
+		),
+		Entry(
+			id: "gameMode",
+			title: .localized("Set Game Mode"),
+			detail: .localized("Pauses downloads and background work. No Siri phrase — use it in an automation."),
+			systemImage: "gamecontroller",
+			phrase: nil
+		),
+		Entry(
+			id: "updateCount",
+			title: .localized("Get Pending Update Count"),
+			detail: .localized("Returns a number, so a shortcut can branch on it."),
+			systemImage: "number",
+			phrase: nil
+		)
+	]
 }

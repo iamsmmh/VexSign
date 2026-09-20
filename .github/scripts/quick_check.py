@@ -44,6 +44,10 @@ from pathlib import Path
 SWIFT_MODULES: dict[str, str] = {
     "VexSign": "VexSign",
     "VexSignWidgetExtension": "VexSignWidgetExtension",
+    "VexSignTV": "VexSignTV",
+    "VexSignVision": "VexSignVision",
+    "VexSignWatch": "VexSignWatch",
+    "VexSignWatchWidgets": "VexSignWatchWidgets",
     "VexSignTests": "VexSignTests",
     "AltSourceKit": "AltSourceKit/Sources/AltSourceKit",
     "NimbleExtensions": "NimbleKit/Sources/NimbleExtensions",

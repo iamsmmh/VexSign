@@ -24,6 +24,8 @@
 		3A2F0EF62E96DA5D009DE4CE /* VexSignWidgetExtensionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3A2F0EE52E96DA5A009DE4CE /* VexSignWidgetExtensionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		3A2F0F0D2E976B67009DE4CE /* IDevice in Frameworks */ = {isa = PBXBuildFile; productRef = 3A2F0F0C2E976B67009DE4CE /* IDevice */; };
 		FADE000100000000000F0001 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = FADE000100000000000F0002 /* ZIPFoundation */; };
+		C0FFEE000000000000000032 /* VexSignWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = C0FFEE00000000000000001D /* VexSignWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C0FFEE000000000000000036 /* VexSignWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = C0FFEE000000000000000029 /* VexSignWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +43,20 @@
 			remoteGlobalIDString = 3379C1B82DA869A1004372DA;
 			remoteInfo = VexSign;
 		};
+		C0FFEE000000000000000034 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3379C1B12DA869A1004372DA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0FFEE00000000000000001E;
+			remoteInfo = VexSignWatch;
+		};
+		C0FFEE000000000000000038 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3379C1B12DA869A1004372DA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C0FFEE00000000000000002A;
+			remoteInfo = VexSignWatchWidgets;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -55,6 +71,28 @@
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE000000000000000031 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				C0FFEE000000000000000032 /* VexSignWatch.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE000000000000000035 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C0FFEE000000000000000036 /* VexSignWatchWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +102,10 @@
 		3A2F0EC02E96DA0B009DE4CE /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		3A2F0EE52E96DA5A009DE4CE /* VexSignWidgetExtensionExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VexSignWidgetExtensionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AABA5D192DB3C87800BFCD2C /* VexSignTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VexSignTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE000000000000000005 /* VexSignTV.app */ = {isa = PBXFileReference; explicitFileType = "wrapper.application"; includeInIndex = 0; path = VexSignTV.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE000000000000000011 /* VexSignVision.app */ = {isa = PBXFileReference; explicitFileType = "wrapper.application"; includeInIndex = 0; path = VexSignVision.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE00000000000000001D /* VexSignWatch.app */ = {isa = PBXFileReference; explicitFileType = "wrapper.application"; includeInIndex = 0; path = VexSignWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C0FFEE000000000000000029 /* VexSignWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = VexSignWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -89,8 +131,50 @@
 				Backend/Observable/DownloadProgressAttributes.swift,
 				Backend/Observable/SigningActivityAttributes.swift,
 				Backend/Observable/WidgetStatusPayload.swift,
+				Backend/Observable/WidgetRepoPayload.swift,
 			);
 			target = 3A2F0EE42E96DA5A009DE4CE /* VexSignWidgetExtensionExtension */;
+		};
+		C0FFEE00000000000000000C /* Exceptions for "VexSign" folder in "VexSignTV" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Companion/CompanionModels.swift,
+				Companion/CompanionClient.swift,
+				Companion/CompanionStore.swift,
+			);
+			target = C0FFEE000000000000000006 /* VexSignTV */;
+		};
+		C0FFEE000000000000000018 /* Exceptions for "VexSign" folder in "VexSignVision" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Companion/CompanionModels.swift,
+				Companion/CompanionClient.swift,
+				Companion/CompanionStore.swift,
+			);
+			target = C0FFEE000000000000000012 /* VexSignVision */;
+		};
+		C0FFEE000000000000000024 /* Exceptions for "VexSign" folder in "VexSignWatch" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Companion/CompanionModels.swift,
+				Companion/WatchSnapshotStore.swift,
+			);
+			target = C0FFEE00000000000000001E /* VexSignWatch */;
+		};
+		C0FFEE000000000000000030 /* Exceptions for "VexSign" folder in "VexSignWatchWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Companion/CompanionModels.swift,
+				Companion/WatchSnapshotStore.swift,
+			);
+			target = C0FFEE00000000000000002A /* VexSignWatchWidgets */;
+		};
+		C0FFEE000000000000000039 /* Exceptions for "VexSignWatchWidgets" folder in "VexSignWatchWidgets" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = C0FFEE00000000000000002A /* VexSignWatchWidgets */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -108,6 +192,10 @@
 		3379C1BB2DA869A1004372DA /* VexSign */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				C0FFEE00000000000000000C /* Exceptions for "VexSign" folder in "VexSignTV" target */,
+				C0FFEE000000000000000018 /* Exceptions for "VexSign" folder in "VexSignVision" target */,
+				C0FFEE000000000000000024 /* Exceptions for "VexSign" folder in "VexSignWatch" target */,
+				C0FFEE000000000000000030 /* Exceptions for "VexSign" folder in "VexSignWatchWidgets" target */,
 				3371F6492DA92A1800281AC6 /* Exceptions for "VexSign" folder in "VexSign" target */,
 				33CF134C2DB5B9BC0021D4C5 /* Exceptions for "VexSign" folder in "Copy Bundle Resources" phase from "VexSign" target */,
 				3A2F0F082E96DD09009DE4CE /* Exceptions for "VexSign" folder in "VexSignWidgetExtensionExtension" target */,
@@ -126,6 +214,29 @@
 		AABA5D1A2DB3C87800BFCD2C /* VexSignTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = VexSignTests;
+			sourceTree = "<group>";
+		};
+		C0FFEE000000000000000001 /* VexSignTV */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = VexSignTV;
+			sourceTree = "<group>";
+		};
+		C0FFEE00000000000000000D /* VexSignVision */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = VexSignVision;
+			sourceTree = "<group>";
+		};
+		C0FFEE000000000000000019 /* VexSignWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = VexSignWatch;
+			sourceTree = "<group>";
+		};
+		C0FFEE000000000000000025 /* VexSignWatchWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				C0FFEE000000000000000039 /* Exceptions for "VexSignWatchWidgets" folder in "VexSignWatchWidgets" target */,
+			);
+			path = VexSignWatchWidgets;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -168,6 +279,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE000000000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE00000000000000000F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE00000000000000001B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE000000000000000027 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -187,6 +326,10 @@
 				3379C1BB2DA869A1004372DA /* VexSign */,
 				AABA5D1A2DB3C87800BFCD2C /* VexSignTests */,
 				3A2F0EE82E96DA5A009DE4CE /* VexSignWidgetExtension */,
+				C0FFEE000000000000000001 /* VexSignTV */,
+				C0FFEE00000000000000000D /* VexSignVision */,
+				C0FFEE000000000000000019 /* VexSignWatch */,
+				C0FFEE000000000000000025 /* VexSignWatchWidgets */,
 				3371F7302DA9ECDD00281AC6 /* Frameworks */,
 				3379C1BA2DA869A1004372DA /* Products */,
 			);
@@ -198,6 +341,10 @@
 				3379C1B92DA869A1004372DA /* VexSign.app */,
 				AABA5D192DB3C87800BFCD2C /* VexSignTests.xctest */,
 				3A2F0EE52E96DA5A009DE4CE /* VexSignWidgetExtensionExtension.appex */,
+				C0FFEE000000000000000005 /* VexSignTV.app */,
+				C0FFEE000000000000000011 /* VexSignVision.app */,
+				C0FFEE00000000000000001D /* VexSignWatch.app */,
+				C0FFEE000000000000000029 /* VexSignWatchWidgets.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -215,12 +362,14 @@
 				3379BC662DC9DB32004372DA /* Copy Acknowledgements */,
 				3A2F0ED92E96DA0E009DE4CE /* Embed Foundation Extensions */,
 				3A7F10012E9A11B0009DE4CE /* Build FilePickerFix */,
+				C0FFEE000000000000000031 /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				339776072DC9D0F800642FFB /* PBXTargetDependency */,
 				3A2F0EF52E96DA5D009DE4CE /* PBXTargetDependency */,
+				C0FFEE000000000000000033 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				3379C1BB2DA869A1004372DA /* VexSign */,
@@ -290,6 +439,96 @@
 			productReference = AABA5D192DB3C87800BFCD2C /* VexSignTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		C0FFEE000000000000000006 /* VexSignTV */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0FFEE000000000000000007 /* Build configuration list for PBXNativeTarget "VexSignTV" */;
+			buildPhases = (
+				C0FFEE000000000000000002 /* Sources */,
+				C0FFEE000000000000000003 /* Frameworks */,
+				C0FFEE000000000000000004 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C0FFEE000000000000000001 /* VexSignTV */,
+			);
+			name = VexSignTV;
+			packageProductDependencies = (
+			);
+			productName = VexSignTV;
+			productReference = C0FFEE000000000000000005 /* VexSignTV.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C0FFEE000000000000000012 /* VexSignVision */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0FFEE000000000000000013 /* Build configuration list for PBXNativeTarget "VexSignVision" */;
+			buildPhases = (
+				C0FFEE00000000000000000E /* Sources */,
+				C0FFEE00000000000000000F /* Frameworks */,
+				C0FFEE000000000000000010 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C0FFEE00000000000000000D /* VexSignVision */,
+			);
+			name = VexSignVision;
+			packageProductDependencies = (
+			);
+			productName = VexSignVision;
+			productReference = C0FFEE000000000000000011 /* VexSignVision.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C0FFEE00000000000000001E /* VexSignWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0FFEE00000000000000001F /* Build configuration list for PBXNativeTarget "VexSignWatch" */;
+			buildPhases = (
+				C0FFEE00000000000000001A /* Sources */,
+				C0FFEE00000000000000001B /* Frameworks */,
+				C0FFEE00000000000000001C /* Resources */,
+				C0FFEE000000000000000035 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C0FFEE000000000000000037 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				C0FFEE000000000000000019 /* VexSignWatch */,
+			);
+			name = VexSignWatch;
+			packageProductDependencies = (
+			);
+			productName = VexSignWatch;
+			productReference = C0FFEE00000000000000001D /* VexSignWatch.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C0FFEE00000000000000002A /* VexSignWatchWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0FFEE00000000000000002B /* Build configuration list for PBXNativeTarget "VexSignWatchWidgets" */;
+			buildPhases = (
+				C0FFEE000000000000000026 /* Sources */,
+				C0FFEE000000000000000027 /* Frameworks */,
+				C0FFEE000000000000000028 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				C0FFEE000000000000000025 /* VexSignWatchWidgets */,
+			);
+			name = VexSignWatchWidgets;
+			packageProductDependencies = (
+			);
+			productName = VexSignWatchWidgets;
+			productReference = C0FFEE000000000000000029 /* VexSignWatchWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -310,6 +549,18 @@
 					AABA5D182DB3C87800BFCD2C = {
 						CreatedOnToolsVersion = 16.3;
 						TestTargetID = 3379C1B82DA869A1004372DA;
+					};
+					C0FFEE000000000000000006 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					C0FFEE000000000000000012 = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					C0FFEE00000000000000001E = {
+						CreatedOnToolsVersion = 26.0.1;
+					};
+					C0FFEE00000000000000002A = {
+						CreatedOnToolsVersion = 26.0.1;
 					};
 				};
 			};
@@ -352,6 +603,10 @@
 				3379C1B82DA869A1004372DA /* VexSign */,
 				AABA5D182DB3C87800BFCD2C /* VexSignTests */,
 				3A2F0EE42E96DA5A009DE4CE /* VexSignWidgetExtensionExtension */,
+				C0FFEE000000000000000006 /* VexSignTV */,
+				C0FFEE000000000000000012 /* VexSignVision */,
+				C0FFEE00000000000000001E /* VexSignWatch */,
+				C0FFEE00000000000000002A /* VexSignWatchWidgets */,
 			);
 		};
 /* End PBXProject section */
@@ -372,6 +627,34 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		AABA5D172DB3C87800BFCD2C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE000000000000000004 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE000000000000000010 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE00000000000000001C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE000000000000000028 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -435,6 +718,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0FFEE000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE00000000000000000E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE00000000000000001A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C0FFEE000000000000000026 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -451,6 +762,16 @@
 			isa = PBXTargetDependency;
 			target = 3379C1B82DA869A1004372DA /* VexSign */;
 			targetProxy = AABA5D1D2DB3C87800BFCD2C /* PBXContainerItemProxy */;
+		};
+		C0FFEE000000000000000033 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0FFEE00000000000000001E /* VexSignWatch */;
+			targetProxy = C0FFEE000000000000000034 /* PBXContainerItemProxy */;
+		};
+		C0FFEE000000000000000037 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C0FFEE00000000000000002A /* VexSignWatchWidgets */;
+			targetProxy = C0FFEE000000000000000038 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1228,6 +1549,498 @@
 			};
 			name = Release;
 		};
+		C0FFEE000000000000000008 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign TV";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.tv;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "3";
+				TVOS_DEPLOYMENT_TARGET = "17.0";
+			};
+			name = Debug;
+		};
+		C0FFEE000000000000000009 /* Debug-distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign TV";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.tv;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "3";
+				TVOS_DEPLOYMENT_TARGET = "17.0";
+			};
+			name = "Debug-distribution";
+		};
+		C0FFEE00000000000000000A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign TV";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.tv;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "3";
+				TVOS_DEPLOYMENT_TARGET = "17.0";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		C0FFEE00000000000000000B /* Release-distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign TV";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.tv;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "3";
+				TVOS_DEPLOYMENT_TARGET = "17.0";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = "Release-distribution";
+		};
+		C0FFEE000000000000000014 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign Vision";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_UIApplicationSceneManifestGeneration = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.vision;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = xros;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "7";
+				XROS_DEPLOYMENT_TARGET = "2.0";
+			};
+			name = Debug;
+		};
+		C0FFEE000000000000000015 /* Debug-distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign Vision";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_UIApplicationSceneManifestGeneration = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.vision;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = xros;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "7";
+				XROS_DEPLOYMENT_TARGET = "2.0";
+			};
+			name = "Debug-distribution";
+		};
+		C0FFEE000000000000000016 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign Vision";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_UIApplicationSceneManifestGeneration = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.vision;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = xros;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "7";
+				VALIDATE_PRODUCT = YES;
+				XROS_DEPLOYMENT_TARGET = "2.0";
+			};
+			name = Release;
+		};
+		C0FFEE000000000000000017 /* Release-distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign Vision";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_UIApplicationSceneManifestGeneration = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.vision;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = xros;
+				SUPPORTED_PLATFORMS = "xros xrsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "7";
+				VALIDATE_PRODUCT = YES;
+				XROS_DEPLOYMENT_TARGET = "2.0";
+			};
+			name = "Release-distribution";
+		};
+		C0FFEE000000000000000020 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "VexSignWatch/VexSignWatch.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = VexSign;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_WKApplication = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "4";
+				WATCHOS_DEPLOYMENT_TARGET = "10.0";
+			};
+			name = Debug;
+		};
+		C0FFEE000000000000000021 /* Debug-distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "VexSignWatch/VexSignWatch.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = VexSign;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_WKApplication = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "4";
+				WATCHOS_DEPLOYMENT_TARGET = "10.0";
+			};
+			name = "Debug-distribution";
+		};
+		C0FFEE000000000000000022 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "VexSignWatch/VexSignWatch.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = VexSign;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_WKApplication = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "4";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = "10.0";
+			};
+			name = Release;
+		};
+		C0FFEE000000000000000023 /* Release-distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "VexSignWatch/VexSignWatch.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = VexSign;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_WKApplication = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.watch;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "4";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = "10.0";
+			};
+			name = "Release-distribution";
+		};
+		C0FFEE00000000000000002C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = "VexSignWatchWidgets/VexSignWatchWidgets.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "VexSignWatchWidgets/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign WatchWidgets";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.watch.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "4";
+				WATCHOS_DEPLOYMENT_TARGET = "10.0";
+			};
+			name = Debug;
+		};
+		C0FFEE00000000000000002D /* Debug-distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = "VexSignWatchWidgets/VexSignWatchWidgets.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "VexSignWatchWidgets/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign WatchWidgets";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.watch.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "4";
+				WATCHOS_DEPLOYMENT_TARGET = "10.0";
+			};
+			name = "Debug-distribution";
+		};
+		C0FFEE00000000000000002E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = "VexSignWatchWidgets/VexSignWatchWidgets.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "VexSignWatchWidgets/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign WatchWidgets";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.watch.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "4";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = "10.0";
+			};
+			name = Release;
+		};
+		C0FFEE00000000000000002F /* Release-distribution */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = "VexSignWatchWidgets/VexSignWatchWidgets.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = "1";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "VexSignWatchWidgets/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "VexSign WatchWidgets";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = "1.0";
+				PRODUCT_BUNDLE_IDENTIFIER = com.vexsign.app.watch.widgets;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "watchos watchsimulator";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = "5.0";
+				TARGETED_DEVICE_FAMILY = "4";
+				VALIDATE_PRODUCT = YES;
+				WATCHOS_DEPLOYMENT_TARGET = "10.0";
+			};
+			name = "Release-distribution";
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1271,6 +2084,50 @@
 				3379C2402E1E53D700A51209 /* Debug-distribution */,
 				AABA5D212DB3C87800BFCD2C /* Release */,
 				3379C2432E1E53E400A51209 /* Release-distribution */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0FFEE000000000000000007 /* Build configuration list for PBXNativeTarget "VexSignTV" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE000000000000000008 /* Debug */,
+				C0FFEE000000000000000009 /* Debug-distribution */,
+				C0FFEE00000000000000000A /* Release */,
+				C0FFEE00000000000000000B /* Release-distribution */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0FFEE000000000000000013 /* Build configuration list for PBXNativeTarget "VexSignVision" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE000000000000000014 /* Debug */,
+				C0FFEE000000000000000015 /* Debug-distribution */,
+				C0FFEE000000000000000016 /* Release */,
+				C0FFEE000000000000000017 /* Release-distribution */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0FFEE00000000000000001F /* Build configuration list for PBXNativeTarget "VexSignWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE000000000000000020 /* Debug */,
+				C0FFEE000000000000000021 /* Debug-distribution */,
+				C0FFEE000000000000000022 /* Release */,
+				C0FFEE000000000000000023 /* Release-distribution */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C0FFEE00000000000000002B /* Build configuration list for PBXNativeTarget "VexSignWatchWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C0FFEE00000000000000002C /* Debug */,
+				C0FFEE00000000000000002D /* Debug-distribution */,
+				C0FFEE00000000000000002E /* Release */,
+				C0FFEE00000000000000002F /* Release-distribution */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

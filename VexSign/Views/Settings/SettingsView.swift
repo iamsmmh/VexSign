@@ -96,6 +96,9 @@ struct SettingsView: View {
                     NavigationLink(destination: AutomationView()) {
                         Label(.localized("Background Automation"), systemImage: "bolt.badge.clock.fill")
                     }
+                    NavigationLink(destination: ShortcutsSettingsView()) {
+                        Label(.localized("Siri & Shortcuts"), systemImage: "waveform")
+                    }
                 } footer: {
                     Text(.localized("Background repository refreshing, download network settings, update matching rules, and automated signing."))
                 }
@@ -205,6 +208,9 @@ struct SettingsView: View {
                     }
                     NavigationLink(destination: CloudSigningView()) {
                         Label(.localized("Cloud Signing"), systemImage: "cloud.fill")
+                    }
+                    NavigationLink(destination: CompanionSettingsView()) {
+                        Label(.localized("Companion Devices"), systemImage: "applewatch")
                     }
                     NavigationLink(destination: GameModeView()) {
                         HStack {

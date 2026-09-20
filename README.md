@@ -12,6 +12,9 @@ An on-device signing toolkit built with SwiftUI, powered by open source.
 [![Release](https://img.shields.io/github/v/release/iamsmmh/VexSign?style=for-the-badge&color=c96fad)](https://github.com/iamsmmh/VexSign/releases)
 [![Downloads](https://img.shields.io/github/downloads/iamsmmh/VexSign/total?style=for-the-badge&color=6366f1)](https://github.com/iamsmmh/VexSign/releases)
 ![iOS](https://img.shields.io/badge/iOS-16%2B-18181b?style=for-the-badge&logo=apple&logoColor=white)
+![tvOS](https://img.shields.io/badge/tvOS-17%2B-0f0f14?style=for-the-badge&logo=appletv&logoColor=white)
+![visionOS](https://img.shields.io/badge/visionOS-2%2B-1e1b4b?style=for-the-badge&logo=applevisionpro&logoColor=white)
+![watchOS](https://img.shields.io/badge/watchOS-10%2B-111827?style=for-the-badge&logo=applewatch&logoColor=white)
 [![License](https://img.shields.io/badge/License-GPL--3.0-22c55e?style=for-the-badge)](LICENSE)
 
 **[Download IPA](https://github.com/iamsmmh/VexSign/releases) · [Add source](#install) · [Explore features](#features) · [Build it yourself](#build)**
@@ -102,12 +105,40 @@ Available from **Settings → Ecosystem**.
 ### ⚡ Automation, cleanup & backup
 
 - **Scheduled automation** for updates, cleanup and summaries, subject to iOS background execution limits.
-- **Shortcuts / App Intents**, including download controls.
-- **Widgets** for app status and **Live Activities** for supported signing/download workflows.
+- **Siri & Shortcuts**: eleven App Intents — sign a chosen app, install it, refresh one or all repositories, check certificates, download from a URL, open any section, set Game Mode, update all, clean now, sign the latest download and a pending-update count automations can branch on. See **Settings → Siri & Shortcuts**.
+- **Widgets**: certificate/update status **and a configurable Repository Apps widget** (pick a repository, sort by name or updates-first, tap a row to open that app), plus **Live Activities** for supported signing/download workflows.
 - **Automatic post-install cleanup**, cleanup history and storage management.
 - **Encrypted `.vexbackup` backup and restore**.
 - **Local analytics** with daily, weekly and monthly charts for recorded signing/install activity, certificate/source events and storage gauges.
 - **Console and signing logs** for troubleshooting, plus diagnostic ZIP export with secret-redaction filters. Review diagnostics before sharing.
+
+### 📺 Companion platforms
+
+Apple TV, Apple Vision Pro and Apple Watch apps mirror what the phone is doing.
+They cannot sign or install — no certificate, no IPA storage, no `installd` — so
+they show certificate health, library and update state instead, and the watch can
+trigger a refresh, a certificate check, Update All or a cleanup on the phone.
+
+- **Apple TV** (tvOS 17+): focus-first status screen over the Web Manager API.
+- **Apple Vision Pro** (visionOS 2+): spatial glass panels, same data.
+- **Apple Watch** (watchOS 10+): certificate countdown, counts, four remote
+  commands over WatchConnectivity, plus a complication widget.
+
+See [companion platforms](docs/PLATFORMS.md) for pairing, build commands and the
+limits.
+
+### 🌐 Web tools
+
+Served by the backend under `/tools`, and linked from **Settings → Ecosystem →
+Web Tools**:
+
+- **Repository Creator** — build, validate and export a source feed plus OTA
+  manifests in the browser.
+- **Certificate Status Checker** — expiry, team, entitlements and device scope
+  from a provisioning profile; never accepts a `.p12` or a password.
+- **UDID Grabber** — one-time enrolment profile, in-memory session, no storage.
+
+See [web tools](docs/WEBTOOLS.md) for endpoints and the privacy stance.
 
 ### 🎨 A native workspace
 
@@ -188,8 +219,12 @@ The packaged IPA is written to `packages/VexSign.ipa` and requires signing befor
 - [`VexSign/`](VexSign/) — SwiftUI app, signing workflows and ecosystem tools.
 - [`AltSourceKit/`](AltSourceKit/) · [`NimbleKit/`](NimbleKit/) — repository parsing and shared utilities.
 - [`VexSignWidgetExtension/`](VexSignWidgetExtension/) — widgets and Live Activity UI.
+- [`VexSignTV/`](VexSignTV/) · [`VexSignVision/`](VexSignVision/) · [`VexSignWatch/`](VexSignWatch/) — companion apps, with [`VexSign/Companion/`](VexSign/Companion/) shared between them.
+- [`VexSignWatchWidgets/`](VexSignWatchWidgets/) — watch complication.
 - [`server/`](server/) — Python premium and repository backend.
 - [`cloud-signing/`](cloud-signing/) — separate cloud orchestration services.
+- [`docs/PLATFORMS.md`](docs/PLATFORMS.md) — Apple TV / visionOS / watchOS companions.
+- [`docs/WEBTOOLS.md`](docs/WEBTOOLS.md) — the browser tools and their endpoints.
 - [`docs/ECOSYSTEM.md`](docs/ECOSYSTEM.md) — implementation scope and release considerations.
 - [`docs/RELEASING.md`](docs/RELEASING.md) — how releases are cut (tag push) and how to test a build without publishing.
 

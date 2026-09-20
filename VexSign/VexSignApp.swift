@@ -312,6 +312,38 @@ struct VexSignApp: App {
 				}
 				return
 			}
+			/// vexsign://repo-app?id=<currentUniqueId>&name=<name>&source=<repository>
+			/// Emitted by the Repository Apps widget: opens that app in the App Store tab,
+			/// which is the same navigation a search result performs.
+			if url.host == "repo-app" {
+				let queryItems = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
+				func queryValue(_ name: String) -> String? {
+					queryItems.first(where: { $0.name == name })?.value
+				}
+
+				if let appID = queryValue("id"), !appID.isEmpty {
+					AppNavigationManager.shared.forceNavigateToApp(
+						appId: appID,
+						appName: queryValue("name") ?? .localized("App"),
+						sourceIdentifier: queryValue("source")
+					)
+				}
+				return
+			}
+			/// vexsign://library · vexsign://downloads · vexsign://appStore …
+			/// The Live Activities already emitted these; this is what receives them.
+			switch url.host?.lowercased() {
+			case "home": TabSelectionObserver.shared.selectedTab = .home
+			case "library": TabSelectionObserver.shared.selectedTab = .library
+			case "appstore": TabSelectionObserver.shared.selectedTab = .appStore
+			case "files": TabSelectionObserver.shared.selectedTab = .files
+			case "downloads": TabSelectionObserver.shared.selectedTab = .downloads
+			case "settings": TabSelectionObserver.shared.selectedTab = .settings
+			default: break
+			}
+			if let host = url.host?.lowercased(), ["home", "library", "appstore", "files", "downloads", "settings"].contains(host) {
+				return
+			}
 			/// vexsign://source/<url>
 			if let fullPath = url.validatedScheme(after: "/source/") {
 				FR.handleSource(fullPath) { _ in }
@@ -503,6 +535,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, DownloadManager.ErrorDelegat
         EcosystemMaintenance.register()
         EcosystemMaintenance.schedule()
 		scheduleAutomationMaintenance()
+
+		// Apple Watch companion: a no-op unless the user switched it on.
+		CompanionBridge.shared.activateIfNeeded()
 
 		// Idempotent, no-op after first run.
 		VexSignAPI.migrateIfNeeded()

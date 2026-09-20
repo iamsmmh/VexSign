@@ -19,6 +19,10 @@ struct EcosystemView: View {
                 NavigationLink(destination: CloneWizardView()) { Label("Clone Wizard", systemImage: "square.on.square") }
                 NavigationLink(destination: AnalyticsView()) { Label("Analytics", systemImage: "chart.bar") }
             }
+            Section("Web Tools") {
+                NavigationLink(destination: WebToolsView()) { Label("Repository Creator, Certificate Checker, UDID", systemImage: "globe") }
+                Text("Browser tools served by the VexSign backend under /tools. They run on the server: no private key ever leaves your device, and the repository creator hands you a file instead of hosting your IPAs.").font(.caption).foregroundStyle(.secondary)
+            }
         }.navigationTitle("Ecosystem")
     }
 }

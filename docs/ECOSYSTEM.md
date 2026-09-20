@@ -20,6 +20,10 @@ The new entry point is **Settings → Ecosystem**. The deployment minimum remain
 | Clone Wizard | Library selection, 1–20 collision-avoiding numbered clones, unsigned registration, root/nested ID rewrites, display names, PNG icon badge when a writable icon is present, existing clone API preserved | One source app per run (multi-source selection deferred). Asset-catalog-only icons and all icon variants are not rewritten. Entitlements/app groups/push domains still need matching signing options/profile. |
 | UX | SwiftUI materials, hero section, async icons, lazy cards/carousels, skeleton state, native navigation/search, accessible labels | Not an app-wide iOS 26 redesign. Full Dynamic Type/VoiceOver/Reduce Motion/device layout QA still needed. |
 | Performance | Actor isolation, bounded network groups, reuse of decoded repositories, coalesced refreshes, cache, background clone copy/enumeration, debounced search, streamed cloud uploads/downloads, bounded signing concurrency | No measured `<100ms`, `<1s` or `<3s` guarantee. Large builder export/validation remains synchronous UI work; profile/file decoding and thumbnail limits need stress profiling. |
+| Siri & Shortcuts | Eleven App Intents with real parameters (`VexSignAppEntity`/`VexSignSourceEntity` resolved from `Storage`, `VexSignSection` enum): sign/install a chosen app, refresh one or all repositories, local certificate check, download from URL, open a section, Game Mode, plus a pending-update count that returns a value for automations. Ten Siri phrases (Apple's cap); a Settings screen lists all eleven. | Shortcuts phrases need iOS 17. Background signing still obeys Settings → Automation. No App Shortcuts snippets or donated `NSUserActivity` yet. |
+| Widgets for repository apps | `VexSignRepoAppsWidget`: `AppIntentConfiguration` with a repository picker and sort order, small/medium/large/rectangular families, per-row deep links, icons pre-fetched by the app into the app group so the extension never uses the network. `vexsign://repo-app` opens the tapped app in the App Store tab (and the tab links the Live Activities already emitted are now handled). | Icons are cached per URL, bounded at 24 fetches per pass; a repository with more apps than the cap fills in on later passes. Widget timelines reload on publish, not on a fixed schedule. |
+| Companion platforms | `VexSignTV` (tvOS 17), `VexSignVision` (visionOS 2), `VexSignWatch` (watchOS 10) + `VexSignWatchWidgets` complication, with `VexSign/Companion/` shared through target membership exceptions. TV/vision read the existing Web Manager API; the watch uses WatchConnectivity and can trigger four phone-side passes. | **Mirrors, not signers** — no certificate, storage or `installd` on those platforms. Empty asset catalogs (placeholder icons), no distribution profiles, and no device/simulator testing here. See [PLATFORMS.md](PLATFORMS.md). |
+| Web tools | `/tools/repo-creator`, `/tools/cert-check`, `/tools/udid` on the Python backend, with matching JSON APIs, 25 tests, and a launcher in Settings → Ecosystem → Web Tools. | The repo creator does not host files; the cert checker never takes a `.p12` or password and reports *unknown* rather than *not revoked*; UDID sessions are in-memory, 15 minutes, unsigned profile. See [WEBTOOLS.md](WEBTOOLS.md). |
 | Security | API/WebDAV password Keychain migration; certificate password read-through migration, updated consumers; remote private-key checker requires explicit consent; authenticated encryption utility; server secret envelopes, hashes/capabilities, safe markup, durable queue recovery | **Legacy P12 files remain in their existing filesystem location** for signing/backups/export compatibility. New encrypted-certificate store is not yet wired into all legacy consumers. No general app binary tamper detector, crash-recovery UI or physical secure-overwrite guarantee. External checker/self-update/explicit exports are still sensitive operations. |
 
 ## Folder structure
@@ -48,8 +52,22 @@ VexSign/
 ├── Analytics/{AnalyticsStore,AnalyticsView}.swift
 ├── CloneWizard/CloneWizardView.swift
 ├── Security/{SecureSecretStore,CertificateSecrets}.swift
-└── Ecosystem/{EcosystemView,EcosystemMaintenance}.swift
-VexSignTests/EcosystemTests.swift
+├── Companion/{CompanionModels,CompanionClient,CompanionStore,WatchSnapshotStore}.swift
+├── Backend/AppIntents/{VexSignEntities,VexSignIntents+Actions}.swift
+├── Backend/Companion/CompanionBridge.swift
+├── Backend/Observable/{WidgetRepoPayload,WidgetRepoPublisher}.swift
+├── Views/Settings/Shortcuts/ShortcutsSettingsView.swift
+├── Views/Settings/Companion/CompanionSettingsView.swift
+└── Ecosystem/{EcosystemView,EcosystemMaintenance,WebToolsView}.swift
+VexSignTV/{VexSignTVApp,TVHomeView,TVConnectView}.swift
+VexSignVision/{VexSignVisionApp,VisionHomeView}.swift
+VexSignWatch/{VexSignWatchApp,WatchSessionStore,WatchHomeView,WatchLibraryView}.swift
+VexSignWatchWidgets/{VexSignWatchWidgetBundle,VexSignWatchComplication}.swift
+VexSignWidgetExtension/VexSignRepoAppsWidget.swift
+VexSignTests/{EcosystemTests,CompanionAndWidgetTests}.swift
+server/{web_tools,web_chrome,repo_creator,cert_inspector,udid_grabber,request_base}.py
+server/tests/test_web_tools.py
+.github/workflows/{platform-check,server-tests}.yml
 cloud-signing/
 ├── src/{app,main,config,contracts,security,infrastructure,jobs,signer,worker,ota,migrate,openapi}.ts
 ├── migrations/001_initial.sql

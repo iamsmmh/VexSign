@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Browser tools that live next to the VexSign backend.
+
+The iOS app covers signing on-device; these three pages cover the things people
+need a browser for — building a repository feed, reading a provisioning profile,
+and reading a device UDID off an iPhone:
+
+    GET /tools                hub page linking the three tools
+    GET /tools/repo-creator   web-based AltStore-compatible repository builder
+    GET /tools/cert-check     certificate / provisioning-profile status checker
+    GET /tools/udid           UDID grabber (enrolment profile + callback)
+
+Their JSON APIs live in the sibling modules (`repo_creator`, `cert_inspector`,
+`udid_grabber`); shared page rendering is in `web_chrome`. Everything here is
+public by design — none of the tools touch premium keys, private keys or the
+admin surface — but see each module's docstring for the privacy stance: nothing
+is persisted, and nothing is uploaded that the page can read locally.
+"""
+
+from __future__ import annotations
+
+import html
+
+from fastapi import APIRouter, Request
+
+import cert_inspector
+import repo_creator
+import udid_grabber
+from web_chrome import TOOLS, page
+
+router = APIRouter()
+router.include_router(repo_creator.router)
+router.include_router(cert_inspector.router)
+router.include_router(udid_grabber.router)
+
+
+@router.get("/tools")
+def tools_hub(request: Request):
+    cards = "\n".join(
+        f"""  <a class="card" href="{href}" style="text-decoration:none;color:inherit;display:block">
+    <h2>{html.escape(name)}</h2>
+    <p class="muted" style="margin:0">{html.escape(blurb)}</p>
+  </a>"""
+        for href, name, blurb, _ in TOOLS
+    )
+    body = f"""
+  <p class="muted">Browser-side helpers for the VexSign workflow. They do not sign
+  anything and never see a private key.</p>
+  <div class="grid">
+{cards}
+  </div>
+  <div class="card">
+    <h2>Backend endpoints</h2>
+    <ul class="muted">
+      <li><code>POST /api/tools/repo/validate</code> — lint a repository draft</li>
+      <li><code>POST /api/tools/repo/export</code> — AltStore / flat / apps.json output</li>
+      <li><code>POST /api/tools/repo/ota</code> — OTA manifest + <code>itms-services://</code> link</li>
+      <li><code>POST /api/tools/cert/inspect</code> — parse an uploaded profile or public certificate</li>
+      <li><code>GET /api/tools/cert/revoked-list</code> — the curated local revocation list</li>
+      <li><code>GET /api/tools/udid/profile</code> — the enrolment <code>.mobileconfig</code></li>
+      <li><code>POST /api/udid/callback</code> — where the device posts its UDID</li>
+      <li><code>GET /api/tools/udid/session/{{token}}</code> — poll for the result</li>
+    </ul>
+  </div>
+"""
+    return page("VexSign Tools", body, request)

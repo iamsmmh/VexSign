@@ -55,6 +55,45 @@ make deploy-server                 # builds the linux/amd64 image
 docker run -p 8080:8080 -e ADMIN_TOKEN=<secret> -v vexsign-repo:/data vexsign-server
 ```
 
+## Browser tools
+
+`GET /tools` serves three pages for the parts of the workflow that happen outside
+the app. They are public (no key, no admin token) and keep nothing: no writes to
+the database, no logs of what you upload.
+
+| Page | Purpose |
+| --- | --- |
+| `/tools/repo-creator` | Build, validate and export an AltStore-compatible feed, plus OTA manifests |
+| `/tools/cert-check` | Read a provisioning profile's validity window, team, entitlements and device scope |
+| `/tools/udid` | Read a device UDID through a one-time enrolment profile |
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /api/tools/repo/validate` | Lint a repository draft (same rules as the app's builder) |
+| `POST /api/tools/repo/export` | `source.json` (AltStore / flat) or `apps.json` |
+| `POST /api/tools/repo/ota` | OTA manifest + `itms-services://` install link |
+| `POST /api/tools/cert/inspect` | Parse an uploaded `.mobileprovision` / public certificate |
+| `GET /api/tools/cert/revoked-list` | The curated local revocation list |
+| `GET /api/tools/udid/profile?token=…` | The enrolment `.mobileconfig` |
+| `POST /api/udid/callback?token=…` | Where the device posts its attributes |
+| `GET /api/tools/udid/session/{token}` | Poll for the result |
+
+Honest limits, in one place:
+
+- **Repo creator** validates and exports. It never hosts your IPAs or the manifest —
+  the OTA link points at whatever https URL you supply.
+- **Cert checker** never accepts a `.p12` or a password (the endpoint has no such
+  field), never contacts Apple, and reports a certificate as *unknown* unless its
+  fingerprint appears in `server/data/revoked_certs.json`. Parsing a profile is not
+  CMS signature verification. Install the optional `cryptography` package to also
+  parse public `.cer`/`.pem` certificates; without it you still get fingerprints.
+- **UDID grabber** sessions live in process memory for 15 minutes, are capped at
+  200, and are never written to disk. The generated profile is unsigned, so iOS
+  says so — sign it with your own certificate to remove the warning. Anyone holding
+  a session URL can read the UDID posted to it.
+
+The pages are also reachable from the app: **Settings → Ecosystem → Web Tools**.
+
 Tests for this surface live in `server/tests/`:
 
 ```sh
