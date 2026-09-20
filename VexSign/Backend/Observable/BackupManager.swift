@@ -292,6 +292,7 @@ final class BackupManager {
 				let packURL = work.appendingPathComponent("pack.zip")
 				try plaintext.write(to: packURL)
 				try FileManager.default.createDirectory(at: extractDir, withIntermediateDirectories: true)
+				try ArchiveSafetyValidator.validate(packURL)
 				try Zip.unzipFile(packURL, destination: extractDir, overwrite: true, password: nil)
 			}.value
 

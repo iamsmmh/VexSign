@@ -271,6 +271,7 @@ final class AppUpdateChecker: ObservableObject {
         var matchingSourceURL: URL?
 
         for s in signedApps {
+            guard !isStrictlyHidden(s.uuid) else { continue }
             let identifierMatch = !appBundleId.isEmpty &&
                 identifiersMatch(appBundleId, s.identifier, s.originalIdentifier)
             let nameMatch = namesMatch(s.name)
@@ -289,6 +290,7 @@ final class AppUpdateChecker: ObservableObject {
         }
         
         for i in importedApps {
+            guard !isStrictlyHidden(i.uuid) else { continue }
             let identifierMatch = !appBundleId.isEmpty &&
                 identifiersMatch(appBundleId, i.identifier, i.originalIdentifier)
             let nameMatch = namesMatch(i.name)
@@ -315,6 +317,18 @@ final class AppUpdateChecker: ObservableObject {
         return (highestVersion, matchingUUID, matchingName, matchingIdentifier, matchingSourceURL)
     }
     
+    /// Strict hiding must also apply to background/update matching. This helper
+    /// intentionally reads the persisted privacy state directly because update
+    /// precomputation runs off the main actor.
+    private func isStrictlyHidden(_ uuid: String?) -> Bool {
+        guard let uuid, !uuid.isEmpty,
+              UserDefaults.standard.bool(forKey: "VexSign.security.strictHiding") else {
+            return false
+        }
+        let hidden = Set(UserDefaults.standard.stringArray(forKey: "VexSign.security.hiddenAppUUIDs") ?? [])
+        return hidden.contains(uuid)
+    }
+
     /// Detailed pending-update rows for the Updates screen and Update All
     func pendingUpdates(
         sources: [ASRepository],

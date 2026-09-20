@@ -75,7 +75,7 @@ enum TabEnum: String, CaseIterable, Hashable, Codable {
         case .appStore:     AppStoreView()
         case .downloads:    DownloadsTabView()
         case .settings:     SettingsView()
-        // legacy — still reachable if user customized, but not in default bar
+        // legacy destinations retained for deep links and data migration
         case .sources:      SourcesView()
         case .logs:         LogsView()
         case .tweaks:       TweaksView()
@@ -88,7 +88,9 @@ enum TabEnum: String, CaseIterable, Hashable, Codable {
         [.files, .library, .home, .appStore, .downloads, .settings]
     }
 
-    /// Hidden by default, user can surface via customization if needed
+    /// Legacy/secondary destinations: the only customizable tabs. They appear
+    /// after the six primary tabs when the user surfaces them in
+    /// Settings → Tab Bar (deep links and migration also rely on this list).
     static var customizableTabs: [TabEnum] {
         [.sources, .logs, .tweaks, .certificates]
     }

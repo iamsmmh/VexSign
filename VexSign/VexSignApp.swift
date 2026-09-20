@@ -207,7 +207,7 @@ struct VexSignApp: App {
             DownloadHeaderView(downloadManager: downloadManager)
         } else if !activeNonManualDownloads.isEmpty {
             let showInSourcesTab = UserDefaults.standard.bool(forKey: "VexSign.showDownloadHeaderInSourcesTab")
-            let shouldHide = tabSelection.selectedTab == .sources && !showInSourcesTab
+            let shouldHide = tabSelection.selectedTab == .appStore && !showInSourcesTab
 
             if !shouldHide {
                 ConditionalDownloadHeaderView(downloads: activeNonManualDownloads)

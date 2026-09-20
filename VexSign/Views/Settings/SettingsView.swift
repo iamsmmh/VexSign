@@ -57,7 +57,7 @@ struct SettingsView: View {
                         Label(.localized("Notifications & Dynamic Island"), systemImage: "bell.badge.fill")
                     }
                 } footer: {
-                    Text(.localized("Customize themes, accent tints, home screen icon, tab order, and Live Activities."))
+                    Text(.localized("Customize themes, accent tints, home screen icon, the fixed tab shell, and Live Activities."))
                 }
 
                 // MARK: 2. App Store, Downloads & Updates (FlareStore / SideStore / Ksign)

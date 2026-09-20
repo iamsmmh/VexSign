@@ -18,6 +18,13 @@ struct AppStoreView: View {
     @ObservedObject private var viewModel = SourcesViewModel.shared
     @ObservedObject private var updateChecker = AppUpdateChecker.shared
     @ObservedObject private var premiumFilter = PremiumFilterPreferences.shared
+    @ObservedObject private var privacyManager = AppLockManager.shared
+
+    @FetchRequest(entity: Signed.entity(), sortDescriptors: [])
+    private var signedApps: FetchedResults<Signed>
+
+    @FetchRequest(entity: Imported.entity(), sortDescriptors: [])
+    private var importedApps: FetchedResults<Imported>
 
     @State private var searchText = ""
     @State private var selectedSegment: StoreSegment = .discover
@@ -123,6 +130,28 @@ struct AppStoreView: View {
         }
     }
 
+    private var strictlyHiddenAppKeys: Set<String> {
+        guard privacyManager.strictHidingEnabled, !privacyManager.isRevealingHiddenApps else { return [] }
+        var keys = privacyManager.hiddenAppUUIDs
+        for app in signedApps where app.uuid.map({ privacyManager.isStrictlyHidden($0) }) == true {
+            if let identifier = app.identifier { keys.insert(identifier) }
+            if let originalIdentifier = app.originalIdentifier { keys.insert(originalIdentifier) }
+            if let name = app.name { keys.insert(name.lowercased()) }
+        }
+        for app in importedApps where app.uuid.map({ privacyManager.isStrictlyHidden($0) }) == true {
+            if let identifier = app.identifier { keys.insert(identifier) }
+            if let originalIdentifier = app.originalIdentifier { keys.insert(originalIdentifier) }
+            if let name = app.name { keys.insert(name.lowercased()) }
+        }
+        return keys
+    }
+
+    private func isStrictlyHidden(_ app: ASRepository.App) -> Bool {
+        guard privacyManager.strictHidingEnabled, !privacyManager.isRevealingHiddenApps else { return false }
+        return strictlyHiddenAppKeys.contains(app.id ?? "") ||
+            strictlyHiddenAppKeys.contains(app.currentName.lowercased())
+    }
+
     // All loaded apps from active repositories
     private var allSourcedApps: [SourcedAppItem] {
         var items: [SourcedAppItem] = []
@@ -131,6 +160,7 @@ struct AppStoreView: View {
         for source in nonExcludedSources {
             guard let repo = viewModel.sources[source] else { continue }
             for app in repo.apps {
+                guard !isStrictlyHidden(app) else { continue }
                 let appID = app.id ?? app.currentName
                 let uniqueKey = SourcePreferences.hideDuplicates ? appID : "\(source.identifier ?? "")-\(appID)"
                 if !seenIDs.contains(uniqueKey) {
@@ -190,6 +220,39 @@ struct AppStoreView: View {
     }
 
     private var updateCount: Int { updateChecker.updateCount }
+
+    private struct SourceHealthSummary {
+        let healthy: Int
+        let failed: Int
+        let stale: Int
+        let neverFetched: Int
+    }
+
+    private var sourceHealth: SourceHealthSummary {
+        let staleAfter: TimeInterval = 24 * 60 * 60
+        var healthy = 0
+        var failed = 0
+        var stale = 0
+        var neverFetched = 0
+
+        for source in sources {
+            let id = source.identifier ?? source.sourceURL?.absoluteString ?? ""
+            if SourcePreferences.lastError(for: id) != nil {
+                failed += 1
+                continue
+            }
+            guard let fetched = SourcePreferences.lastFetch(for: id) else {
+                neverFetched += 1
+                continue
+            }
+            if Date().timeIntervalSince(fetched) > staleAfter {
+                stale += 1
+            } else {
+                healthy += 1
+            }
+        }
+        return SourceHealthSummary(healthy: healthy, failed: failed, stale: stale, neverFetched: neverFetched)
+    }
 
     /// A lightweight, stable task identity. Passing `Array(FetchedResults)` to
     /// `.task(id:)` makes SwiftUI compare managed objects while Core Data is
@@ -876,7 +939,61 @@ struct AppStoreView: View {
         }
     }
 
-    // MARK: - Repositories Section (Merged Sources Tab)
+    private var sourceHealthCard: some View {
+        let health = sourceHealth
+        let attentionCount = health.failed + health.stale + health.neverFetched
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "waveform.path.ecg")
+                    .foregroundStyle(Color.userTint)
+                Text(.localized("Source Health"))
+                    .font(.subheadline.weight(.semibold))
+                Spacer()
+                Text(String.localized("%lld total", arguments: sources.count))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 8) {
+                sourceHealthPill(String.localized("%lld healthy", arguments: health.healthy), color: .green)
+                sourceHealthPill(String.localized("%lld failed", arguments: health.failed), color: health.failed > 0 ? .red : .secondary)
+                sourceHealthPill(String.localized("%lld needs refresh", arguments: health.stale + health.neverFetched), color: attentionCount > 0 ? .orange : .secondary)
+            }
+
+            if attentionCount > 0 {
+                Button {
+                    Task { await viewModel.fetchSources(sources, refresh: true) }
+                } label: {
+                    Label(.localized("Refresh All Sources"), systemImage: "arrow.clockwise")
+                        .font(.caption.weight(.semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.userTint)
+            }
+
+            if let latest = sources.compactMap({
+                SourcePreferences.lastFetch(for: $0.identifier ?? $0.sourceURL?.absoluteString ?? "")
+            }).max() {
+                Text(String.localized("Last refresh %@", arguments: latest.formatted(date: .abbreviated, time: .shortened)))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(14)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.06), lineWidth: 1))
+    }
+
+    private func sourceHealthPill(_ title: String, color: Color) -> some View {
+        Text(title)
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(color.opacity(0.13), in: Capsule())
+    }
+
+    // MARK: - Repositories Section (merged into App Store)
     private var repositoriesSection: some View {
         VStack(spacing: 16) {
             // Repositories summary header
@@ -916,6 +1033,8 @@ struct AppStoreView: View {
                 .accessibilityLabel(Text(.localized("Source Health")))
             }
             .padding(.horizontal, 4)
+
+            sourceHealthCard
 
             // Master "All Repositories" Card
             allRepositoriesBannerCard
