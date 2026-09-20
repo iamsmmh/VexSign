@@ -1,0 +1,132 @@
+# SwiftLint configuration for VexSign.
+#
+# Style problems are *warnings* only: the "SwiftLint auto-fix" workflow
+# (.github/workflows/lint-fix.yml) corrects what it can on pull requests and
+# annotates the rest. Nothing here fails a build.
+#
+# Run locally:   swiftlint            (report)
+#                swiftlint --fix      (auto-correct)
+
+# Only first-party Swift is linted. Submodules ship their own tooling and the
+# generated/vendored directories are not ours to fix.
+included:
+  - VexSign
+  - VexSignWidgetExtension
+  - VexSignTests
+  - AltSourceKit/Sources
+  - NimbleKit/Sources
+
+excluded:
+  - .build
+  - .git
+  - Zsign
+  - IDeviceKitten
+  - packages
+  - Payload
+  - deps
+  - _upstream_vexsign
+  - _VexSign
+  - server
+  - cloud-signing
+  - tools
+  - Tweaks
+  - "**/.build"
+  - "**/Package.swift"
+
+# Rules that fight the codebase or SwiftUI idioms.
+disabled_rules:
+  - todo                                    # TODO/FIXME markers are fine in a fast-moving fork
+  - trailing_whitespace                     # .editorconfig sets trim_trailing_whitespace = false; do not create diff noise
+  - multiple_closures_with_trailing_closure # Button(action:) { } label: { } is idiomatic SwiftUI
+  - nesting                                 # SwiftUI views nest small helper types freely
+
+# Safe, low-noise opt-ins (all auto-correctable or purely advisory).
+opt_in_rules:
+  - closure_spacing
+  - contains_over_first_not_nil
+  - empty_count
+  - first_where
+  - last_where
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+  - vertical_whitespace_closing_braces
+  - yoda_condition
+
+# ---------------------------------------------------------------------------
+# Rule configuration
+# ---------------------------------------------------------------------------
+
+line_length:
+  warning: 120
+  ignores_urls: true
+  ignores_comments: true
+  ignores_interpolated_strings: true
+  ignores_function_declarations: false
+
+identifier_name:
+  min_length:
+    warning: 2
+  max_length:
+    warning: 60
+    error: 80
+  excluded:
+    - id
+    - x
+    - y
+    - z
+    - i
+    - j
+    - k
+    - n
+    - to
+    - ok
+    - up
+    - db
+    - io
+    - os
+    - ui
+    - vm
+  allowed_symbols: ["_"]
+  validates_start_with_lowercase: warning
+
+type_name:
+  min_length: 3
+  max_length:
+    warning: 50
+    error: 80
+  excluded:
+    - ID
+
+# SwiftUI screens get long; keep these advisory and generous.
+file_length:
+  warning: 1000
+  error: 2000
+  ignore_comment_only_lines: true
+
+type_body_length:
+  warning: 500
+  error: 1000
+
+function_body_length:
+  warning: 80
+  error: 200
+
+function_parameter_count:
+  warning: 7
+  error: 10
+
+cyclomatic_complexity:
+  warning: 15
+  error: 30
+  ignores_case_statements: true
+
+large_tuple:
+  warning: 3
+  error: 4
+
+empty_count:
+  severity: warning
+
+reporter: "xcode"

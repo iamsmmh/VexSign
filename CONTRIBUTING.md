@@ -56,6 +56,7 @@ Set your own team / enable automatic signing in Xcode's target settings, or use 
 - Keep contributions in their own branch, not `main`.
 - Don't be afraid of reviewers requesting changes.
 - Every PR is compiled by the `Release` workflow; the resulting unsigned IPA is attached to the run as an artifact if you want to try it on a device.
+- PRs also get a one-minute **Quick check** (syntax, duplicates, broken resources), a Debug **Build check** and automatic **SwiftLint** fixes. Features from related projects are collected by the **Upstream feature radar**; see [docs/AUTOMATION.md](docs/AUTOMATION.md).
 
 ## Releasing
 
