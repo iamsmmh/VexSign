@@ -43,6 +43,7 @@ struct LogsView: View {
 				NBToolbarMenu(systemImage: "ellipsis.circle", style: .icon, placement: .topBarTrailing) {
 					Button(.localized("Share"), systemImage: "square.and.arrow.up") { _share() }
 						.disabled(_visible.isEmpty)
+					Button(.localized("Export Diagnostic Bundle"), systemImage: "archivebox") { _exportDiagnostics() }
 					Button(.localized("Copy"), systemImage: "doc.on.doc") { _copy() }
 						.disabled(_visible.isEmpty)
 					Button(.localized("Reload"), systemImage: "arrow.clockwise") {
@@ -171,6 +172,14 @@ extension LogsView {
 		} catch {
 			Toast.error(error.localizedDescription, duration: .long)
 		}
+	}
+
+	private func _exportDiagnostics() {
+		guard let zipURL = DiagnosticBundleExporter.createDiagnosticBundle() else {
+			Toast.error(.localized("Failed to create diagnostic bundle"), duration: .long)
+			return
+		}
+		UIActivityViewController.show(activityItems: [zipURL])
 	}
 
 	private func _copy() {

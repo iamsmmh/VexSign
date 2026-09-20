@@ -269,6 +269,12 @@ struct VexSignApp: App {
 				let queryItems = components.queryItems?.reduce(into: [String: String]()) { $0[$1.name.lowercased()] = $1.value } ?? [:]
 				guard let callbackTemplate = queryItems["callback_template"]?.removingPercentEncoding else { return }
 				
+				let lowercased = callbackTemplate.lowercased()
+				guard !lowercased.hasPrefix("http://") && !lowercased.hasPrefix("https://") &&
+					  !lowercased.hasPrefix("file://") && !lowercased.hasPrefix("javascript:") else {
+					return
+				}
+
 				FR.exportCertificateAndOpenUrl(using: callbackTemplate)
 			}
 			/// vexsign://source/<url>

@@ -187,26 +187,18 @@ final class UpdateAllManager: ObservableObject {
 		request.cachePolicy = .reloadIgnoringLocalAndRemoteCacheData
 		VexSignAPI.applyAuthHeaders(to: &request)
 
-		let data: Data = try await withCheckedThrowingContinuation { continuation in
-			let task = URLSession.shared.dataTask(with: request) { data, response, error in
-				if let error {
-					continuation.resume(throwing: error)
-					return
-				}
-				let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-				guard (200..<300).contains(status), let data else {
-					continuation.resume(throwing: Self.error(String.localized("The update did not download (HTTP %lld).", arguments: status)))
-					return
-				}
-				continuation.resume(returning: data)
-			}
-			task.resume()
+		let (tempURL, response) = try await URLSession.shared.download(for: request)
+		let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+		guard (200..<300).contains(status) else {
+			try? FileManager.default.removeItem(at: tempURL)
+			throw Self.error(String.localized("The update did not download (HTTP %lld).", arguments: status))
 		}
 
 		let dir = FileManager.default.uniqueTemporaryDirectory("UpdateAll")
 		let name = url.lastPathComponent.isEmpty ? "update.ipa" : url.lastPathComponent
 		let file = dir.appendingPathComponent(name)
-		try data.write(to: file, options: .atomic)
+		try? FileManager.default.removeItem(at: file)
+		try FileManager.default.moveItem(at: tempURL, to: file)
 		return file
 	}
 

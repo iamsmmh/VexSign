@@ -49,7 +49,7 @@ final class ZsignHandler {
 		StdoutCapture.shared.start { SigningLog.shared.info($0) }
 		defer { StdoutCapture.shared.stop() }
 
-		let _ = Zsign.sign(
+		let success = Zsign.sign(
 			appPath: _appUrl.relativePath,
 			provisionPath: Storage.shared.getFile(.provision, from: cert)?.path ?? "",
 			p12Path: Storage.shared.getFile(.certificate, from: cert)?.path ?? "",
@@ -60,13 +60,20 @@ final class ZsignHandler {
 				self.hadError = error
 			}
 		)
+
+		if let hadError {
+			throw hadError
+		}
+		if !success {
+			throw SigningFileHandlerError.signFailed
+		}
 	}
 	
 	func adhocSign() async throws {
 		StdoutCapture.shared.start { SigningLog.shared.info($0) }
 		defer { StdoutCapture.shared.stop() }
 
-		let _ = Zsign.sign(
+		let success = Zsign.sign(
 			appPath: _appUrl.relativePath,
 			entitlementsPath: _options.appEntitlementsFile?.path ?? "",
 			adhoc: true,
@@ -75,5 +82,12 @@ final class ZsignHandler {
 				self.hadError = error
 			}
 		)
+
+		if let hadError {
+			throw hadError
+		}
+		if !success {
+			throw SigningFileHandlerError.signFailed
+		}
 	}
 }

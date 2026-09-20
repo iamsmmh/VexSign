@@ -98,6 +98,10 @@ final class SelfUpdateManager: NSObject, ObservableObject {
 	}
 
 	var serverBaseURL: URL? {
+		if let configured = UserDefaults.standard.string(forKey: "VexSign.selfUpdateServerURL")?.trimmingCharacters(in: .whitespacesAndNewlines),
+		   !configured.isEmpty, let url = URL(string: configured) {
+			return url
+		}
 		guard
 			let url = Bundle.main.url(forResource: "SelfUpdateConfig", withExtension: "plist"),
 			let dict = NSDictionary(contentsOf: url),

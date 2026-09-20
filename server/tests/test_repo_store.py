@@ -264,3 +264,36 @@ def test_feed_still_reports_health_and_root_endpoints(client):
     assert page.status_code == 200
     assert "text/html" in page.headers["content-type"]
     assert "VexSign Premium API" in page.text
+
+
+def test_key_validation_and_atomic_consumption(client, tmp_path, monkeypatch):
+    import db
+    monkeypatch.setattr(db, "DB_PATH", str(tmp_path / "test.db"))
+
+    # Mint a key
+    db.add_key("VEX-TEST-1234-5678")
+
+    # Device 1 consumes it successfully
+    res1 = client.post(
+        "/api/validate",
+        json={"device_uuid": "device-1"},
+        headers={"X-API-Key": "VEX-TEST-1234-5678"},
+    )
+    assert res1.status_code == 200
+    assert "urls" in res1.json()
+
+    # Device 1 re-validates (idempotent)
+    res1_again = client.post(
+        "/api/validate",
+        json={"device_uuid": "device-1"},
+        headers={"X-API-Key": "VEX-TEST-1234-5678"},
+    )
+    assert res1_again.status_code == 200
+
+    # Device 2 tries to use the same key -> rejected (401)
+    res2 = client.post(
+        "/api/validate",
+        json={"device_uuid": "device-2"},
+        headers={"X-API-Key": "VEX-TEST-1234-5678"},
+    )
+    assert res2.status_code == 401

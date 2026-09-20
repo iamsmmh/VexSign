@@ -46,7 +46,9 @@ VexSign brings signing, IPA editing, repository discovery and device utilities i
 ### 🧩 Customization & IPA tools
 
 - **Tweak injection** for `.dylib`, `.deb`, `.framework`, `.bundle` and `.appex` inputs, with ElleKit support.
-- **Tweak management** to organize injection components.
+- **Tweak management** to organize injection components, with dependency-aware ElleKit injection and legacy Substrate replacement.
+- **Mach-O thinning** to remove non-target architectures from supported universal binaries.
+- **Document picker fixes**, keychain isolation and optional JIT entitlement settings. Entitlements alone do not guarantee JIT availability on a device.
 - **IPA Explorer** for browsing app contents and editing `Info.plist`, files and images.
 - **Clone Wizard** to create 1–20 numbered clones from a library app, rewriting identifiers and display names.
 - **Clone icon badges** when a writable PNG icon is available; cloned apps still need compatible signing options and profiles.
@@ -58,6 +60,7 @@ VexSign brings signing, IPA editing, repository discovery and device utilities i
 - **Source management and preferences**, repository refresh and app update tracking.
 - **Discovery** with multi-term search, suggestions, favorites, categories and collections.
 - **Featured, recommended, locally ranked trending and recently updated views** with app cards and carousels.
+- **Bundle-ID grouping and multi-source version selection** for apps offered by multiple repositories.
 - **Offline discovery index** and cached repository snapshots.
 - **Conditional repository sync** using ETag / Last-Modified, unchanged-content detection and coalesced refreshes.
 - **Last-known-good source retention** when refreshes fail, plus opt-in startup/background refresh.
@@ -90,6 +93,8 @@ Available from **Settings → Ecosystem**.
 - **Certificate status monitoring**, batch checks and expiry reminders.
 - **Certificate Dashboard** with profile payloads, entitlements, team information, expiry countdowns and device/bundle scope.
 - **Local trust / OCSP checks**, status indicators and opt-in best-effort daily checks and alerts.
+- **Local CA profile export** from the bundled certificate chain for configuring local HTTPS trust.
+- **P12 password recovery tools** for your own password-protected certificates.
 - **Face ID / passcode app lock** when the app leaves the foreground.
 - **Keychain-backed secret storage and migration** for supported passwords and API credentials.
 - **Anti-Revoke DNS profile tools** for verification-host filtering; these do not guarantee protection from certificate revocation.
@@ -102,7 +107,7 @@ Available from **Settings → Ecosystem**.
 - **Automatic post-install cleanup**, cleanup history and storage management.
 - **Encrypted `.vexbackup` backup and restore**.
 - **Local analytics** with daily, weekly and monthly charts for recorded signing/install activity, certificate/source events and storage gauges.
-- **Console and signing logs** for troubleshooting.
+- **Console and signing logs** for troubleshooting, plus diagnostic ZIP export with secret-redaction filters. Review diagnostics before sharing.
 
 ### 🎨 A native workspace
 
@@ -117,11 +122,12 @@ Available from **Settings → Ecosystem**.
 This repository also contains services and tooling beyond the iOS app:
 
 - **Python backend:** premium key validation, device binding, recovery, gated feeds, admin key management and IPA catalog endpoints. See [`server/`](server/).
+- **Native cloud bridge:** endpoint/token configuration and connection testing, with client methods for remote signing jobs. Requires a compatible deployed backend.
 - **Cloud-signing infrastructure:** a separate TypeScript/Fastify API with JWT authorization, PostgreSQL, Redis/BullMQ queues, private S3 storage, worker contracts, webhook retries and OTA endpoints. See [`cloud-signing/`](cloud-signing/).
 - **OTA server pages:** manifest/download endpoints, installation links and QR codes, with optional app images, screenshots and changelogs.
 - **Tests and CI:** iOS test sources, backend tests and cloud-service tests alongside build/deployment tooling.
 
-**Cloud signing is not a turnkey feature:** no signing engine/sandbox launcher or native cloud account/client UI is bundled. It requires infrastructure, a signer integration and end-to-end validation. Discovery rankings are local, not global popularity statistics; background schedules are controlled by iOS.
+**Cloud signing is not a turnkey feature:** no signing engine/sandbox launcher is bundled. The native client bridge and settings do not by themselves provide a deployed signing service. It requires infrastructure, a signer integration and end-to-end validation. Discovery rankings are local, not global popularity statistics; background schedules are controlled by iOS.
 
 For detailed feature boundaries, security caveats and remaining device/release testing, read the [ecosystem implementation status](docs/ECOSYSTEM.md).
 

@@ -90,7 +90,25 @@ struct ServerView: View {
 						}
 					}
 				}
+				
+				Button(.localized("Export Root CA Profile (.mobileconfig)"), systemImage: "lock.shield") {
+					_exportRootCA()
+				}
+			} footer: {
+				Text(.localized("Export and install the Root CA profile in Settings to trust the local HTTPS server for offline installations. After installing the profile, enable Full Trust under Settings → General → About → Certificate Trust Settings."))
 			}
 		}
+	}
+	
+	private func _exportRootCA() {
+		guard let profileURL = LocalCAProfile.exportProfile() else {
+			UIAlertController.showAlertWithOk(
+				title: .localized("Export Failed"),
+				message: .localized("No server certificate found. Please download or update SSL certificates first.")
+			)
+			return
+		}
+		
+		UIActivityViewController.show(activityItems: [profileURL])
 	}
 }
