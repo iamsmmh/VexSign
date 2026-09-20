@@ -142,7 +142,7 @@ struct RepoAppsWidgetView: View {
 	var body: some View {
 		switch family {
 		case .systemSmall: small
-		case .accessoryRectangular, .accessorySquare: accessory
+		case .accessoryRectangular: accessory
 		default: list
 		}
 	}

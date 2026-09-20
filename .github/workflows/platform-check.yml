@@ -83,8 +83,10 @@ jobs:
             spm-${{ matrix.scheme }}-
 
       - name: Build (Debug, unsigned)
+        id: build
         run: |
           set -uo pipefail
+          echo "BUILD_LOG=${RUNNER_TEMP}/${{ matrix.scheme }}-build.log" >> "$GITHUB_ENV"
           xcodebuild \
             -workspace VexSign.xcworkspace \
             -scheme "${{ matrix.scheme }}" \
@@ -97,4 +99,32 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             COMPILER_INDEX_STORE_ENABLE=NO \
-            build
+            build 2>&1 | tee "${RUNNER_TEMP}/${{ matrix.scheme }}-build.log"
+          status=${PIPESTATUS[0]}
+          echo "exit_code=${status}" >> "$GITHUB_OUTPUT"
+          if [ "${status}" -ne 0 ]; then
+            echo "::error::xcodebuild (${{ matrix.scheme }}) exited with status ${status}."
+          fi
+          exit "${status}"
+
+      # Inline annotations so a compile error in a companion target can be read
+      # from the PR page. Warnings are not gated here: these targets have no
+      # committed baseline, and the iOS build check owns that gate.
+      - name: Report diagnostics
+        if: always() && steps.build.outcome != 'skipped'
+        run: |
+          python3 .github/scripts/xcodebuild_report.py \
+            --log "$BUILD_LOG" \
+            --build-exit "${{ steps.build.outputs.exit_code || 1 }}" \
+            --warnings-as-errors false \
+            --baseline "${RUNNER_TEMP}/${{ matrix.scheme }}-baseline.json" \
+            --workspace "$GITHUB_WORKSPACE"
+
+      - name: Upload build log
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: platform-build-log-${{ matrix.scheme }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/${{ matrix.scheme }}-build.log
+          if-no-files-found: ignore
+          retention-days: 14

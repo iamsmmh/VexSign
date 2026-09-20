@@ -17,7 +17,7 @@ import WatchConnectivity
 import WidgetKit
 
 @MainActor
-final class WatchSessionStore: NSObject, ObservableObject {
+final class WatchSessionStore: NSObject, ObservableObject, WCSessionDelegate {
 	static let shared = WatchSessionStore()
 
 	@Published private(set) var snapshot: CompanionSnapshot?

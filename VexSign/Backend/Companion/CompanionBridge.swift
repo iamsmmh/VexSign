@@ -17,7 +17,7 @@ import SwiftUI
 import WatchConnectivity
 import OSLog
 
-final class CompanionBridge: NSObject, ObservableObject {
+final class CompanionBridge: NSObject, ObservableObject, WCSessionDelegate {
 	static let shared = CompanionBridge()
 
 	/// Opt-in, because activating a WCSession on every launch is not free.
