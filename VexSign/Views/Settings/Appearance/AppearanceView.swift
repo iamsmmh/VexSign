@@ -16,8 +16,6 @@ struct AppearanceView: View {
     ]
 
     @AppStorage("com.apple.SwiftUI.IgnoreSolariumLinkedOnCheck") private var _ignoreSolariumLinkedOnCheck: Bool = false
-    @AppStorage("VexSign.sourcesTabShowAllReposDirectly") private var _sourcesTabShowAllReposDirectly: Bool = false
-    @AppStorage("VexSign.sourcesShowUpdatesAsTab") private var _sourcesShowUpdatesAsTab: Bool = false
     @AppStorage("VexSign.showSourcesUpdateBadge") private var _showSourcesUpdateBadge: Bool = true
     @AppStorage("VexSign.shouldTintIcons") private var _shouldTintIcons: Bool = false
     @AppStorage("VexSign.shouldChangeIconsBasedOffStyle") private var _shouldChangeIconsBasedOffStyle: Bool = false
@@ -120,7 +118,7 @@ struct AppearanceView: View {
                 }
             }
 
-            NBSection(.localized("Sources")) {
+            NBSection(.localized("App Store"), systemName: "bag.fill") {
                 Picker(.localized("Store Cell Appearance"), selection: $_storeCellAppearance) {
                     ForEach(0..<_storeCellAppearanceMethods.count, id: \.self) { index in
                         let method = _storeCellAppearanceMethods[index]
@@ -129,14 +127,12 @@ struct AppearanceView: View {
                 }
                 .labelsHidden()
                 .pickerStyle(.inline)
-                Toggle(.localized("Show All Repos by Default"), isOn: $_sourcesTabShowAllReposDirectly).tint(Color.userTint)
-                Toggle(.localized("Show Updates as Tab"), isOn: $_sourcesShowUpdatesAsTab).tint(Color.userTint)
                 Toggle(.localized("Update Count Badge"), isOn: $_showSourcesUpdateBadge).tint(Color.userTint)
                 NavigationLink(destination: IgnoredUpdatesView()) {
                     Label(.localized("Ignored Updates"), systemImage: "bell.slash")
                 }
             } footer: {
-                Text(.localized("When enabled, the Sources tab shows all apps directly. Toggle off to manage sources. The update count badge shows the number of available app updates on the Sources tab."))
+                Text(.localized("The App Store owns repository browsing, source refresh, updates, and app discovery. The update count badge appears on its primary tab."))
             }
 
             if #available(iOS 19.0, *) {

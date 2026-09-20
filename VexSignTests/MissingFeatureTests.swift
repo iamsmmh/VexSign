@@ -5,7 +5,7 @@
 //  Covers the logic behind the features that were added on top of the signing
 //  core: PPQ/PPQLess classification, the JIT entitlement builder, the batch
 //  certificate result mapping, direct-install verification, App Store lookups,
-//  the IPSW catalog models, the widget payload and Minimal Mode.
+//  the IPSW catalog models, the widget payload and fixed navigation shell.
 //
 //  Everything here is pure (no network, no device), so it runs on any host.
 //
@@ -359,22 +359,21 @@ final class MissingFeatureTests: XCTestCase {
 										   availableBytes: nil, lastUpdated: Date()).certTint, .red)
 	}
 
-	// MARK: - Minimal Mode
+	// MARK: - Fixed navigation shell
 
-	func testMinimalModeKeepsOnlyHomeAndSettings() {
+	func testPrimaryShellIsAlwaysVisibleAndOrdered() {
 		let preferences = TabBarPreferences.shared
-		let wasMinimal = preferences.isMinimal
-		addTeardownBlock { preferences.setMinimal(wasMinimal) }
+		let previousLaunch = preferences.defaultLaunch
+		addTeardownBlock { preferences.defaultLaunch = previousLaunch }
 
 		preferences.setMinimal(true)
-		XCTAssertTrue(preferences.isMinimal)
-		XCTAssertEqual(Set(preferences.visibleTabs), Set(TabBarPreferences.minimalTabs))
-		XCTAssertTrue(preferences.visibleTabs.contains(.settings), "Settings must stay reachable to turn it off")
-		XCTAssertTrue(TabBarPreferences.minimalTabs.contains(preferences.resolvedLaunchTab))
+		preferences.setHidden(.files, true)
+		preferences.move(from: IndexSet(integer: 0), to: 6)
 
-		preferences.setMinimal(false)
 		XCTAssertFalse(preferences.isMinimal)
-		XCTAssertTrue(preferences.visibleTabs.contains(.library) || preferences.isHidden(.library))
+		XCTAssertEqual(preferences.visibleTabs, TabEnum.defaultTabs)
+		XCTAssertEqual(preferences.orderedTabs, [.files, .library, .home, .appStore, .downloads, .settings])
+		XCTAssertTrue(preferences.visibleTabs.contains(.settings))
 	}
 
 	// MARK: - Fixtures
