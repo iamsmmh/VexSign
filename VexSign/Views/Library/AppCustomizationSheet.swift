@@ -144,7 +144,7 @@ struct AppCustomizationSheet: View {
                 set: { val in
                     isAutoUpdate = val
                     if let uuid = app.uuid {
-                        updatePrefs.toggleAutoUpdate(uuid: uuid)
+                        updatePrefs.toggleAutoUpdate(for: uuid)
                     }
                 }
             )) {

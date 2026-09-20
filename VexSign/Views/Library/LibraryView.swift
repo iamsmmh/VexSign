@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreData
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct LibraryView: View {
@@ -293,9 +294,9 @@ struct LibraryView: View {
 
     // MARK: - Hidden Apps Vault Section (LiveContainer)
     private var hiddenAppsVaultSection: some View {
-        NBSection {
+        NBSection(.localized("Hidden Apps")) {
             Button {
-                NBHaptic.medium()
+                NBHaptic.tap(.medium)
                 lockManager.authenticateToRevealHidden { _ in }
             } label: {
                 HStack(spacing: 12) {

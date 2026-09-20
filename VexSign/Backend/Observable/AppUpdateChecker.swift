@@ -439,6 +439,6 @@ final class AppUpdateChecker: ObservableObject {
 
         var displayName: String { app.currentName }
         var downloadURL: URL? { app.currentDownloadUrl }
-        var iconURL: URL? { app.currentIconUrl }
+        var iconURL: URL? { app.iconURL }
     }
 }
