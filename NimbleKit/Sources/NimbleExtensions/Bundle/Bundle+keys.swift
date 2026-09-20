@@ -49,6 +49,11 @@ extension Bundle {
 		return object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
 	}
 	
+	/// Get the build number of the app
+	public var buildNumber: String {
+		object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+	}
+	
 	/// Get the icon of the app
 	public var iconFileName: String? {
 		if

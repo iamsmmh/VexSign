@@ -19,6 +19,12 @@ public struct ASRepository: Sendable, Decodable, Hashable, Identifiable {
 	public var id: String?
 	public var name: String?
 
+	/// The URL this repository was fetched from. Repositories are published as
+	/// bare JSON (they carry no self-reference), so the loader stamps this on
+	/// after decoding — see `SourcesViewModel`. It stays `nil` for repositories
+	/// that never came off the network (e.g. a local `RepositoryBuilder` file).
+	public var sourceURL: URL?
+
 	// descriptive fields
 	public var subtitle: String?
 	public var description: String?
@@ -38,6 +44,8 @@ public struct ASRepository: Sendable, Decodable, Hashable, Identifiable {
 
 	public init(from decoder: any Decoder) throws {
 		let container = try decoder.container(keyedBy: CodingKeys.self)
+		// Stamped on by whoever loaded the repository, not part of the JSON.
+		self.sourceURL = nil
 		self.id = try container.decodeIfPresent(String.self, forKey: .id)
 		self.name = try container.decodeIfPresent(String.self, forKey: .name)
 

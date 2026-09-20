@@ -415,7 +415,7 @@ struct AppStoreView: View {
                     NavigationLink(destination: SourceAppsDetailView(source: item.repository, app: item.app)) {
                         HStack(spacing: 12) {
                             ZStack(alignment: .bottomTrailing) {
-                                AppIconView(app: item.app, size: 48)
+                                AppStoreIconView(app: item.app, size: 48)
                                     .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
 
                                 // Repo logo badge
@@ -490,7 +490,7 @@ struct AppStoreView: View {
                             NavigationLink(destination: SourceAppsDetailView(source: item.repository, app: item.app)) {
                                 VStack(alignment: .leading, spacing: 8) {
                                     ZStack(alignment: .bottomTrailing) {
-                                        AppIconView(app: item.app, size: 76)
+                                        AppStoreIconView(app: item.app, size: 76)
                                             .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                                             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
                                             .shadow(color: Color.black.opacity(0.08), radius: 6, y: 3)
@@ -565,7 +565,7 @@ struct AppStoreView: View {
                                     .frame(width: 24, alignment: .center)
 
                                 ZStack(alignment: .bottomTrailing) {
-                                    AppIconView(app: item.app, size: 52)
+                                    AppStoreIconView(app: item.app, size: 52)
                                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
 
@@ -706,7 +706,7 @@ struct AppStoreView: View {
                         NavigationLink(destination: SourceAppsDetailView(source: item.repository, app: item.app)) {
                             HStack(spacing: 12) {
                                 ZStack(alignment: .bottomTrailing) {
-                                    AppIconView(app: item.app, size: 56)
+                                    AppStoreIconView(app: item.app, size: 56)
                                         .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                                         .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
 
@@ -1000,7 +1000,7 @@ struct AppStoreView: View {
                         NavigationLink(destination: SourceAppsDetailView(source: item.repository, app: item.app)) {
                             HStack(spacing: 12) {
                                 ZStack(alignment: .bottomTrailing) {
-                                    AppIconView(app: item.app, size: 52)
+                                    AppStoreIconView(app: item.app, size: 52)
                                         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                                     RepoMiniBadge(source: item.source)
                                 }
@@ -1249,7 +1249,7 @@ private struct RepoMiniBadge: View {
     }
 }
 
-private struct AppIconView: View {
+private struct AppStoreIconView: View {
     let app: ASRepository.App
     let size: CGFloat
 

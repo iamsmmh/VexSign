@@ -96,11 +96,11 @@ struct LibraryCellView: View {
 			} else if let uuid = app.uuid, lockManager.isAppLocked(uuid), !lockManager.isSessionUnlocked(uuid) {
 				lockManager.authenticateForApp(uuid: uuid, name: app.name ?? .localized("Application")) { success in
 					if success {
-						selectedInfoAppPresenting = AnyApp(app)
+						selectedInfoAppPresenting = AnyApp(base: app)
 					}
 				}
 			} else {
-				selectedInfoAppPresenting = AnyApp(app)
+				selectedInfoAppPresenting = AnyApp(base: app)
 			}
 		}
 		.swipeActions {
@@ -144,7 +144,7 @@ struct LibraryCellView: View {
 				_contextActions(for: app)
 				Divider()
 				Button {
-					_customizingApp = AnyApp(app)
+					_customizingApp = AnyApp(base: app)
 				} label: {
 					Label(.localized("Customize App..."), systemImage: "slider.horizontal.2.square")
 				}

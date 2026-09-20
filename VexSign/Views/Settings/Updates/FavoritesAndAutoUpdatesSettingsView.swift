@@ -204,7 +204,7 @@ struct FavoritesAndAutoUpdatesSettingsView: View {
 
                             // Favorite toggle button
                             Button {
-                                NBHaptic.light()
+                                NBHaptic.tap()
                                 prefs.toggleFavorite(uuid: uuid)
                             } label: {
                                 Image(systemName: isFav ? "star.fill" : "star")
@@ -216,8 +216,8 @@ struct FavoritesAndAutoUpdatesSettingsView: View {
 
                             // Auto update toggle button
                             Button {
-                                NBHaptic.light()
-                                prefs.toggleAutoUpdate(uuid: uuid)
+                                NBHaptic.tap()
+                                prefs.toggleAutoUpdate(for: uuid)
                             } label: {
                                 Image(systemName: isAuto ? "arrow.triangle.2.circlepath.circle.fill" : "arrow.triangle.2.circlepath.circle")
                                     .font(.system(size: 20))

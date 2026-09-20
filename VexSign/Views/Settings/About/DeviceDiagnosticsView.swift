@@ -9,7 +9,6 @@ import NimbleExtensions
 import IDeviceSwift
 
 struct DeviceDiagnosticsView: View {
-    @State private var showingShareSheet = false
     @State private var diagnosticReportString = ""
 
     private var deviceModel: String {
@@ -56,9 +55,6 @@ struct DeviceDiagnosticsView: View {
 
             exportSection
         }
-        .sheet(isPresented: $showingShareSheet) {
-            ActivityView(activityItems: [diagnosticReportString])
-        }
     }
 
     private var overviewSection: some View {
@@ -97,7 +93,7 @@ struct DeviceDiagnosticsView: View {
         NBSection(.localized("Operating System")) {
             LabeledContent(.localized("iOS Version"), value: iosVersion)
             LabeledContent(.localized("Build Number"), value: buildNumber)
-            LabeledContent(.localized("Developer Mode"), value: .localized("Enabled"))
+            LabeledContent(.localized("Developer Mode"), value: String.localized("Enabled"))
         }
     }
 
@@ -112,7 +108,7 @@ struct DeviceDiagnosticsView: View {
         NBSection(.localized("Diagnostics Export")) {
             Button {
                 generateReport()
-                showingShareSheet = true
+                UIActivityViewController.show(activityItems: [diagnosticReportString])
             } label: {
                 Label(.localized("Share Diagnostic Report"), systemImage: "square.and.arrow.up")
             }
@@ -131,7 +127,7 @@ struct DeviceDiagnosticsView: View {
         Total Storage: \(totalDiskSpace)
         Available Storage: \(availableDiskSpace)
         Certificates Installed: \(Storage.shared.getAllCertificates().count)
-        Signed Apps: \(Storage.shared.getAllSignedApps().count)
+        Signed Apps: \(Storage.shared.getSignedApps().count)
         Imported Apps: \(Storage.shared.getImportedApps().count)
         Sources Configured: \(Storage.shared.getSources().count)
         Time: \(Date())

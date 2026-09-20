@@ -178,8 +178,11 @@ final class SourcesViewModel: ObservableObject {
 			for (idx, repo) in fetched {
 				let item = items[idx]
 				let id = item.source.identifier ?? item.url.absoluteString
-				if let repo {
+				if var repo {
                     successes += 1
+                    // Repositories are published as bare JSON and carry no
+                    // self-reference, so record where this one came from.
+                    repo.sourceURL = item.source.sourceURL
                     working[item.source] = repo
 					SourcePreferences.recordFetch(id: id, error: nil)
 				} else {
