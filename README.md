@@ -1,120 +1,214 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="icon.png">
-  <img alt="VexSign" src="icon.png" width="180">
-</picture>
+<img src="icon.png" alt="VexSign app icon" width="140">
 
 # VexSign
 
-### sign · tweak · install — entirely on device 📲
+### Your apps. Your tweaks. Your device.
 
-[![Release](https://img.shields.io/github/v/release/iamsmmh/VexSign?style=for-the-badge&color=C96FAD&label=Release)](https://github.com/iamsmmh/VexSign/releases)
-[![Downloads](https://img.shields.io/github/downloads/iamsmmh/VexSign/total?style=for-the-badge&color=181717&label=Downloads)](https://github.com/iamsmmh/VexSign/releases)
-[![Stars](https://img.shields.io/github/stars/iamsmmh/VexSign?style=for-the-badge&color=FFD700&label=Stars)](https://github.com/iamsmmh/VexSign/stargazers)
-![iOS](https://img.shields.io/badge/iOS-16%2B-000000?style=for-the-badge&logo=apple&logoColor=white)
-[![License](https://img.shields.io/badge/License-GPL--3.0-2f6feb?style=for-the-badge)](LICENSE)
+Sign, customize and install IPAs on your iPhone or iPad.<br>
+An on-device signing toolkit built with SwiftUI, powered by open source.
 
-**On-device iOS signer** built on [Feather](https://github.com/claration/Feather) (GPL-3.0).
-Sign, tweak and install IPAs entirely on your iPhone or iPad — no Mac, no PC, no jailbreak.
+[![Release](https://img.shields.io/github/v/release/iamsmmh/VexSign?style=for-the-badge&color=c96fad)](https://github.com/iamsmmh/VexSign/releases)
+[![Downloads](https://img.shields.io/github/downloads/iamsmmh/VexSign/total?style=for-the-badge&color=6366f1)](https://github.com/iamsmmh/VexSign/releases)
+![iOS](https://img.shields.io/badge/iOS-16%2B-18181b?style=for-the-badge&logo=apple&logoColor=white)
+[![License](https://img.shields.io/badge/License-GPL--3.0-22c55e?style=for-the-badge)](LICENSE)
 
-[Features](#-features) ·
-[Install](#-install) ·
-[Build](#️-build-from-source) ·
-[Premium](#-premium) ·
-[Credits](#-credits) ·
-[License](#-license)
+**[Download IPA](https://github.com/iamsmmh/VexSign/releases) · [Add source](#install) · [Explore features](#features) · [Build it yourself](#build)**
+
+<sub>Built on <a href="https://github.com/claration/Feather">Feather</a> · No jailbreak required · iPhone & iPad</sub>
 
 </div>
 
 ---
 
-## ✨ Features
+## At a glance
 
-Native SwiftUI app with **Liquid Glass** design on iOS 26. Signs and installs IPAs with `.p12` certificates and `.mobileprovision` profiles via Zsign, with full AltStore-source support and certificate health monitoring from the Feather base. On top of that VexSign adds:
+**SIGN** with your certificate → **CUSTOMIZE** apps and tweaks → **INSTALL** on device → **MANAGE** updates, sources and backups.
 
-|  |  |
-| --- | --- |
-| 🧹 **Auto Cleanup** | import → sign → install → sweep, zero leftovers |
-| 📂 **IPA Explorer** | edit `Info.plist`, files and images inside any IPA |
-| 🧩 **Tweak Injection** | `.dylib` `.deb` `.framework` `.bundle` `.appex` via ElleKit |
-| 📡 **File Transfer** | HTTP + WebDAV server, no cable needed |
-| ⬇️ **Live Downloads** | background transfers with Live Activities & Dynamic Island |
-| 🔐 **App Lock** | Face ID / passcode lock when the app leaves the foreground |
-| #️⃣ **SHA-256 Verify** | every download hashed to the log; verify any file against a published hash |
-| 🔔 **Expiry Reminders** | notifications before your certificates expire |
-| 🔋 **Download Conditions** | Wi-Fi-only and charge-only gates |
-| 🔄 **Update All** | one-tap re-sign of every source update |
-| 📦 **Batch Signing** | queue many apps with per-app settings |
-| 💾 **Backup & Restore** | encrypted `.vexbackup` archives |
-| 🛡️ **Anti-Revoke** | DoH profile pinning Apple's verification hosts |
-| 🤖 **Automation** | scheduled updates, cleanup and summaries |
-| 🗂️ **Logs & File Manager** | full console, built-in document browser, QuickLook preview |
-| 🎮 **Game Mode** | pauses downloads and background work |
+VexSign brings signing, IPA editing, repository discovery and device utilities into one native app. Use `.p12` certificates and `.mobileprovision` profiles with Zsign, organize your library, and automate repeat tasks without a desktop in the everyday signing workflow.
+
+> **Requirements:** iOS 16 or later, a valid signing certificate and a compatible provisioning profile. Installation and entitlement support depend on your device and signing setup. Newer system UI and Live Activity features require supported iOS versions and hardware.
+
+<a id="features"></a>
+## ✨ Explore the toolkit
+
+### ✍️ Signing & installation
+
+- **On-device IPA signing** powered by Zsign.
+- **Batch signing and install queues** for processing multiple apps with per-app settings.
+- **Reusable signing profiles** and named presets for repeat workflows.
+- **Signing options and entitlement management**, with preflight checks and signing logs.
+- **Local HTTPS installation** using `itms-services://`, plus paired installation through the AFC / `installd` backend.
+- **Signing Live Activities** to follow progress on supported devices.
+- **Auto-sign workflows** and **Update All** for re-signing source updates.
+
+### 🧩 Customization & IPA tools
+
+- **Tweak injection** for `.dylib`, `.deb`, `.framework`, `.bundle` and `.appex` inputs, with ElleKit support.
+- **Tweak management** to organize injection components.
+- **IPA Explorer** for browsing app contents and editing `Info.plist`, files and images.
+- **Clone Wizard** to create 1–20 numbered clones from a library app, rewriting identifiers and display names.
+- **Clone icon badges** when a writable PNG icon is available; cloned apps still need compatible signing options and profiles.
+- **File manager**, document browsing, QuickLook previews and file/compression settings.
+
+### 📚 Sources, discovery & updates
+
+- **AltStore-compatible repositories** through AltSourceKit, including the existing encrypted ESign parsing support.
+- **Source management and preferences**, repository refresh and app update tracking.
+- **Discovery** with multi-term search, suggestions, favorites, categories and collections.
+- **Featured, recommended, locally ranked trending and recently updated views** with app cards and carousels.
+- **Offline discovery index** and cached repository snapshots.
+- **Conditional repository sync** using ETag / Last-Modified, unchanged-content detection and coalesced refreshes.
+- **Last-known-good source retention** when refreshes fail, plus opt-in startup/background refresh.
+- **Premium activation, restore and device recovery** through the configured backend, with premium catalog filters.
+- **App self-update checking** and controls for skipped source updates.
+
+### 🛠️ Repository Builder & sharing
+
+Available from **Settings → Ecosystem**.
+
+- Create, edit, save and delete repository projects.
+- Import repository JSON from files or HTTPS URLs.
+- Export `source.json` and `apps.json`, with format selection and conversion for supported public JSON fields.
+- Validate entries, probe links and apply supported URL/screenshot fixes.
+- Generate and export **OTA manifests, installation links and QR codes**.
+
+> OTA export does not upload your files or configure hosting. Installation requires a reachable HTTPS host and a correctly signed IPA. Repository conversion supports a common public JSON subset, not every provider-specific field.
+
+### ⬇️ Downloads & file transfer
+
+- **Background downloads** with progress, speed tracking, Live Activities and Dynamic Island support.
+- **Wi-Fi-only and charging-only download conditions**.
+- **HTTP and WebDAV file transfer** through the built-in web manager.
+- **SHA-256 hashing** in download logs and file verification against a supplied hash.
+- **Game Mode** to pause downloads and background work.
+
+### 🔐 Certificates & security
+
+- Import and manage signing certificates and provisioning profiles.
+- **Certificate status monitoring**, batch checks and expiry reminders.
+- **Certificate Dashboard** with profile payloads, entitlements, team information, expiry countdowns and device/bundle scope.
+- **Local trust / OCSP checks**, status indicators and opt-in best-effort daily checks and alerts.
+- **Face ID / passcode app lock** when the app leaves the foreground.
+- **Keychain-backed secret storage and migration** for supported passwords and API credentials.
+- **Anti-Revoke DNS profile tools** for verification-host filtering; these do not guarantee protection from certificate revocation.
+
+### ⚡ Automation, cleanup & backup
+
+- **Scheduled automation** for updates, cleanup and summaries, subject to iOS background execution limits.
+- **Shortcuts / App Intents**, including download controls.
+- **Widgets** for app status and **Live Activities** for supported signing/download workflows.
+- **Automatic post-install cleanup**, cleanup history and storage management.
+- **Encrypted `.vexbackup` backup and restore**.
+- **Local analytics** with daily, weekly and monthly charts for recorded signing/install activity, certificate/source events and storage gauges.
+- **Console and signing logs** for troubleshooting.
+
+### 🎨 A native workspace
+
+- SwiftUI navigation, search, material surfaces and availability-gated Liquid Glass styling.
+- Appearance and app-icon settings.
+- Configurable tab bar and library display preferences.
+- Ecosystem tools grouped in a dedicated settings entry point.
+
+<details>
+<summary><strong>Developer components & implementation status</strong></summary>
+
+This repository also contains services and tooling beyond the iOS app:
+
+- **Python backend:** premium key validation, device binding, recovery, gated feeds, admin key management and IPA catalog endpoints. See [`server/`](server/).
+- **Cloud-signing infrastructure:** a separate TypeScript/Fastify API with JWT authorization, PostgreSQL, Redis/BullMQ queues, private S3 storage, worker contracts, webhook retries and OTA endpoints. See [`cloud-signing/`](cloud-signing/).
+- **OTA server pages:** manifest/download endpoints, installation links and QR codes, with optional app images, screenshots and changelogs.
+- **Tests and CI:** iOS test sources, backend tests and cloud-service tests alongside build/deployment tooling.
+
+**Cloud signing is not a turnkey feature:** no signing engine/sandbox launcher or native cloud account/client UI is bundled. It requires infrastructure, a signer integration and end-to-end validation. Discovery rankings are local, not global popularity statistics; background schedules are controlled by iOS.
+
+For detailed feature boundaries, security caveats and remaining device/release testing, read the [ecosystem implementation status](docs/ECOSYSTEM.md).
+
+</details>
 
 ---
 
-## 📦 Install
+<a id="install"></a>
+## 📦 Get VexSign
 
-Grab the latest `.ipa` from [**Releases**](https://github.com/iamsmmh/VexSign/releases) 🚀, or add this source to any AltStore-compatible signer (SideStore, ESign, Scarlet, Feather, …):
+### Download the app
 
-```
+Get the latest `.ipa` from **[GitHub Releases](https://github.com/iamsmmh/VexSign/releases)** and install it with your preferred compatible signing workflow.
+
+### Add the app source
+
+Copy this URL into an AltStore-compatible signer such as SideStore, ESign, Scarlet or Feather:
+
+```text
 https://raw.githubusercontent.com/iamsmmh/VexSign/main/app-repo.json
 ```
 
-Installs use either the built-in local HTTPS server (`itms-services://`) or direct AFC pairing over USB 🔐
+### Start signing
+
+1. Import your `.p12` certificate and `.mobileprovision` profile.
+2. Import an IPA or download an app from a source you trust.
+3. Choose signing options and any tweaks, then sign and install.
 
 ---
 
-## 🛠️ Build from source
+<a id="build"></a>
+## 🧑‍💻 Build from source
 
-Requires **Xcode 16+** and the iOS 16+ SDK (Swift 6.0).
+Use macOS with Xcode and the iOS SDK. The project uses Swift 6 and targets iOS 16+; choose an Xcode version that supports the SDK APIs used by your checkout.
 
 ```bash
 git clone --recursive https://github.com/iamsmmh/VexSign.git
 cd VexSign
-make deps                    # fetch SSL certificates for the local HTTPS server
-open VexSign.xcworkspace     # set your team in Xcode, or build unsigned with `make`
+make deps
+open VexSign.xcworkspace
 ```
 
-> **Note:** `--recursive` is required — Zsign and IDeviceKitten are pulled in as Git submodules.
+Select the VexSign scheme and configure your development team in Xcode. To create the unsigned IPA using the repository’s build recipe:
+
+```bash
+make
+```
+
+The packaged IPA is written to `packages/VexSign.ipa` and requires signing before installation.
+
+> Clone with `--recursive`: Zsign and IDeviceKitten are Git submodules. For an existing clone, run `git submodule update --init --recursive`.
+
+### Project guide
+
+- [`VexSign/`](VexSign/) — SwiftUI app, signing workflows and ecosystem tools.
+- [`AltSourceKit/`](AltSourceKit/) · [`NimbleKit/`](NimbleKit/) — repository parsing and shared utilities.
+- [`VexSignWidgetExtension/`](VexSignWidgetExtension/) — widgets and Live Activity UI.
+- [`server/`](server/) — Python premium and repository backend.
+- [`cloud-signing/`](cloud-signing/) — separate cloud orchestration services.
+- [`docs/ECOSYSTEM.md`](docs/ECOSYSTEM.md) — implementation scope and release considerations.
+
+Want to contribute? Read [Contributing](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md), or [open an issue](https://github.com/iamsmmh/VexSign/issues).
 
 ---
 
-## 👑 Premium
+## 💜 Acknowledgments
 
-Premium unlocks a private curated source with single-use, device-bound keys. Keys are issued through the official distribution channel; unknown, reused or disabled keys are rejected by design.
+**Built on [Feather](https://github.com/claration/Feather) by [claration](https://github.com/claration)** — the foundation for signing, storage, UI architecture, AltSourceKit and NimbleKit (GPL-3.0).
 
-The premium backend lives in [`server/`](server/) and is committed here for transparency — anyone can audit exactly what the app talks to, what data is stored, and how keys are enforced.
+**Signing & installation** · [Zsign](https://github.com/zhlynn/zsign) by zhlynn (MIT) · [idevice](https://github.com/jkcoxson/idevice) by jkcoxson (MIT) · [ElleKit](https://github.com/everythingappletech/ElleKit) by tealbathingsuit (BSD-3).
 
----
+**Networking & media** · [Vapor](https://github.com/vapor/vapor) by the Vapor team · [Nuke](https://github.com/kean/Nuke) by kean · [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) by weichsel · [SWCompression](https://github.com/tsolomko/SWCompression) by tsolomko (MIT).
 
-## 🙏 Credits
+**Service acknowledgment** · [backloop.dev](https://backloop.dev/) for public-CA-signed localhost SSL certificates.
 
-VexSign stands on the shoulders of giants — thank you 💜
+## License
 
-| Project | By | Role | License |
-| --- | --- | --- | --- |
-| 🪽 [Feather](https://github.com/claration/Feather) | [claration](https://github.com/claration) | Base signing engine, storage, UI architecture, AltSourceKit & NimbleKit | GPL-3.0 |
-| ✍️ [Zsign](https://github.com/zhlynn/zsign) | [zhlynn](https://github.com/zhlynn) | On-device IPA signing | MIT |
-| 🔌 [idevice](https://github.com/jkcoxson/idevice) | [jkcoxson](https://github.com/jkcoxson) | AFC / `installd` backend for pairing installs | MIT |
-| 🧩 [ElleKit](https://github.com/everythingappletech/ElleKit) | [tealbathingsuit](https://github.com/everythingappletech/ElleKit) | Tweak injection | BSD-3 |
-| 💨 [Vapor](https://github.com/vapor/vapor) | Vapor team | Local HTTPS install server | MIT |
-| 🖼️ [Nuke](https://github.com/kean/Nuke) · [ZIPFoundation](https://github.com/weichsel/ZIPFoundation) · [SWCompression](https://github.com/tsolomko/SWCompression) | kean · weichsel · tsolomko | Image loading and archive handling | MIT |
-| 🔐 [backloop.dev](https://backloop.dev/) | — | Public-CA-signed SSL for the on-device localhost server | — |
+**GPL-3.0**, matching the Feather base. VexSign additions © 2026; Feather © 2024 Samara / claration. See [`LICENSE`](LICENSE) and [`LICENSE_ELLEKIT`](LICENSE_ELLEKIT) for the full notices.
 
 ---
-
-## 📜 License
-
-**GPL-3.0**, matching the Feather base ⚖️ — VexSign additions © 2026; Feather © 2024 Samara / claration. See [`LICENSE`](LICENSE) for the full text and [`LICENSE_ELLEKIT`](LICENSE_ELLEKIT) for ElleKit's BSD-3 notice.
 
 <div align="center">
 
-<sub>Sideloading may conflict with the Apple Developer Program terms; use at your own risk. VexSign is not affiliated with Apple Inc.</sub>
+**Made for people who like control over their apps.**
 
-<br>
+[Releases](https://github.com/iamsmmh/VexSign/releases) · [Issues](https://github.com/iamsmmh/VexSign/issues) · [Contribute](CONTRIBUTING.md)
 
-<sub>If VexSign helps you, a ⭐ on GitHub goes a long way.</sub>
+<sub>VexSign is not affiliated with Apple Inc. Sideloading may conflict with Apple Developer Program terms; use at your own risk.</sub>
 
 </div>
