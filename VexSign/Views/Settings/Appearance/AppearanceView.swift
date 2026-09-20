@@ -16,16 +16,42 @@ struct AppearanceView: View {
     ]
 
     @AppStorage("com.apple.SwiftUI.IgnoreSolariumLinkedOnCheck") private var _ignoreSolariumLinkedOnCheck: Bool = false
-    @AppStorage("VexSign.sourcesTabShowAllReposDirectly") private var _sourcesTabShowAllReposDirectly: Bool = false
-    @AppStorage("VexSign.sourcesShowUpdatesAsTab") private var _sourcesShowUpdatesAsTab: Bool = false
     @AppStorage("VexSign.showSourcesUpdateBadge") private var _showSourcesUpdateBadge: Bool = true
     @AppStorage("VexSign.shouldTintIcons") private var _shouldTintIcons: Bool = false
     @AppStorage("VexSign.shouldChangeIconsBasedOffStyle") private var _shouldChangeIconsBasedOffStyle: Bool = false
     @AppStorage("VexSign.userTintColor") private var _selectedColorHex: String = "#848ef9"
-    @AppStorage(VexSignStylePreferences.visualThemeKey) private var _visualTheme = VexSignVisualTheme.system.rawValue
-    @AppStorage(VexSignStylePreferences.fontFamilyKey) private var _fontFamily = VexSignFontFamily.system.rawValue
-    @AppStorage(VexSignStylePreferences.fontScaleKey) private var _fontScale = 1.0
-    @AppStorage(VexSignStylePreferences.flareAnimationsKey) private var _flareAnimations = true
+
+    /// Theme/font/animation preferences go through the shared appearance store
+    /// so every observer (app root, tab bar, motion modifiers) updates at once.
+    @ObservedObject private var _appearance = AppearanceStore.shared
+
+    private var _visualThemeBinding: Binding<String> {
+        Binding(
+            get: { _appearance.visualTheme.rawValue },
+            set: { _appearance.setVisualTheme(VexSignVisualTheme(rawValue: $0) ?? .system) }
+        )
+    }
+
+    private var _fontFamilyBinding: Binding<String> {
+        Binding(
+            get: { _appearance.fontFamily.rawValue },
+            set: { _appearance.setFontFamily(VexSignFontFamily(rawValue: $0) ?? .system) }
+        )
+    }
+
+    private var _fontScaleBinding: Binding<Double> {
+        Binding(
+            get: { _appearance.fontScale },
+            set: { _appearance.setFontScale($0) }
+        )
+    }
+
+    private var _flareAnimationsBinding: Binding<Bool> {
+        Binding(
+            get: { _appearance.animationsEnabled },
+            set: { _appearance.setAnimationsEnabled($0) }
+        )
+    }
 
     private var _tintColorBinding: Binding<Color> {
         Binding(
@@ -59,7 +85,7 @@ struct AppearanceView: View {
             }
 
             NBSection(.localized("Visual Theme"), systemName: "sparkles") {
-                Picker(.localized("Theme"), selection: $_visualTheme) {
+                Picker(.localized("Theme"), selection: _visualThemeBinding) {
                     ForEach(VexSignVisualTheme.allCases) { theme in
                         NBTitleWithSubtitleView(title: theme.title, subtitle: theme.description)
                             .tag(theme.rawValue)
@@ -120,7 +146,7 @@ struct AppearanceView: View {
                 }
             }
 
-            NBSection(.localized("Sources")) {
+            NBSection(.localized("App Store"), systemName: "bag.fill") {
                 Picker(.localized("Store Cell Appearance"), selection: $_storeCellAppearance) {
                     ForEach(0..<_storeCellAppearanceMethods.count, id: \.self) { index in
                         let method = _storeCellAppearanceMethods[index]
@@ -129,14 +155,12 @@ struct AppearanceView: View {
                 }
                 .labelsHidden()
                 .pickerStyle(.inline)
-                Toggle(.localized("Show All Repos by Default"), isOn: $_sourcesTabShowAllReposDirectly).tint(Color.userTint)
-                Toggle(.localized("Show Updates as Tab"), isOn: $_sourcesShowUpdatesAsTab).tint(Color.userTint)
                 Toggle(.localized("Update Count Badge"), isOn: $_showSourcesUpdateBadge).tint(Color.userTint)
                 NavigationLink(destination: IgnoredUpdatesView()) {
                     Label(.localized("Ignored Updates"), systemImage: "bell.slash")
                 }
             } footer: {
-                Text(.localized("When enabled, the Sources tab shows all apps directly. Toggle off to manage sources. The update count badge shows the number of available app updates on the Sources tab."))
+                Text(.localized("The App Store owns repository browsing, source refresh, updates, and app discovery. The update count badge appears on its primary tab."))
             }
 
             if #available(iOS 19.0, *) {

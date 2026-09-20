@@ -2,12 +2,17 @@
 //  OnboardingView.swift
 //  VexSign
 //
-//  First-launch wizard: what VexSign is, import a certificate, pick install method.
+//  First-run setup wizard: what VexSign is, import a certificate, add a
+//  repository, import the first IPA and pick the install method. Every step
+//  is optional — each page states what it does and where to find it later.
 //
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 import IDeviceSwift
+import UniformTypeIdentifiers
+import CoreData
 
 struct OnboardingView: View {
 	@Environment(\.dismiss) private var dismiss
@@ -15,25 +20,39 @@ struct OnboardingView: View {
 	@AppStorage("VexSign.installationMethod") private var _installMethod = 0
 	@State private var _page = 0
 	@State private var _isAddingCert = false
+	@State private var _isAddingSource = false
+	@State private var _isImportingIPA = false
+	@State private var _importedAppName: String?
+
+	@FetchRequest(entity: CertificatePair.entity(), sortDescriptors: [])
+	private var _certificates: FetchedResults<CertificatePair>
+
+	@FetchRequest(entity: AltSource.entity(), sortDescriptors: [])
+	private var _sources: FetchedResults<AltSource>
+
+	private let _pageCount = 5
 
 	var body: some View {
 		NBNavigationView(.localized("Welcome")) {
 			TabView(selection: $_page) {
 				_pageWelcome.tag(0)
 				_pageCertificate.tag(1)
-				_pageInstall.tag(2)
+				_pageSource.tag(2)
+				_pageFirstApp.tag(3)
+				_pageInstall.tag(4)
 			}
 			.tabViewStyle(.page(indexDisplayMode: .always))
 			.toolbar {
 				ToolbarItem(placement: .topBarTrailing) {
-					Button(_page == 2 ? .localized("Done") : .localized("Next")) {
-						if _page < 2 {
+					Button(_page == _pageCount - 1 ? .localized("Done") : .localized("Next")) {
+						if _page < _pageCount - 1 {
 							_page += 1
 						} else {
 							_completed = true
 							dismiss()
 						}
 					}
+					.font(.body.weight(.semibold))
 				}
 				if _page > 0 {
 					ToolbarItem(placement: .topBarLeading) {
@@ -45,9 +64,19 @@ struct OnboardingView: View {
 				CertificatesAddView()
 					.presentationDetents([.medium])
 			}
+			.sheet(isPresented: $_isAddingSource) {
+				SourcesAddView()
+			}
+			.fileImporter(isPresented: $_isImportingIPA, allowedContentTypes: [.ipa, .tipa, .item], allowsMultipleSelection: false) { result in
+				if case .success(let urls) = result, let url = urls.first {
+					_importFirstApp(from: url)
+				}
+			}
 		}
-		.interactiveDismissDisabled(!_completed && _page < 2)
+		.interactiveDismissDisabled(!_completed && _page < _pageCount - 1)
 	}
+
+	// MARK: - Pages
 
 	private var _pageWelcome: some View {
 		VStack(spacing: 16) {
@@ -77,6 +106,66 @@ struct OnboardingView: View {
 				Label(.localized("Import Certificate"), systemImage: "plus")
 			}
 			.buttonStyle(.borderedProminent)
+
+			if !_certificates.isEmpty {
+				Label(
+					verbatim: String.localized("%lld certificate(s) ready", arguments: _certificates.count),
+					systemImage: "checkmark.circle.fill"
+				)
+				.font(.footnote)
+				.foregroundStyle(.green)
+			}
+			Spacer()
+		}
+		.padding(28)
+		.frame(maxWidth: .infinity, alignment: .leading)
+	}
+
+	private var _pageSource: some View {
+		VStack(alignment: .leading, spacing: 16) {
+			Text(.localized("Add a repository"))
+				.font(.title2.weight(.semibold))
+			Text(.localized("Repositories (sources) are app catalogs. Add one to browse and download IPAs directly in the App Store tab — you can add more any time."))
+				.foregroundStyle(.secondary)
+			Button {
+				_isAddingSource = true
+			} label: {
+				Label(.localized("Add Source"), systemImage: "plus")
+			}
+			.buttonStyle(.borderedProminent)
+
+			if !_sources.isEmpty {
+				Label(
+					verbatim: String.localized("%lld source(s) added", arguments: _sources.count),
+					systemImage: "checkmark.circle.fill"
+				)
+				.font(.footnote)
+				.foregroundStyle(.green)
+			}
+			Spacer()
+		}
+		.padding(28)
+		.frame(maxWidth: .infinity, alignment: .leading)
+	}
+
+	private var _pageFirstApp: some View {
+		VStack(alignment: .leading, spacing: 16) {
+			Text(.localized("Import your first app"))
+				.font(.title2.weight(.semibold))
+			Text(.localized("Already have an IPA or TIPA file? Import it now — it lands in your Library, ready to sign. You can also download apps from your repositories, or drop a file onto Home."))
+				.foregroundStyle(.secondary)
+			Button {
+				_isImportingIPA = true
+			} label: {
+				Label(_importedAppName == nil ? .localized("Choose File") : .localized("Choose Another"), systemImage: "square.and.arrow.down")
+			}
+			.buttonStyle(.bordered)
+
+			if let name = _importedAppName {
+				Label(verbatim: String.localized("Imported %@", arguments: name), systemImage: "checkmark.circle.fill")
+					.font(.footnote)
+					.foregroundStyle(.green)
+			}
 			Spacer()
 		}
 		.padding(28)

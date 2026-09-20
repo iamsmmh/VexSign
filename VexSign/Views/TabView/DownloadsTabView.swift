@@ -103,6 +103,14 @@ struct DownloadsTabView: View {
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
+            NavigationLink {
+                TaskCenterView()
+            } label: {
+                Image(systemName: "list.bullet.rectangle")
+            }
+            .accessibilityLabel(Text(.localized("Task Center")))
+        }
+        ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button(.localized("Download from URL…"), systemImage: "link") { showAddSheet = true }
                 Button(.localized("Import from Files…"), systemImage: "square.and.arrow.down") { showImportPicker = true }

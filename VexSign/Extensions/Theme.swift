@@ -9,7 +9,7 @@ import NimbleViews
 
 enum Theme {
     private static var visualTheme: VexSignVisualTheme {
-        VexSignVisualTheme(rawValue: UserDefaults.standard.string(forKey: VexSignStylePreferences.visualThemeKey) ?? "") ?? .system
+        AppearanceStore.snapshot().visualTheme
     }
 
     private static var isLuna: Bool { visualTheme == .luna }

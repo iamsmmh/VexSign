@@ -24,12 +24,27 @@ extension Storage {
 		identifier: String,
 		iconURL: URL? = nil,
 		deferSave: Bool = false,
+		enforceTransportPolicy: Bool = true,
 		completion: @escaping (Error?) -> Void
 	) {
 		if sourceExists(identifier) {
 			completion(nil)
 			Logger.misc.debug("ignoring \(identifier)")
 			return
+		}
+
+		// Transport policy: a repository must be served over HTTPS unless the
+		// user explicitly opted into insecure HTTP (e.g. a LAN repository).
+		// Backup restore passes `enforceTransportPolicy: false` to keep
+		// restoring the user's own previously-saved configuration.
+		if enforceTransportPolicy {
+			do {
+				try SourceURLPolicy.validate(url)
+			} catch {
+				Logger.security.warning("Rejected repository with insecure transport: \(url.absoluteString, privacy: .public)")
+				completion(error)
+				return
+			}
 		}
 		
 		let generator = UIImpactFeedbackGenerator(style: .light)
@@ -58,16 +73,18 @@ extension Storage {
 		repository: ASRepository,
 		id: String = "",
 		deferSave: Bool = false,
+		enforceTransportPolicy: Bool = true,
 		completion: @escaping (Error?) -> Void
 	) {
 		addSource(
 			url,
 			name: repository.name,
 			identifier: !id.isEmpty
-						? id
-						: (repository.id ?? url.absoluteString),
+					? id
+					: (repository.id ?? url.absoluteString),
 			iconURL: repository.currentIconURL,
 			deferSave: deferSave,
+			enforceTransportPolicy: enforceTransportPolicy,
 			completion: completion
 		)
 	}

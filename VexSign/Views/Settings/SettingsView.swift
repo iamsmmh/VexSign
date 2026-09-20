@@ -57,7 +57,7 @@ struct SettingsView: View {
                         Label(.localized("Notifications & Dynamic Island"), systemImage: "bell.badge.fill")
                     }
                 } footer: {
-                    Text(.localized("Customize themes, accent tints, home screen icon, tab order, and Live Activities."))
+                    Text(.localized("Customize themes, accent tints, home screen icon, the fixed tab shell, and Live Activities."))
                 }
 
                 // MARK: 2. App Store, Downloads & Updates (FlareStore / SideStore / Ksign)
@@ -146,8 +146,15 @@ struct SettingsView: View {
                     NavigationLink(destination: CertificateExpirySettingsView()) {
                         Label(.localized("Expiry Reminders"), systemImage: "bell.badge.fill")
                     }
+                    Toggle(isOn: Binding(
+                        get: { SourceURLPolicy.allowInsecureHTTP },
+                        set: { SourceURLPolicy.allowInsecureHTTP = $0 }
+                    )) {
+                        Label(.localized("Allow Insecure HTTP Sources"), systemImage: "exclamationmark.shield.fill")
+                    }
+                    .tint(Color.userTint)
                 } footer: {
-                    Text(.localized("Features from LiveContainer, AppNest, and FlareStore. Lock specific apps with Face ID, conceal hidden applications, and block Apple revocation endpoints."))
+                    Text(.localized("Features from LiveContainer, AppNest, and FlareStore. Lock specific apps with Face ID, conceal hidden applications, and block Apple revocation endpoints. Repositories must use HTTPS; the insecure HTTP option exists only for local network repositories and is off by default."))
                 }
 
                 // MARK: 4. Signing & Tweaks Engine (Feather / FeatherPlus / MySign)
@@ -229,6 +236,9 @@ struct SettingsView: View {
                 _directories()
 
                 NBSection(.localized("Storage & Maintenance"), systemName: "internaldrive.fill") {
+                    NavigationLink(destination: DiagnosticsCenterView()) {
+                        Label(.localized("Diagnostics Center"), systemImage: "cross.case.fill")
+                    }
                     NavigationLink(destination: StorageView()) {
                         Label(.localized("Storage Breakdown"), systemImage: "internaldrive.fill")
                     }
@@ -263,19 +273,22 @@ struct SettingsView: View {
 private extension SettingsView {
     var _aboutSection: some View {
         Section {
-            NavigationLink(destination: AboutView()) {
-                Label {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(verbatim: .localized("About %@", arguments: Bundle.main.name))
-                            .font(.headline)
-                        Text("Version \(Bundle.main.version) • FlareStore & LiveContainer Edition")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                    NavigationLink(destination: AboutView()) {
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(verbatim: .localized("About %@", arguments: Bundle.main.name))
+                                    .font(.headline)
+                                Text("Version \(Bundle.main.version) • FlareStore & LiveContainer Edition")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        } icon: {
+                            FRAppIconView(size: 26)
+                        }
                     }
-                } icon: {
-                    FRAppIconView(size: 26)
-                }
-            }
+                    NavigationLink(destination: FeatureStatusView()) {
+                        Label(.localized("Feature Status"), systemImage: "checklist")
+                    }
             Button(.localized("Submit Feedback"), systemImage: "safari") {
                 let bugAction: UIAlertAction = .init(title: .localized("Bug Report"), style: .default) { _ in
                     UIApplication.open(_makeGitHubIssueURL(url: _githubUrl))

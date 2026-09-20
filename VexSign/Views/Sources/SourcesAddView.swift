@@ -140,9 +140,6 @@ struct SourcesAddView: View {
 		}
 	}
 
-	@AppStorage("VexSign.sourcesTabShowAllReposDirectly")
-	var _sourcesTabShowAllReposDirectly: Bool = false
-
 	@ViewBuilder
 	var formContent: some View {
 		Form {
@@ -150,7 +147,6 @@ struct SourcesAddView: View {
 			importExportSection
 			premiumVexSignSection
 			vexReposSection
-			displaySection
 			featuredSection
 		}
 		.dismissableKeyboard()
@@ -360,17 +356,6 @@ struct SourcesAddView: View {
 			} else {
 				Text("Add a collection of popular repositories crafted by Vex.")
 			}
-		}
-	}
-
-	@ViewBuilder
-	var displaySection: some View {
-		Section {
-			Toggle(isOn: $_sourcesTabShowAllReposDirectly) {
-				Label(.localized("Show All Repos by Default"), systemImage: "square.stack")
-			}
-		} footer: {
-			Text(.localized("When enabled, the Sources tab shows all apps directly. Toggle off to manage sources."))
 		}
 	}
 

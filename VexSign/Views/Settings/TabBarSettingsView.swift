@@ -1,6 +1,6 @@
 //
 //  TabBarSettingsView.swift
-//  VexSign — organized, no duplicate Minimal Mode
+//  VexSign — six fixed primary tabs + customizable legacy tabs
 //
 
 import SwiftUI
@@ -36,18 +36,6 @@ struct TabBarSettingsView: View {
                 Text(verbatim: String.localized("Your current order: %@.", arguments: _prefs.visibleTabs.map { $0.title }.joined(separator: " • ")))
             }
 
-            NBSection(.localized("Layout")) {
-                Toggle(isOn: Binding(
-                    get: { _prefs.isMinimal },
-                    set: { _prefs.setMinimal($0) }
-                )) {
-                    Label(.localized("Minimal Mode"), systemImage: "square.split.1x2")
-                }
-                .tint(Color.userTint)
-            } footer: {
-                Text(.localized("Hides every tab except Home and Settings for a calmer layout. Turn it off here at any time — Home has a shortcut too. Nothing is deleted."))
-            }
-
             NBSection(.localized("Default Launch Tab")) {
                 Picker(selection: $_prefs.defaultLaunch) {
                     ForEach(_prefs.visibleTabs, id: \.self) { tab in
@@ -59,62 +47,43 @@ struct TabBarSettingsView: View {
                 .pickerStyle(.menu)
                 .tint(Color.userTint)
             } footer: {
-                Text(.localized("Which tab the app opens to. Settings and Home are always available."))
+                Text(.localized("Which tab the app opens to."))
             }
 
-            NBSection(.localized("Tabs")) {
-                ForEach(_prefs.orderedTabs, id: \.self) { tab in
-                    _row(for: tab)
-                }
-                .onMove { source, destination in
-                    _prefs.move(from: source, to: destination)
+            NBSection(.localized("Primary Tabs"), systemName: "square.grid.2x2.fill") {
+                ForEach(TabBarPreferences.primaryTabs, id: \.self) { tab in
+                    HStack {
+                        Label(tab.title, systemImage: tab.icon)
+                        Spacer()
+                        Label(.localized("Locked"), systemImage: "lock.fill")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .labelStyle(.titleAndIcon)
+                    }
                 }
             } footer: {
-                Text(.localized("Drag to reorder (tap Edit). Hidden tabs stay reachable from Home. Home and Settings can’t be hidden — they’re your way back."))
+                Text(.localized("Files, Library, Home, App Store, Downloads and Settings are the app's fixed navigation structure. They are always visible, in this order, and cannot be hidden or reordered."))
+            }
+
+            NBSection(.localized("Legacy Tabs"), systemName: "square.stack.3d.up.fill") {
+                ForEach(_prefs.order, id: \.self) { tab in
+                    Toggle(isOn: Binding(
+                        get: { !_prefs.isHidden(tab) },
+                        set: { _prefs.setHidden(tab, !$0) }
+                    )) {
+                        Label(tab.title, systemImage: tab.icon)
+                    }
+                    .tint(Color.userTint)
+                }
+                .onMove { source, destination in
+                    _prefs.moveSecondary(from: source, to: destination)
+                }
+            } footer: {
+                Text(.localized("Optional destinations carried over from older versions. Show, hide and reorder them freely — they appear after the six primary tabs."))
             }
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { EditButton().tint(Color.userTint) }
-        }
-    }
-
-    @ViewBuilder
-    private func _row(for tab: TabEnum) -> some View {
-        if _prefs.isMinimal {
-            HStack {
-                Label(tab.title, systemImage: tab.icon)
-                Spacer()
-                if TabBarPreferences.minimalTabs.contains(tab) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.caption)
-                        .foregroundStyle(Color.userTint)
-                } else {
-                    Image(systemName: "eye.slash")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            .foregroundStyle(TabBarPreferences.minimalTabs.contains(tab) ? .primary : .secondary)
-        } else if _prefs.isHideable(tab) {
-            Toggle(isOn: Binding(
-                get: { !_prefs.isHidden(tab) },
-                set: { _prefs.setHidden(tab, !$0) }
-            )) {
-                Label(tab.title, systemImage: tab.icon)
-            }
-            .tint(Color.userTint)
-        } else {
-            HStack {
-                Label(tab.title, systemImage: tab.icon)
-                Spacer()
-                Label(.localized("Always visible"), systemImage: "lock.fill")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .labelStyle(.iconOnly)
-                Image(systemName: "lock.fill")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
         }
     }
 }

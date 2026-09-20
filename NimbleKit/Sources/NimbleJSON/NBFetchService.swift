@@ -23,7 +23,7 @@ public class NBFetchService {
 	/// assigned exactly once — on the main thread at launch, via
 	/// `FR.registerRepositoryKeyProvider()` — before any fetch runs; afterwards
 	/// the background queues in `fetch(from:headers:completion:)` only read it.
-	nonisolated(unsafe) public static var apiKeyProvider: (() -> String)? = nil
+	nonisolated(unsafe) public static var apiKeyProvider: (() -> String)?
 
 	public enum NBFetchServiceError: Error, LocalizedError {
 		case invalidURL
@@ -66,6 +66,32 @@ extension NBFetchService {
 		headers: [String: String] = [:],
 		completion: @escaping (Result<T, Error>) -> Void
 	) {
+		fetchRaw(from: url, headers: headers) { result in
+			switch result {
+			case .success(let data):
+				do {
+					let decoder = JSONDecoder()
+					let decodedData = try decoder.decode(T.self, from: data)
+					completion(.success(decodedData))
+				} catch {
+					let snippet = String(data: data.prefix(512), encoding: .utf8) ?? "<non-utf8 \(data.count) bytes>"
+					Self.log.error("Request PARSE FAIL \(url.absoluteString, privacy: .public): \(error.localizedDescription, privacy: .public)\nBody: \(snippet, privacy: .public)")
+					completion(.failure(NBFetchServiceError.parsingError(error)))
+				}
+			case .failure(let error):
+				completion(.failure(error))
+			}
+		}
+	}
+
+	/// Fetches the raw response body. Host apps use this when they need the
+	/// undecoded payload — e.g. to keep an offline snapshot of a repository
+	/// that can be re-decoded later without another request.
+	public func fetchRaw(
+		from url: URL,
+		headers: [String: String] = [:],
+		completion: @escaping (Result<Data, Error>) -> Void
+	) {
 		DispatchQueue.global(qos: .userInitiated).async {
 			// Create URLRequest with gzip support
 			var request = URLRequest(url: url)
@@ -85,8 +111,7 @@ extension NBFetchService {
 			if
 				request.value(forHTTPHeaderField: "X-API-Key") == nil,
 				let key = Self.apiKeyProvider?(),
-				!key.isEmpty
-			{
+				!key.isEmpty {
 				request.setValue(key, forHTTPHeaderField: "X-API-Key")
 			}
 
@@ -115,18 +140,8 @@ extension NBFetchService {
 					return
 				}
 
-				// URLSession automatically decompresses gzip responses,
-				// so we can use the data directly
-				do {
-					let decoder = JSONDecoder()
-					let decodedData = try decoder.decode(T.self, from: data)
-					Self.log.debug("Request OK (HTTP \(statusCode, privacy: .public)) \(url.absoluteString, privacy: .public)")
-					completion(.success(decodedData))
-				} catch {
-					let snippet = String(data: data.prefix(512), encoding: .utf8) ?? "<non-utf8 \(data.count) bytes>"
-					Self.log.error("Request PARSE FAIL (HTTP \(statusCode, privacy: .public)) \(url.absoluteString, privacy: .public): \(error.localizedDescription, privacy: .public)\nBody: \(snippet, privacy: .public)")
-					completion(.failure(NBFetchServiceError.parsingError(error)))
-				}
+				Self.log.debug("Request OK (HTTP \(statusCode, privacy: .public)) \(url.absoluteString, privacy: .public)")
+				completion(.success(data))
 			}
 
 			task.resume()

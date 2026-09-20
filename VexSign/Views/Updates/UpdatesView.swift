@@ -84,6 +84,15 @@ struct UpdatesView: View {
 				(app: $0.app, sourceName: $0.sourceName, hasUpdate: true)
 			})
 		}
+		.sheet(item: $_rulesApp) { update in
+			PerAppUpdateRulesView(
+				appName: update.displayName,
+				bundleID: update.app.id ?? update.installedAppIdentifier ?? "",
+				currentVersion: update.sourceVersion
+			)
+			.presentationDetents([.large])
+			.onDisappear { Task { await _reload() } }
+		}
 		.refreshable { await _reload() }
 		.task { await _reload() }
 	}
@@ -124,6 +133,9 @@ struct UpdatesView: View {
 		}
 		.contextMenu {
 			Button(.localized("Update Now"), systemImage: "arrow.down.circle") { _updateOne(update) }
+			Button(.localized("Update Rules…"), systemImage: "slider.horizontal.3") {
+				_rulesApp = update
+			}
 			if let bundleID = update.app.id {
 				Button(.localized("Ignore Updates"), systemImage: "bell.slash") {
 					SkippedUpdatesManager.shared.ignore(bundleID)

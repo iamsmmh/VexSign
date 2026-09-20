@@ -157,7 +157,7 @@ final class BackupManager {
 		"VexSign.defaultImportFolderName",
 		"VexSign.defaultImportFolderBookmark", // security-scoped, dead on another install
 		"VexSign.downloadBubblePositionX",
-		"VexSign.downloadBubblePositionY",
+		"VexSign.downloadBubblePositionY"
 	]
 
 	static func isBackupableSettingKey(_ key: String) -> Bool {
@@ -172,7 +172,7 @@ final class BackupManager {
 			.certificates: Storage.shared.getAllCertificates().count,
 			.sources: Storage.shared.getSources().count,
 			.tweaks: TweakManager.shared.tweaks.count,
-			.settings: UserDefaults.standard.dictionaryRepresentation().keys.filter(Self.isBackupableSettingKey).count,
+			.settings: UserDefaults.standard.dictionaryRepresentation().keys.filter(Self.isBackupableSettingKey).count
 		]
 		var components: BackupComponents = []
 		for (component, count) in counts where count > 0 { components.insert(component) }
@@ -292,6 +292,7 @@ final class BackupManager {
 				let packURL = work.appendingPathComponent("pack.zip")
 				try plaintext.write(to: packURL)
 				try FileManager.default.createDirectory(at: extractDir, withIntermediateDirectories: true)
+				try ArchiveSafetyValidator.validate(packURL)
 				try Zip.unzipFile(packURL, destination: extractDir, overwrite: true, password: nil)
 			}.value
 
@@ -339,8 +340,7 @@ final class BackupManager {
 
 			if
 				let uuid = manifest.selectedCertUUID,
-				let index = Storage.shared.getAllCertificates().firstIndex(where: { $0.uuid == uuid })
-			{
+				let index = Storage.shared.getAllCertificates().firstIndex(where: { $0.uuid == uuid }) {
 				UserDefaults.standard.set(index, forKey: "vexsign.selectedCert")
 			}
 		}
@@ -350,7 +350,17 @@ final class BackupManager {
 			var skipped = 0
 			for source in manifest.sources {
 				if Storage.shared.sourceExists(source.identifier) { skipped += 1; continue }
-				Storage.shared.addSource(source.url, name: source.name, identifier: source.identifier, iconURL: source.iconURL) { _ in }
+				// Restoring the user's own configuration is not a new trust
+				// decision: the transport policy is bypassed so a previously
+				// saved (e.g. LAN HTTP) repository still restores. Refreshes
+				// still respect the SourceURLPolicy until the user opts in.
+				Storage.shared.addSource(
+					source.url,
+					name: source.name,
+					identifier: source.identifier,
+					iconURL: source.iconURL,
+					enforceTransportPolicy: false
+				) { _ in }
 				added += 1
 			}
 			summary.record(.sources, added: added, skipped: skipped)
@@ -359,8 +369,7 @@ final class BackupManager {
 		if
 			wanted.contains(.settings),
 			let data = try? Data(contentsOf: root.appendingPathComponent("settings.plist")),
-			let dict = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any]
-		{
+			let dict = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] {
 			var added = 0
 			for (key, value) in dict where Self.isBackupableSettingKey(key) {
 				UserDefaults.standard.set(value, forKey: key)
