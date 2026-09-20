@@ -28,7 +28,7 @@ extension ServerInstaller {
 		
 		do {
 			if getServerMethod() != 1 {
-				guard readCommonName() != nil else { throw LocalInstallError.invalidHostname }
+				guard Self.readCommonName() != nil else { throw LocalInstallError.invalidHostname }
 				guard let configuration = try tls() else { throw LocalInstallError.missingTLS }
 				app.http.server.configuration.tlsConfiguration = configuration
 			}
@@ -56,7 +56,7 @@ extension ServerInstaller {
 			? (Self.getLocalAddress() ?? localhost)
 			: localhost
 		} else {
-			return readCommonName() ?? localhost
+			return Self.readCommonName() ?? localhost
 		}
 	}
 	
@@ -87,7 +87,7 @@ extension ServerInstaller {
 		}
 	}
 	
-	func readCommonName() -> String? {
+	static func readCommonName() -> String? {
 		guard
 			let url = Self.getUrl("commonName", ext: "txt"),
 			let name = try? String(contentsOf: url, encoding: .utf8)

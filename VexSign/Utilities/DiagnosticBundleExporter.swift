@@ -146,7 +146,7 @@ enum DiagnosticBundleExporter {
 
 	@MainActor
 	private static func _buildCertificatesSummaryJSON() -> Data {
-		let certs = Storage.shared.getCertificates()
+		let certs = Storage.shared.getAllCertificates()
 		var summaries: [[String: Any]] = []
 
 		for cert in certs {
