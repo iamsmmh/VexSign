@@ -163,6 +163,23 @@ jobs:
           fi
           exit "${status}"
 
+      # Logs/artifacts live in blob storage that some API consumers cannot
+      # reach, so mirror the decisive failure lines as check-run annotations:
+      # they stay readable from the plain REST annotations endpoint.
+      - name: Surface failures as annotations
+        if: failure()
+        run: |
+          set -uo pipefail
+          if [ -f "$TEST_LOG" ]; then
+            grep -aE "error:|Testing failed|failed -|Failing tests|\*\* TEST FAILED \*\*|Fatal error|Unexpectedly" "$TEST_LOG" \
+              | head -n 50 \
+              | while IFS= read -r line; do echo "::error::${line}"; done
+            echo "Failing test names (if any):"
+            grep -aE "^\s+.*\(\) failed" "$TEST_LOG" | head -n 30 || true
+          else
+            echo "::error::test log missing - an earlier step failed"
+          fi
+
       # Always publish a test summary (counts per suite), from the xcresult
       # when the tooling supports it, otherwise from the raw log.
       - name: Summarize results
