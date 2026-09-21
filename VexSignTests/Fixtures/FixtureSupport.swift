@@ -22,12 +22,10 @@ import Foundation
 
 enum TestFixtures {
 	/// Fixtures are addressed relative to this source file (they live in the
-	/// `Fixtures/` folder next to it), so the directory layout is preserved
-	/// exactly and no resource-bundling rules apply.
+	/// same `Fixtures/` folder), so the directory layout is preserved exactly
+	/// and no resource-bundling rules apply.
 	static var root: URL {
-		URL(fileURLWithPath: #filePath)
-			.deletingLastPathComponent()
-			.appendingPathComponent("Fixtures", isDirectory: true)
+		URL(fileURLWithPath: #filePath).deletingLastPathComponent()
 	}
 
 	static func url(_ relativePath: String) -> URL {
@@ -52,6 +50,16 @@ enum TestFixtures {
 	/// environment opts in, so the normal suite is deterministic.
 	static var integrationTestsEnabled: Bool {
 		ProcessInfo.processInfo.environment["VEXSIGN_INTEGRATION_TESTS"] == "1"
+	}
+}
+
+/// Gates live-network integration tests behind `VEXSIGN_INTEGRATION_TESTS=1`
+/// so the default PR suite stays deterministic.
+enum IntegrationGate {
+	static func skipUnlessEnabled(_ reason: String = "live network required") throws {
+		guard TestFixtures.integrationTestsEnabled else {
+			throw XCTSkip("\(reason) — set VEXSIGN_INTEGRATION_TESTS=1 to run")
+		}
 	}
 }
 

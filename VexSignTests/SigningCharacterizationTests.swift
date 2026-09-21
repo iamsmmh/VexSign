@@ -69,10 +69,8 @@ final class SigningCharacterizationTests: XCTestCase {
 
 		// Stage 1 — copy: a private workspace appears; the library is untouched.
 		try await handler.copy()
-		XCTAssertEqual(
-			await FixturePipeline.libraryUUIDs(), libraryBefore,
-			"copy() must not register anything yet"
-		)
+		let uuidsAfterCopy = await FixturePipeline.libraryUUIDs()
+		XCTAssertEqual(uuidsAfterCopy, libraryBefore, "copy() must not register anything yet")
 
 		// Stage 2..n — modify, move, register (signing skipped for .onlyModify).
 		try await handler.modify()
@@ -82,7 +80,8 @@ final class SigningCharacterizationTests: XCTestCase {
 		let newUUIDs = libraryAfter.subtracting(libraryBefore)
 		XCTAssertEqual(newUUIDs.count, 1, "a successful sign registers exactly one app")
 		let signedUUID = try XCTUnwrap(newUUIDs.first)
-		let signed = try XCTUnwrap(await FixturePipeline.app(withUUID: signedUUID))
+		let signedLookup = await FixturePipeline.app(withUUID: signedUUID)
+		let signed = try XCTUnwrap(signedLookup)
 		cleanupApps.append(signed)
 
 		let signedSnapshot = await FixturePipeline.snapshot(of: signed)
@@ -91,7 +90,8 @@ final class SigningCharacterizationTests: XCTestCase {
 		XCTAssertNotNil(handler.signedApp)
 
 		// Modifications landed before the output was finalized.
-		let outputDirectory = try XCTUnwrap(await FixturePipeline.appDirectory(for: signed))
+		let outputDirectoryLookup = await FixturePipeline.appDirectory(for: signed)
+		let outputDirectory = try XCTUnwrap(outputDirectoryLookup)
 		let info = try XCTUnwrap(NSDictionary(contentsOf: outputDirectory.appendingPathComponent("Info.plist")))
 		XCTAssertEqual(info["CFBundleIdentifier"] as? String, "com.vexsign.test.resigned")
 		XCTAssertEqual(info["CFBundleDisplayName"] as? String, "Resigned Fixture")
@@ -101,8 +101,9 @@ final class SigningCharacterizationTests: XCTestCase {
 		// The signed output is a NEW folder — the unsigned import survives.
 		let signedDirsAfter = signedDirectoryNames()
 		XCTAssertEqual(signedDirsAfter.count, signedDirsBefore.count + 1)
+		let uuidsAfterSign = await FixturePipeline.libraryUUIDs()
 		XCTAssertTrue(
-			(await FixturePipeline.libraryUUIDs()).contains(appUUID ?? ""),
+			uuidsAfterSign.contains(appUUID ?? ""),
 			"the original import must stay in the library after signing"
 		)
 
@@ -152,8 +153,9 @@ final class SigningCharacterizationTests: XCTestCase {
 		}
 		try await handler.clean()
 
+		let uuidsAfterFailedSign = await FixturePipeline.libraryUUIDs()
 		XCTAssertEqual(
-			await FixturePipeline.libraryUUIDs(), libraryBefore,
+			uuidsAfterFailedSign, libraryBefore,
 			"a failed sign must not register anything"
 		)
 		XCTAssertEqual(
@@ -169,7 +171,8 @@ final class SigningCharacterizationTests: XCTestCase {
 
 		// Corrupt the imported bundle's Info.plist; copy() carries the damage
 		// into the workspace and modify() must fail on it.
-		let appDirectory = try XCTUnwrap(await FixturePipeline.appDirectory(for: app))
+		let appDirectoryLookup = await FixturePipeline.appDirectory(for: app)
+		let appDirectory = try XCTUnwrap(appDirectoryLookup)
 		try Data("this is not a property list".utf8).write(
 			to: appDirectory.appendingPathComponent("Info.plist")
 		)
@@ -187,7 +190,8 @@ final class SigningCharacterizationTests: XCTestCase {
 		}
 		try await handler.clean()
 
-		XCTAssertEqual(await FixturePipeline.libraryUUIDs(), libraryBefore)
+		let uuidsAfterInfoPlistFailure = await FixturePipeline.libraryUUIDs()
+		XCTAssertEqual(uuidsAfterInfoPlistFailure, libraryBefore)
 	}
 
 	func testInjectionFailureCleansUpAndRegistersNothing() async throws {
@@ -214,7 +218,8 @@ final class SigningCharacterizationTests: XCTestCase {
 		}
 		try await handler.clean()
 
-		XCTAssertEqual(await FixturePipeline.libraryUUIDs(), libraryBefore)
+		let uuidsAfterInjectionFailure = await FixturePipeline.libraryUUIDs()
+		XCTAssertEqual(uuidsAfterInjectionFailure, libraryBefore)
 		XCTAssertEqual(signingWorkspaceCount(), workspacesBefore, "clean() removes the failed workspace")
 	}
 
@@ -262,8 +267,9 @@ final class SigningCharacterizationTests: XCTestCase {
 			XCTAssertEqual(error as? SigningFileHandlerError, .missingCertifcate)
 		}
 
+		let uuidsAfterFailedFacadeSign = await FixturePipeline.libraryUUIDs()
 		XCTAssertEqual(
-			await FixturePipeline.libraryUUIDs(), libraryBefore,
+			uuidsAfterFailedFacadeSign, libraryBefore,
 			"a failed sign must not register anything"
 		)
 
