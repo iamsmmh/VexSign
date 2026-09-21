@@ -48,6 +48,11 @@ struct StorageUsage: Identifiable {
 	let count: Int
 
 	var id: String { category.id }
+
+	/// Whether the category holds no items.
+	/// Defined because SwiftLint's `empty_count` autocorrect rewrites
+	/// `count > 0` to `!isEmpty`; `StorageUsage` must support that spelling.
+	var isEmpty: Bool { count == 0 }
 }
 
 struct StorageReport {
