@@ -5,12 +5,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Transform, type Readable } from 'node:stream';
-import { createHash, createHmac, hkdfSync } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { loadConfig } from './config.js';
 import { infrastructure } from './infrastructure.js';
-import { unseal, permittedWebhook } from './security.js';
+import { unseal } from './security.js';
+import { deliverWebhooks } from './webhooks.js';
 import { invokeSigner, type SignerInput } from './signer.js';
 
 const config = loadConfig(); const infra = infrastructure(config);
@@ -106,29 +107,14 @@ async function dispatch() {
         await finish(row.id, 'failed', null, null, null);
       }
     }
-    await deliverWebhooks();
+    await runWebhookDelivery();
   } catch { console.error('Dispatch unavailable; retrying on next interval'); }
   finally { polling = false; }
 }
-async function deliverWebhooks() {
-  // Transactional claim with a lease supports multiple worker replicas.
-  const records = await infra.pool.query(`UPDATE webhook_deliveries SET attempts=attempts+1,next_attempt_at=now()+interval '5 minutes'
-    WHERE job_id IN (SELECT job_id FROM webhook_deliveries WHERE delivered_at IS NULL AND attempts<8 AND next_attempt_at<=now()
-      ORDER BY next_attempt_at FOR UPDATE SKIP LOCKED LIMIT 10) RETURNING *`);
-  for (const row of records.rows) {
-    if (!permittedWebhook(row.url, config.WEBHOOK_ALLOWLIST)) continue;
-    const timestamp = String(Math.floor(Date.now() / 1000)); const payload = JSON.stringify(row.payload);
-    const webhookKey = Buffer.from(hkdfSync('sha256', key, '', `vexsign.webhook.v1:${row.url}`, 32));
-    const signature = createHmac('sha256', webhookKey).update(`${timestamp}.${payload}`).digest('hex');
-    try {
-      // URLs are operator-registered EXACT matches. Deployment egress firewall must
-      // block private/link-local addresses and DNS rebinding for these destinations.
-      const response = await fetch(row.url, { method: 'POST', body: payload, redirect: 'error', signal: AbortSignal.timeout(10_000),
-        headers: { 'content-type': 'application/json', 'x-vexsign-timestamp': timestamp, 'x-vexsign-signature': signature, 'x-vexsign-event-id': row.job_id } });
-      await response.body?.cancel();
-      if (response.ok) await infra.pool.query('UPDATE webhook_deliveries SET delivered_at=now() WHERE job_id=$1', [row.job_id]);
-    } catch { /* Persisted lease enables retry without logging secret endpoint URLs. */ }
-  }
+// Webhook delivery lives in webhooks.ts so the SSRF/retry contracts are
+// unit-testable; behavior is unchanged.
+async function runWebhookDelivery() {
+  await deliverWebhooks(infra, config, key);
 }
 const timer = setInterval(() => { void dispatch(); }, 5000);
 await dispatch();
