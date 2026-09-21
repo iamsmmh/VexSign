@@ -285,7 +285,7 @@ struct SourceHealthDashboardView: View {
 			}
 			if let next = health.nextRetryDate {
 				Label(
-					verbatim: String.localized("Next automatic retry: %@", arguments: next.formatted(date: .omitted, time: .shortened)),
+					String.localized("Next automatic retry: %@", arguments: next.formatted(date: .omitted, time: .shortened)),
 					systemImage: "clock.arrow.circlepath"
 				)
 				.font(.caption2)

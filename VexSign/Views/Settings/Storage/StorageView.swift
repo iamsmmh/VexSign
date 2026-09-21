@@ -132,7 +132,7 @@ private extension StorageView {
 
 	@ViewBuilder
 	func _row(_ usage: StorageUsage) -> some View {
-		if usage.category.isBrowsable, !usage.isEmpty {
+		if usage.category.isBrowsable, usage.count > 0 {
 			NavigationLink(destination: StorageDetailView(category: usage.category)) {
 				StorageRowLabel(usage: usage)
 			}
@@ -193,7 +193,7 @@ struct StorageRowLabel: View {
 
 			VStack(alignment: .leading, spacing: 1) {
 				Text(usage.category.title)
-				if !usage.isEmpty {
+				if usage.count > 0 {
 					Text(verbatim: .localized("%lld items", arguments: usage.count))
 						.font(.caption)
 						.foregroundStyle(.secondary)
