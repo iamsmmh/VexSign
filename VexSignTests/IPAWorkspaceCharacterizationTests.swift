@@ -13,9 +13,10 @@
 
 import XCTest
 import Foundation
-import Zip
+import ZIPFoundation
 @testable import VexSign
 
+@MainActor
 final class IPAWorkspaceCharacterizationTests: XCTestCase {
 
 	private var tempFiles: [URL] = []
@@ -46,7 +47,7 @@ final class IPAWorkspaceCharacterizationTests: XCTestCase {
 
 	func testOpenIPACreatesWorkspaceAndRecentRecord() async throws {
 		let workspace = try await IPAWorkspace.open(ipa: TestFixtures.url("IPAs/Minimal.ipa"))
-		addTeardownBlock { workspace.discard() }
+		addTeardownBlock { await MainActor.run { workspace.discard() } }
 
 		XCTAssertFalse(workspace.isLibraryApp)
 		XCTAssertEqual(workspace.name, "App")
@@ -67,8 +68,9 @@ final class IPAWorkspaceCharacterizationTests: XCTestCase {
 		XCTAssertEqual(reopened.appURL.lastPathComponent, workspace.appURL.lastPathComponent)
 
 		// Discard removes the directory and the recent entry.
+		let workspaceDirectory = IPAWorkspace.root.appendingPathComponent(workspace.id, isDirectory: true)
 		workspace.discard()
-		XCTAssertFalse(FileManager.default.fileExists(atPath: workspace.url.path))
+		XCTAssertFalse(FileManager.default.fileExists(atPath: workspaceDirectory.path))
 		XCTAssertFalse(IPAWorkspace.recents().contains { $0.id == workspace.id })
 	}
 
@@ -90,7 +92,7 @@ final class IPAWorkspaceCharacterizationTests: XCTestCase {
 
 	func testUndoRestoresModifiedFile() async throws {
 		let workspace = try await IPAWorkspace.open(ipa: TestFixtures.url("IPAs/Minimal.ipa"))
-		addTeardownBlock { workspace.discard() }
+		addTeardownBlock { await MainActor.run { workspace.discard() } }
 
 		let infoPlist = workspace.appURL.appendingPathComponent("Info.plist")
 		let original = try Data(contentsOf: infoPlist)
@@ -109,7 +111,7 @@ final class IPAWorkspaceCharacterizationTests: XCTestCase {
 
 	func testSecondEditKeepsTheFirstBackup() async throws {
 		let workspace = try await IPAWorkspace.open(ipa: TestFixtures.url("IPAs/Minimal.ipa"))
-		addTeardownBlock { workspace.discard() }
+		addTeardownBlock { await MainActor.run { workspace.discard() } }
 
 		let infoPlist = workspace.appURL.appendingPathComponent("Info.plist")
 		let original = try Data(contentsOf: infoPlist)
@@ -139,7 +141,7 @@ final class IPAWorkspaceCharacterizationTests: XCTestCase {
 
 	func testUndoOfAddedFileRemovesIt() async throws {
 		let workspace = try await IPAWorkspace.open(ipa: TestFixtures.url("IPAs/Minimal.ipa"))
-		addTeardownBlock { workspace.discard() }
+		addTeardownBlock { await MainActor.run { workspace.discard() } }
 
 		let added = workspace.appURL.appendingPathComponent("BrandNew.txt")
 		try Data("new".utf8).write(to: added)
@@ -151,7 +153,7 @@ final class IPAWorkspaceCharacterizationTests: XCTestCase {
 
 	func testAddedFileThatGetsEditedStaysAdded() async throws {
 		let workspace = try await IPAWorkspace.open(ipa: TestFixtures.url("IPAs/Minimal.ipa"))
-		addTeardownBlock { workspace.discard() }
+		addTeardownBlock { await MainActor.run { workspace.discard() } }
 
 		let added = workspace.appURL.appendingPathComponent("Edited.txt")
 		try Data("v1".utf8).write(to: added)
@@ -170,7 +172,7 @@ final class IPAWorkspaceCharacterizationTests: XCTestCase {
 
 	func testDiscardChangesRestoresTheWholeSession() async throws {
 		let workspace = try await IPAWorkspace.open(ipa: TestFixtures.url("IPAs/Minimal.ipa"))
-		addTeardownBlock { workspace.discard() }
+		addTeardownBlock { await MainActor.run { workspace.discard() } }
 
 		let infoPlist = workspace.appURL.appendingPathComponent("Info.plist")
 		let original = try Data(contentsOf: infoPlist)
@@ -193,7 +195,7 @@ final class IPAWorkspaceCharacterizationTests: XCTestCase {
 
 	func testRebuildProducesValidIPAAndResetsTheJournal() async throws {
 		let workspace = try await IPAWorkspace.open(ipa: TestFixtures.url("IPAs/Minimal.ipa"))
-		addTeardownBlock { workspace.discard() }
+		addTeardownBlock { await MainActor.run { workspace.discard() } }
 
 		workspace.markDirty()
 		XCTAssertTrue(workspace.isDirty)
@@ -214,7 +216,7 @@ final class IPAWorkspaceCharacterizationTests: XCTestCase {
 
 	func testDefaultArchiveURLIsSanitizedAndInsideArchives() async throws {
 		let workspace = try await IPAWorkspace.open(ipa: TestFixtures.url("IPAs/Minimal.ipa"))
-		addTeardownBlock { workspace.discard() }
+		addTeardownBlock { await MainActor.run { workspace.discard() } }
 
 		let url = workspace.defaultArchiveURL()
 		XCTAssertTrue(url.path.hasPrefix(FileManager.default.archives.path))
