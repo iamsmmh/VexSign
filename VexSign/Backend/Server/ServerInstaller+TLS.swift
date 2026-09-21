@@ -17,9 +17,15 @@ import SystemConfiguration.CaptiveNetwork
 extension ServerInstaller {
 	// MARK: Setup
 	static let env: Environment = {
-		var env = try! Environment.detect()
-		try! LoggingSystem.bootstrap(from: &env)
-		return env
+		do {
+			var env = try Environment.detect()
+			try LoggingSystem.bootstrap(from: &env)
+			return env
+		} catch {
+			FileLogger.error("Failed to detect Environment or bootstrap LoggingSystem: \(error)", category: "install")
+			var env = Environment.development
+			return env
+		}
 	}()
 	
 	func setupApp(port: Int) throws -> Application {
@@ -156,8 +162,8 @@ extension ServerInstaller {
 		
 		if getifaddrs(&ifaddr) == 0 {
 			var ptr = ifaddr
-			while ptr != nil {
-				let interface = ptr!.pointee
+			while let current = ptr {
+				let interface = current.pointee
 				guard let addr = interface.ifa_addr else {
 					ptr = interface.ifa_next
 					continue
@@ -165,20 +171,17 @@ extension ServerInstaller {
 				let addrFamily = addr.pointee.sa_family
 				
 				if addrFamily == UInt8(AF_INET) {
-					
 					let name = String(cString: interface.ifa_name)
 					if name == "en0" || name == "pdp_ip0" {
-						
 						var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
 						if getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len),
 									   &hostname, socklen_t(hostname.count),
 									   nil, socklen_t(0), NI_NUMERICHOST) == 0 {
 							address = String(cString: hostname)
 						}
-						
 					}
 				}
-				ptr = ptr!.pointee.ifa_next
+				ptr = interface.ifa_next
 			}
 			freeifaddrs(ifaddr)
 		}

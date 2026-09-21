@@ -585,14 +585,22 @@ class AppDelegate: NSObject, UIApplicationDelegate, DownloadManager.ErrorDelegat
             forTaskWithIdentifier: "com.vexsign.background.download",
             using: nil
         ) { task in
-            self._handleBackgroundDownload(task: task as! BGProcessingTask)
+            guard let processingTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self._handleBackgroundDownload(task: processingTask)
         }
 
         BGTaskScheduler.shared.register(
             forTaskWithIdentifier: "com.vexsign.background.refresh",
             using: nil
         ) { task in
-            self._handleBackgroundRefresh(task: task as! BGAppRefreshTask)
+            guard let refreshTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self._handleBackgroundRefresh(task: refreshTask)
         }
 
         // Scheduled automation: sources → updates → (optional) sign+queue → cleanup → notify.
@@ -601,7 +609,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, DownloadManager.ErrorDelegat
             forTaskWithIdentifier: "com.vexsign.background.maintenance",
             using: nil
         ) { task in
-            self._handleMaintenance(task: task as! BGProcessingTask)
+            guard let maintenanceTask = task as? BGProcessingTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            self._handleMaintenance(task: maintenanceTask)
         }
     }
 

@@ -185,8 +185,8 @@ struct SourcesAddView: View {
 				if sources.isEmpty {
 					Toast.error("No sources to export", duration: .sticky)
 				} else {
-					UIPasteboard.general.string = sources.map {
-						$0.sourceURL!.absoluteString
+					UIPasteboard.general.string = sources.compactMap {
+						$0.sourceURL?.absoluteString
 					}.joined(separator: "\n")
 					Toast.success("Successfully exported \(sources.count) source\(sources.count == 1 ? "" : "s") to clipboard")
 				}

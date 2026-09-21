@@ -79,7 +79,7 @@ final class AppInstaller: ObservableObject {
 		guard _completion == nil, !_hasFinished else { return }
 		_completion = completion
 
-		guard _isSharing || app.identifier != Bundle.main.bundleIdentifier! || _installationMethod == 1 else {
+		guard _isSharing || app.identifier != Bundle.main.bundleIdentifier || _installationMethod == 1 else {
 			_finish(.failure(Self.error(.localized("You cannot update '%@' with itself, please use an alternative tool to update it.", arguments: Bundle.main.name))))
 			return
 		}
@@ -123,7 +123,7 @@ final class AppInstaller: ObservableObject {
 			switch _installationMethod {
 			case 1:
 				try await InstallationProxy(viewModel: viewModel)
-					.install(at: packageUrl, suspend: app.identifier == Bundle.main.bundleIdentifier!)
+					.install(at: packageUrl, suspend: app.identifier == (Bundle.main.bundleIdentifier ?? ""))
 			default:
 				await _serveForOTA(packageUrl)
 			}
@@ -191,7 +191,7 @@ final class AppInstaller: ObservableObject {
 			Task {
 				do {
 					try await InstallationProxy(viewModel: viewModel)
-						.install(at: packageUrl, suspend: app.identifier == Bundle.main.bundleIdentifier!)
+						.install(at: packageUrl, suspend: app.identifier == (Bundle.main.bundleIdentifier ?? ""))
 				} catch {
 					FileLogger.error("idevice fallback failed: \(error.localizedDescription)", category: "install")
 					_finish(.failure(error))
@@ -273,7 +273,7 @@ final class AppInstaller: ObservableObject {
 		Task {
 			do {
 				try await InstallationProxy(viewModel: viewModel)
-					.install(at: packageUrl, suspend: app.identifier == Bundle.main.bundleIdentifier!)
+					.install(at: packageUrl, suspend: app.identifier == (Bundle.main.bundleIdentifier ?? ""))
 			} catch {
 				FileLogger.error("idevice fallback failed: \(error.localizedDescription)", category: "install")
 				_finish(.failure(error))

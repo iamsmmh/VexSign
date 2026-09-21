@@ -285,8 +285,8 @@ struct SourceAppsView: View {
                 )
                 return
             }
-            UIPasteboard.general.string = object.map {
-                $0.sourceURL!.absoluteString
+            UIPasteboard.general.string = object.compactMap {
+                $0.sourceURL?.absoluteString
             }.joined(separator: "\n")
             UIAlertController.showAlertWithOk(
                 title: .localized("Success"),

@@ -71,10 +71,11 @@ final class SigningHandler: NSObject {
 			throw SigningFileHandlerError.appNotFound
 		}
 		
+		let infoPlistURL = movedAppPath.appendingPathComponent("Info.plist")
 		guard
-			let infoDictionary = NSDictionary(
-				contentsOf: movedAppPath.appendingPathComponent("Info.plist")
-			)!.mutableCopy() as? NSMutableDictionary
+			let infoData = try? Data(contentsOf: infoPlistURL),
+			let plistObject = try? PropertyListSerialization.propertyList(from: infoData, options: .mutableContainersAndLeaves, format: nil),
+			let infoDictionary = plistObject as? NSMutableDictionary
 		else {
 			throw SigningFileHandlerError.infoPlistNotFound
 		}

@@ -103,11 +103,17 @@ final class Storage: ObservableObject {
 
 	private func _loadPersistentStoreAggressively() {
 		container.loadPersistentStores { description, error in
-			if error != nil {
+			if let error {
+				Logger.misc.error("Core Data initial load failed: \(error.localizedDescription), attempting recovery via store reset")
 				self._destroyStore(at: description.url)
-				self.container.loadPersistentStores { _, error in
-					if let error {
-						fatalError("Core Data unrecoverable: \(error)")
+				self.container.loadPersistentStores { _, secondError in
+					if let secondError {
+						Logger.misc.fault("Core Data secondary load failed after store reset: \(secondError.localizedDescription)")
+						// Fallback gracefully without crashing the app: use an in-memory description
+						let fallbackDescription = NSPersistentStoreDescription()
+						fallbackDescription.type = NSInMemoryStoreType
+						self.container.persistentStoreDescriptions = [fallbackDescription]
+						self.container.loadPersistentStores { _, _ in }
 					}
 				}
 			}

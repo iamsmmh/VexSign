@@ -215,8 +215,11 @@ final class StabilityAndArchitectureTests: XCTestCase {
 		task.errorText = "lost connection"
 
 		let snapshot = task.snapshot
-		let data = try! JSONEncoder().encode(snapshot)
-		let decoded = try! JSONDecoder().decode(UnifiedTask.Snapshot.self, from: data)
+		guard let data = try? JSONEncoder().encode(snapshot),
+		      let decoded = try? JSONDecoder().decode(UnifiedTask.Snapshot.self, from: data) else {
+			XCTFail("Failed to encode or decode UnifiedTask.Snapshot")
+			return
+		}
 		let restored = UnifiedTask.from(decoded)
 
 		XCTAssertEqual(restored.id, task.id)
