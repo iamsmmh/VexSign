@@ -11,6 +11,7 @@ import UIKit
 import UserNotifications
 import BackgroundTasks
 import ActivityKit
+import NimbleExtensions
 
 class DownloadManager: NSObject, ObservableObject {
 	static let shared = DownloadManager()
@@ -320,7 +321,6 @@ class DownloadManager: NSObject, ObservableObject {
 
 		_ = saveGroup.wait(timeout: deadline)
 	}
-	
 	
 	private func startProgressTimer() {
 		guard progressUpdateTimer == nil else { return }

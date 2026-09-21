@@ -8,6 +8,7 @@
 import Foundation
 import Combine
 import IDeviceSwift
+import NimbleExtensions
 
 extension InstallerStatusViewModel {
 	var statusImage: String {

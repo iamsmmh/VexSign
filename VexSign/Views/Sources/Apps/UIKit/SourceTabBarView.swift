@@ -8,6 +8,7 @@
 import SwiftUI
 import AltSourceKit
 import CoreData
+import NimbleExtensions
 
 // MARK: - Tab Bar View
 struct SourceTabBarView: View {

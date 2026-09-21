@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import NimbleExtensions
 
 @MainActor
 final class AutoSignManager {

@@ -7,6 +7,7 @@
 
 import Foundation
 import Nuke
+import NimbleExtensions
 
 // MARK: - Category
 enum StorageCategory: String, CaseIterable, Identifiable {
@@ -47,6 +48,13 @@ struct StorageUsage: Identifiable {
 	let count: Int
 
 	var id: String { category.id }
+
+	/// Whether the category holds no items.
+	/// Defined because SwiftLint's `empty_count` autocorrect rewrites
+	/// `count > 0` to `!isEmpty`; `StorageUsage` must support that spelling.
+	/// (swiftlint:disable:next keeps autocorrect from rewriting this body.)
+	// swiftlint:disable:next empty_count
+	var isEmpty: Bool { count == 0 }
 }
 
 struct StorageReport {
@@ -399,8 +407,7 @@ private enum StorageScanner {
 			if
 				let age,
 				let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate,
-				Date().timeIntervalSince(modified) < age
-			{
+				Date().timeIntervalSince(modified) < age {
 				continue
 			}
 			try? fm.removeItem(at: url)

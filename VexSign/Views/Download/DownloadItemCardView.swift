@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Foundation
+import NimbleExtensions
 
 // MARK: - Download Card View
 struct DownloadItemCardView: View {

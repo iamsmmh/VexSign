@@ -7,6 +7,7 @@
 
 import Foundation
 import Zip
+import NimbleExtensions
 
 struct BackupComponents: OptionSet, Hashable, Codable {
 	let rawValue: Int

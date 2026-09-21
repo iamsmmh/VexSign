@@ -10,6 +10,7 @@ import CoreData
 import UIKit
 import IDeviceSwift
 import OSLog
+import NimbleExtensions
 
 enum SelfUpdateMethod: Int {
 	case server = 0

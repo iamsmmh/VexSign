@@ -9,6 +9,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct AutomationView: View {
 	@AppStorage(BackgroundAutomationPreferences.enabledKey) private var _isEnabled: Bool = false

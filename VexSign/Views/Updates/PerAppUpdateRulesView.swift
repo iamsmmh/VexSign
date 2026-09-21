@@ -9,6 +9,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 import CoreData
 
 struct PerAppUpdateRulesView: View {
@@ -32,7 +33,7 @@ struct PerAppUpdateRulesView: View {
 	var body: some View {
 		NBNavigationView(.localized("Update Rules"), displayMode: .inline) {
 			NBList(.localized("Update Rules")) {
-				NBSection {
+				NBSection(.localized("App")) {
 					VStack(alignment: .leading, spacing: 4) {
 						Text(appName)
 							.font(.headline)
@@ -50,8 +51,8 @@ struct PerAppUpdateRulesView: View {
 					}
 					.tint(Color.userTint)
 
-					if !rule.disableUpdates {
-						Toggle(isOn: $ignoreVersionOn) {
+				if !rule.disableUpdates {
+					Toggle(isOn: ignoreVersionOn) {
 							Label(.localized("Ignore This Version"), systemImage: "eye.slash")
 						}
 						.tint(Color.userTint)
@@ -66,7 +67,7 @@ struct PerAppUpdateRulesView: View {
 				}
 
 				NBSection(.localized("Repositories")) {
-					Picker(.localized("Preferred Source"), selection: $preferredSourceBinding) {
+					Picker(.localized("Preferred Source"), selection: preferredSourceBinding) {
 						Text(.localized("Source Priority")).tag("")
 						ForEach(Array(sources), id: \.objectID) { source in
 							Text(source.name ?? .localized("Unknown")).tag(source.identifier ?? "")
@@ -74,7 +75,7 @@ struct PerAppUpdateRulesView: View {
 					}
 					.pickerStyle(.menu)
 
-					Picker(.localized("Ignore Source"), selection: $ignoredSourceBinding) {
+					Picker(.localized("Ignore Source"), selection: ignoredSourceBinding) {
 						Text(.localized("None")).tag("")
 						ForEach(Array(sources), id: \.objectID) { source in
 							Text(source.name ?? .localized("Unknown")).tag(source.identifier ?? "")
@@ -86,7 +87,7 @@ struct PerAppUpdateRulesView: View {
 				}
 
 				NBSection(.localized("Signing")) {
-					Picker(.localized("Certificate"), selection: $pinnedCertificateBinding) {
+					Picker(.localized("Certificate"), selection: pinnedCertificateBinding) {
 						Text(.localized("Default")).tag("")
 						ForEach(Array(certificates), id: \.objectID) { cert in
 							Text(cert.nickname ?? cert.uuid ?? .localized("Certificate")).tag(cert.uuid ?? "")

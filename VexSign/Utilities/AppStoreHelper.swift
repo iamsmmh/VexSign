@@ -70,7 +70,7 @@ struct AppStoreHelper {
         var components = URLComponents(string: "https://itunes.apple.com/lookup")
         components?.queryItems = [
             URLQueryItem(name: "bundleId", value: trimmedBundleID),
-            URLQueryItem(name: "country", value: Locale.current.regionCode ?? "US"),
+            URLQueryItem(name: "country", value: Locale.current.region?.identifier ?? "US"),
             URLQueryItem(name: "entity", value: "software")
         ]
 

@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import NimbleExtensions
 
 enum NexCerts {
 	private static let apiBaseURL = "https://sideloading.net/api/certificates"

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct AllVersionsView: View {
 	private enum Filter: Int { case all, stable, beta }

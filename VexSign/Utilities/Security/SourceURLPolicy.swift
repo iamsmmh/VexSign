@@ -15,6 +15,7 @@
 //
 
 import Foundation
+import NimbleExtensions
 
 enum SourceURLPolicy {
 	enum Failure: LocalizedError {

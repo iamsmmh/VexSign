@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 private enum CertificateAddSheet: String, Identifiable {
 	case certificateFiles

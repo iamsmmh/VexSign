@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct DirectInstallSheet: View {
 	@Environment(\.dismiss) private var dismiss
@@ -159,4 +160,3 @@ struct DirectInstallSheet: View {
 		}
 	}
 }
-

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct P12CrackerView: View {
 	@Environment(\.dismiss) private var dismiss

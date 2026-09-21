@@ -6,6 +6,7 @@
 import SwiftUI
 import NimbleViews
 import UniformTypeIdentifiers
+import NimbleExtensions
 
 struct SigningProfilesView: View {
 	@ObservedObject private var store = NamedSigningProfileStore.shared

@@ -20,6 +20,7 @@ struct UpdatesView: View {
 	@State private var _updates: [AppUpdateChecker.SourcedUpdate] = []
 	@State private var _isLoading = true
 	@State private var _showProgress = false
+	@State private var _rulesApp: AppUpdateChecker.SourcedUpdate?
 
 	@FetchRequest(
 		entity: Signed.entity(),

@@ -5,8 +5,8 @@
 //  Created by samsam on 7/26/25.
 //
 
-
 import SwiftUI
+import NimbleExtensions
 
 struct ExpandableText: View {
 	let text: String
@@ -32,7 +32,7 @@ struct ExpandableText: View {
 						})
 						.hidden()
 				)
-                .onTapGesture {pGesture in
+                .onTapGesture {_ in
                     withAnimation {
                         expanded.toggle()
                     }
@@ -52,4 +52,3 @@ struct ExpandableText: View {
 		}
 	}
 }
-

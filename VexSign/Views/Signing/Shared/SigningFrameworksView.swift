@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct SigningFrameworksView: View {
@@ -61,8 +62,7 @@ struct SigningFrameworksView: View {
 
 				if
 					_filteredFrameworks.isEmpty,
-					_filteredPlugins.isEmpty
-				{
+					_filteredPlugins.isEmpty {
 					Text(.localized("No Frameworks or PlugIns Found."))
 						.font(.footnote)
 						.foregroundColor(.disabled())

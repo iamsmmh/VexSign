@@ -10,6 +10,7 @@ import NimbleViews
 import UIKit
 import Darwin
 import IDeviceSwift
+import NimbleExtensions
 
 struct SettingsView: View {
     @AppStorage("vexsign.selectedCert") private var _storedSelectedCert: Int = 0

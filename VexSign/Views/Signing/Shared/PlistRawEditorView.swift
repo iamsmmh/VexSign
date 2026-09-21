@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 /// Raw XML editing for anything the structured editors show. Nothing is handed back until it parses.
 struct PlistRawEditorView: View {

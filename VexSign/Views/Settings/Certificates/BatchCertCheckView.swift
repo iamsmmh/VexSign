@@ -9,6 +9,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct BatchCertCheckView: View {
 	@ObservedObject private var _checker = BatchCertChecker.shared

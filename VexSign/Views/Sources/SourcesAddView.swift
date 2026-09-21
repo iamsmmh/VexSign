@@ -11,6 +11,7 @@ import AltSourceKit
 import NimbleJSON
 import OSLog
 import UIKit.UIImpactFeedbackGenerator
+import NimbleExtensions
 
 // MARK: - View
 struct SourcesAddView: View {
@@ -19,7 +20,7 @@ struct SourcesAddView: View {
 	@State private var _filteredRecommendedSourcesData: [(url: URL, data: ASRepository)] = []
 	func _refreshFilteredRecommendedSourcesData() {
 		let filtered = recommendedSourcesData
-			.filter { (url, data) in
+			.filter { url, data in
 				let id = data.id ?? url.absoluteString
 				return !Storage.shared.sourceExists(id)
 			}
@@ -54,7 +55,7 @@ struct SourcesAddView: View {
 	// MARK: - Vex Repos Collection
 	@State var vexRepos: [URL] = []
 	@State var vexReposCount: Int = 0
-	@State var vexReposFetchError: String? = nil
+	@State var vexReposFetchError: String?
 
 	// MARK: - Premium VexSign API
 	@State var _showPremiumKeyPrompt = false
@@ -363,7 +364,7 @@ struct SourcesAddView: View {
 	var featuredSection: some View {
 		if !_filteredRecommendedSourcesData.isEmpty {
 			NBSection(.localized("Featured")) {
-				ForEach(_filteredRecommendedSourcesData, id: \.url) { (url, source) in
+				ForEach(_filteredRecommendedSourcesData, id: \.url) { url, source in
 					HStack(spacing: 2) {
 						FRIconCellView(
 							title: source.name ?? .localized("Unknown"),
@@ -424,5 +425,4 @@ struct SourcesAddView: View {
 			}
 		}
 	}
-
 }

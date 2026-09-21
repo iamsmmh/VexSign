@@ -13,6 +13,7 @@ import NimbleJSON
 import AltSourceKit
 import IDeviceSwift
 import OSLog
+import NimbleExtensions
 
 enum FR {
 	static func handlePackageFile(

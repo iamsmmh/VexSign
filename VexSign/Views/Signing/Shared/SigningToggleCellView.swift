@@ -5,16 +5,16 @@
 //  Created by VexSign TeamSign Team on 20.04.2025.
 //
 
-
 import SwiftUI
 import UIKit
+import NimbleExtensions
 
 struct SigningToggleCellView<T>: View {
 	let title: String
 	@Binding var options: T?
 	let arrayKeyPath: WritableKeyPath<T, [String]>
 	/// When set and the file still exists, the row offers Send to Tweak Manager / Share.
-	var fileURL: URL? = nil
+	var fileURL: URL?
 
 	var body: some View {
 		Toggle(title, isOn: Binding(

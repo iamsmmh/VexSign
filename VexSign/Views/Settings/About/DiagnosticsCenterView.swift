@@ -25,15 +25,7 @@ struct DiagnosticsCenterView: View {
 	@FetchRequest(entity: AltSource.entity(), sortDescriptors: [])
 	private var sources: FetchedResults<AltSource>
 
-	@State private var _exportURL: URL?
 	@State private var _isExporting = false
-
-	/// Wrapper so a file URL can drive `sheet(item:)`.
-	private struct ExportItem: Identifiable {
-		let url: URL
-		var id: String { url.absoluteString }
-	}
-	@State private var _exportItem: ExportItem?
 
 	var body: some View {
 		NBNavigationView(.localized("Diagnostics"), displayMode: .inline) {
@@ -47,9 +39,6 @@ struct DiagnosticsCenterView: View {
 				exportSection
 			}
 			.navigationTitle(.localized("Diagnostics"))
-			.sheet(item: $_exportItem) { item in
-				UIActivityViewController.show(activityItems: [item.url])
-			}
 		}
 	}
 
@@ -171,7 +160,7 @@ struct DiagnosticsCenterView: View {
 	// MARK: - Device
 
 	private var deviceSection: some View {
-		NBSection(.localized("Device & Installation"), systemImage: "iphone.gen3") {
+		NBSection(.localized("Device & Installation"), systemName: "iphone.gen3") {
 			NavigationLink(destination: DeviceDiagnosticsView()) {
 				Label(.localized("System Diagnostics"), systemImage: "info.circle.fill")
 			}
@@ -220,7 +209,7 @@ struct DiagnosticsCenterView: View {
 	// MARK: - Export
 
 	private var exportSection: some View {
-		NBSection(.localized("Export"), systemImage: "square.and.arrow.up.fill") {
+		NBSection(.localized("Export"), systemName: "square.and.arrow.up.fill") {
 			Button {
 				_exportDiagnostics()
 			} label: {
@@ -248,7 +237,8 @@ struct DiagnosticsCenterView: View {
 			let url = DiagnosticBundleExporter.createDiagnosticBundle()
 			_isExporting = false
 			if let url {
-				_exportItem = ExportItem(url: url)
+				// Same direct-share pattern the other log/diagnostic views use.
+				UIActivityViewController.show(activityItems: [url])
 			} else {
 				Toast.error(.localized("Could not create the diagnostics bundle."))
 			}

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct SigningAlternativeIconView: View {
@@ -63,7 +64,6 @@ extension SigningAlternativeIconView {
 		.padding(.vertical, 4)
 	}
 	
-	
 	private func _iconUrl(_ path: String) -> UIImage? {
 		guard let app = Storage.shared.getAppDirectory(for: app) else {
 			return nil
@@ -83,7 +83,7 @@ extension SigningAlternativeIconView {
 			return
 		}
 		
-		_alternateIcons = alternateIconsDict.compactMap { (name, details) in
+		_alternateIcons = alternateIconsDict.compactMap { name, details in
 			if let files = details["CFBundleIconFiles"] as? [String], let path = files.first {
 				return (name, path)
 			}

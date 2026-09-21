@@ -10,6 +10,7 @@ import Foundation
 import SwiftUI
 import IDeviceSwift
 import OSLog
+import NimbleExtensions
 
 /// Install pipeline without a UI, so the single-app card and the batch queue can share it.
 @MainActor

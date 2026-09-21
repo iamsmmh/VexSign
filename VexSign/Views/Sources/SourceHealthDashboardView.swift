@@ -10,6 +10,7 @@
 import SwiftUI
 import NimbleViews
 import CoreData
+import NimbleExtensions
 
 struct SourceHealthDashboardView: View {
 	@ObservedObject private var viewModel = SourcesViewModel.shared
@@ -275,7 +276,7 @@ struct SourceHealthDashboardView: View {
 			}
 			if health.isRateLimited, let until = health.rateLimitedUntil {
 				Label(
-					verbatim: String.localized("Paused until %@ (rate limited)", arguments: until.formatted(date: .omitted, time: .shortened)),
+					String.localized("Paused until %@ (rate limited)", arguments: until.formatted(date: .omitted, time: .shortened)),
 					systemImage: "hourglass"
 				)
 				.font(.caption2)
@@ -284,7 +285,7 @@ struct SourceHealthDashboardView: View {
 			}
 			if let next = health.nextRetryDate {
 				Label(
-					verbatim: String.localized("Next automatic retry: %@", arguments: next.formatted(date: .omitted, time: .shortened)),
+					String.localized("Next automatic retry: %@", arguments: next.formatted(date: .omitted, time: .shortened)),
 					systemImage: "clock.arrow.circlepath"
 				)
 				.font(.caption2)

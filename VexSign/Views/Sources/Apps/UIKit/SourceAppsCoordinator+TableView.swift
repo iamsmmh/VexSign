@@ -8,6 +8,7 @@
 import SwiftUI
 import AltSourceKit
 import CoreData
+import NimbleExtensions
 
 extension SourceAppsTableRepresentableView.Coordinator {
         // MARK: - TableView DataSource
@@ -187,8 +188,7 @@ extension SourceAppsTableRepresentableView.Coordinator {
                         for: entry.app,
                         signedApps: self.signedApps,
                         importedApps: self.importedApps
-                    ) != nil
-                {
+                    ) != nil {
                     let isIgnored = SkippedUpdatesManager.shared.isIgnored(bundleId)
                     let ignoreAction = UIAction(
                         title: isIgnored ? .localized("Resume Updates") : .localized("Ignore Updates"),

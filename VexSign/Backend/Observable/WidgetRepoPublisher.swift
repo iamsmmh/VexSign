@@ -13,6 +13,7 @@ import SwiftUI
 import UIKit
 import WidgetKit
 import OSLog
+import NimbleExtensions
 
 /// Not actor-isolated as a whole: only the snapshot reads need the main actor,
 /// and the icon downloads should not run there.

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import NimbleExtensions
 
 // MARK: - View
 struct FRExpirationPillView: View {
@@ -36,4 +37,3 @@ struct FRExpirationPillView: View {
 			.clipShape(Capsule())
 	}
 }
-

@@ -5,6 +5,7 @@
 
 import Foundation
 import UIKit
+import NimbleExtensions
 
 enum LibrarySort: String, CaseIterable {
 	case manual

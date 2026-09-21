@@ -8,6 +8,7 @@
 import SwiftUI
 import NimbleJSON
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - Extension: Model
 extension ServerView {

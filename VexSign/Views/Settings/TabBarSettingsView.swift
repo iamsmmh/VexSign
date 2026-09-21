@@ -5,6 +5,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct TabBarSettingsView: View {
     @ObservedObject private var _prefs = TabBarPreferences.shared

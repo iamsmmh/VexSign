@@ -110,7 +110,7 @@ enum CertificateInspector {
 		//                                issuer, validity, subject, ... }
 		if tbs.peekTag() == 0xA0 { _ = tbs.skip() }  // optional version record
 		guard tbs.skip(), tbs.skip(), tbs.skip(),  // serialNumber, signature, issuer
-			let validity = tbs.sequence() else { return nil }
+			var validity = tbs.sequence() else { return nil }
 		// Validity ::= SEQUENCE { notBefore Time, notAfter Time }
 		guard validity.skip(), let notAfter = validity.time() else { return nil }
 		return notAfter

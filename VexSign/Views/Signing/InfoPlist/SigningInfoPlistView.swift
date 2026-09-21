@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct SigningInfoPlistView: View {
@@ -301,8 +302,7 @@ extension SigningInfoPlistView {
 		if
 			status != .removed,
 			let value,
-			let kind = PlistValueKind.kind(for: value)
-		{
+			let kind = PlistValueKind.kind(for: value) {
 			NavigationLink {
 				if kind.isContainer {
 					PlistNodeView(title: key, value: value) { newValue in

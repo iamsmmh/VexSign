@@ -7,11 +7,12 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct SigningEntitlementsEditorView: View {
 	let entry: EntitlementsFile
-	var certificate: CertificatePair? = nil
+	var certificate: CertificatePair?
 
 	@ObservedObject private var _manager = EntitlementsManager.shared
 	@ObservedObject private var _clipboard = PlistClipboard.shared
@@ -25,7 +26,7 @@ struct SigningEntitlementsEditorView: View {
 	@State private var _editMode: EditMode = .inactive
 	@State private var _selectedKeys: Set<String> = []
 	@State private var _flaggedOnly = false
-	@State private var _detailKey: String? = nil
+	@State private var _detailKey: String?
 
 	private var _grantedEntitlements: [String: Any]? {
 		PlistDiff.grantedEntitlements(for: certificate)

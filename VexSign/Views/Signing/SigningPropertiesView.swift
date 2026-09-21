@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct SigningPropertiesView: View {
@@ -23,7 +24,7 @@ struct SigningPropertiesView: View {
 	var title: String
 	var initialValue: String
 	@Binding var bindingValue: String?
-	var suggestion: String? = nil
+	var suggestion: String?
 
 	private var isIdentifier: Bool {
 		title == .localized("Identifier")
@@ -97,4 +98,3 @@ struct SigningPropertiesView: View {
 		}
 	}
 }
-

@@ -9,6 +9,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct FeatureStatusView: View {
 	@State private var _showingOnlyNeedsDevice = false
@@ -21,7 +22,7 @@ struct FeatureStatusView: View {
 
 	var body: some View {
 		NBList(.localized("Feature Status")) {
-			NBSection {
+			NBSection(.localized("Overview")) {
 				HStack(spacing: 12) {
 					_counter(FeatureStatusRegistry.implementedCount, title: .localized("Implemented"), tint: .green, icon: "checkmark.circle.fill")
 					_counter(FeatureStatusRegistry.needsDeviceCount, title: .localized("Needs Device"), tint: .orange, icon: "iphone.gen3")

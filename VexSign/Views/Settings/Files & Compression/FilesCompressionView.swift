@@ -8,6 +8,7 @@
 import SwiftUI
 import Zip
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct FilesCompressionView: View {

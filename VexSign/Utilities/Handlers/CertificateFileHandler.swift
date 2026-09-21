@@ -7,6 +7,7 @@
 
 import Foundation
 import OSLog
+import NimbleExtensions
 
 final class CertificateFileHandler: NSObject {
 	private let _fileManager = FileManager.default
@@ -39,8 +40,8 @@ final class CertificateFileHandler: NSObject {
 	}
 	
 	func copy() async throws {
-		guard
-			(_certPair != nil)
+		guard 
+			_certPair != nil
 		else {
 			throw CertificateFileHandlerError.certNotValid
 		}

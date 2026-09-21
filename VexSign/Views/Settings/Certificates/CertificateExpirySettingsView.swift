@@ -10,6 +10,7 @@
 import SwiftUI
 import NimbleViews
 import UserNotifications
+import NimbleExtensions
 
 struct CertificateExpirySettingsView: View {
 	@AppStorage(CertificateExpiryMonitor.enabledKey)

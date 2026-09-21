@@ -9,6 +9,7 @@ import SwiftUI
 import NimbleViews
 import Nuke
 import CoreData
+import NimbleExtensions
 
 // MARK: - View
 struct ResetView: View {

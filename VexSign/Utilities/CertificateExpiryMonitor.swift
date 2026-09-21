@@ -12,6 +12,7 @@
 import Foundation
 import CoreData
 import UserNotifications
+import NimbleExtensions
 
 enum CertificateExpiryMonitor {
 	static let enabledKey = "VexSign.certificates.expiryRemindersEnabled"

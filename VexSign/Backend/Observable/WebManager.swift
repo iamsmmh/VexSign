@@ -6,6 +6,7 @@
 import Foundation
 import UIKit
 import OSLog
+import NimbleExtensions
 
 final class WebManager: ObservableObject {
 	static let shared = WebManager()
@@ -25,8 +26,7 @@ final class WebManager: ObservableObject {
 	}
 	@Published var password: String {
 		didSet {
-            do { try SecureSecretStore.write(Data(password.utf8), account: "webManager.password") }
-            catch { lastError = "Password could not be saved to Keychain: \(error.localizedDescription)" }
+            do { try SecureSecretStore.write(Data(password.utf8), account: "webManager.password") } catch { lastError = "Password could not be saved to Keychain: \(error.localizedDescription)" }
         }
 	}
 	/// Keep server reachable in background via silent-audio keep-alive.
@@ -52,8 +52,7 @@ final class WebManager: ObservableObject {
 		self.username = defaults.string(forKey: "VexSign.webManager.user") ?? "vex"
 		self.password = ""
         self.keepAlive = defaults.bool(forKey: "VexSign.webManager.keepAlive")
-        do { self.password = try SecureSecretStore.migrateDefaults("VexSign.webManager.pass", account: "webManager.password") }
-        catch { self.lastError = "Unlock the device to migrate the WebDAV password." }
+        do { self.password = try SecureSecretStore.migrateDefaults("VexSign.webManager.pass", account: "webManager.password") } catch { self.lastError = "Unlock the device to migrate the WebDAV password." }
 
 		NotificationCenter.default.addObserver(
 			self,

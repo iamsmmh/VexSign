@@ -6,6 +6,7 @@
 //
 
 import Zip
+import NimbleExtensions
 
 extension ZipCompression {
 	static var allCases: [ZipCompression] {

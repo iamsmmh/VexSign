@@ -8,6 +8,7 @@
 import Foundation
 import ZsignSwift
 import UIKit
+import NimbleExtensions
 
 final class ZsignHandler {
 	var hadError: Error?

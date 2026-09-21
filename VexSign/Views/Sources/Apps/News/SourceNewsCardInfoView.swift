@@ -9,6 +9,7 @@ import SwiftUI
 import AltSourceKit
 import NukeUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct SourceNewsCardInfoView: View {
@@ -29,8 +30,7 @@ struct SourceNewsCardInfoView: View {
 								if let image = state.image {
 									Color.clear.overlay(
 									image
-										.resizable()
-										.aspectRatio(contentMode: .fill)
+										.resizable().scaledToFill()
 									)
 								} else {
 									placeholderView

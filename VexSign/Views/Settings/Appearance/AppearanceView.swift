@@ -5,6 +5,7 @@
 import SwiftUI
 import NimbleViews
 import UIKit
+import NimbleExtensions
 
 struct AppearanceView: View {
     @AppStorage("VexSign.userInterfaceStyle") private var _userIntefacerStyle: Int = UIUserInterfaceStyle.unspecified.rawValue
@@ -105,7 +106,7 @@ struct AppearanceView: View {
             }
 
             NBSection(.localized("Font & Motion"), systemName: "textformat") {
-                Picker(.localized("Font"), selection: $_fontFamily) {
+                Picker(.localized("Font"), selection: _fontFamilyBinding) {
                     ForEach(VexSignFontFamily.allCases) { family in
                         Text(family.title)
                             .font(.system(.body, design: family.design))
@@ -118,7 +119,7 @@ struct AppearanceView: View {
                     Text("A")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Slider(value: $_fontScale, in: 0.9...1.15, step: 0.05)
+                    Slider(value: _fontScaleBinding, in: 0.9...1.15, step: 0.05)
                         .tint(Color.userTint)
                     Text("A")
                         .font(.title3.weight(.semibold))
@@ -127,7 +128,7 @@ struct AppearanceView: View {
                 .accessibilityElement(children: .combine)
                 .accessibilityLabel(Text(.localized("Font size")))
 
-                Toggle(.localized("Flare Touch Animations"), isOn: $_flareAnimations)
+                Toggle(.localized("Flare Touch Animations"), isOn: _flareAnimationsBinding)
                     .tint(Color.userTint)
             } footer: {
                 Text(.localized("Choose the app font and size. Flare touch feedback adds a subtle spring to buttons without changing layout."))

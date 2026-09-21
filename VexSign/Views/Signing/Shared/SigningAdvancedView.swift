@@ -7,15 +7,16 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct SigningAdvancedView: View {
 	let app: AppInfoPresentable
 	@Binding var options: Options
 	/// Used only to flag entitlement entries the selected certificate's provisioning profile doesn't grant.
-	var certificate: CertificatePair? = nil
+	var certificate: CertificatePair?
 	/// Off where properties are owned higher up, such as a batch sharing one set across every app.
 	var showsProperties: Bool = true
-	var scrollProxy: ScrollViewProxy? = nil
+	var scrollProxy: ScrollViewProxy?
 
 	@State private var _isModifyExpanded = false
 

@@ -12,6 +12,7 @@
 import Foundation
 import AppIntents
 import SwiftUI
+import NimbleExtensions
 
 // MARK: - Sign an app
 
@@ -33,12 +34,12 @@ struct SignAppIntent: AppIntent {
 		case .success(let signed):
 			return .result(dialog: IntentDialog(stringLiteral: String.localized(
 				"Signed %@.",
-				arguments: signed.name ?? target.name
+				arguments: signed.name ?? target.name ?? .localized("app")
 			)))
 		case .failure(let error):
 			return .result(dialog: IntentDialog(stringLiteral: String.localized(
 				"Could not sign %@: %@",
-				arguments: target.name, error.localizedDescription
+				arguments: target.name ?? .localized("app"), error.localizedDescription
 			)))
 		}
 	}

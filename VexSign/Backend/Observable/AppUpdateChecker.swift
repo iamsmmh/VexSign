@@ -107,7 +107,12 @@ final class AppUpdateChecker: ObservableObject {
             if !sourcedList.isEmpty {
                 var byInstalledApp: [String: [Int]] = [:]
                 for (index, update) in sourcedList.enumerated() {
-                    byInstalledApp[update.installedAppUUID, default: []].append(index)
+                    // UUID is preferred; the bundle identifier groups updates
+                    // for apps whose UUID is unavailable. The empty-string
+                    // group is harmless: the dedupe below only drops entries
+                    // that have a resolvable bundle ID and a preferred source.
+                    let key = update.installedAppUUID ?? update.installedAppIdentifier ?? ""
+                    byInstalledApp[key, default: []].append(index)
                 }
                 var dropIndices = Set<Int>()
                 for (_, indices) in byInstalledApp where indices.count > 1 {

@@ -10,6 +10,7 @@ import SwiftUI
 import UIKit
 import OSLog
 import CommonCrypto
+import NimbleExtensions
 
 class CertificateAutoImporter {
 	static let shared = CertificateAutoImporter()

@@ -8,6 +8,7 @@
 import SwiftUI
 import NimbleViews
 import UIKit
+import NimbleExtensions
 
 struct SelfUpdateSheet: View {
 	let release: SelfUpdateRelease

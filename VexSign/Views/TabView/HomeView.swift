@@ -11,6 +11,7 @@ import SwiftUI
 import NimbleViews
 import CoreData
 import UniformTypeIdentifiers
+import NimbleExtensions
 
 struct HomeView: View {
     @ObservedObject private var updateChecker = AppUpdateChecker.shared
@@ -33,6 +34,8 @@ struct HomeView: View {
     @State private var isDropTargeted = false
     @State private var quickSignApp: AnyApp?
     @State private var showAddRepository = false
+
+    @ObservedObject private var appearance = AppearanceStore.shared
 
     private var visibleAppCount: Int {
         let signed = signedApps.filter { app in
@@ -469,7 +472,7 @@ struct HomeView: View {
             return
         }
 
-        downloadManager.startArchive(
+        _ = downloadManager.startArchive(
             from: stagedURL,
             id: "VexSignHomeImport_\(UUID().uuidString)",
             appName: stagedURL.deletingPathExtension().lastPathComponent

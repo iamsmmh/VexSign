@@ -8,6 +8,7 @@ import CoreData
 import AltSourceKit
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct SourcesView: View {
@@ -21,7 +22,7 @@ struct SourcesView: View {
 	@State private var _addingSourceLoading = false
 	@State private var _searchText = ""
 	@State private var _shouldNavigateToAllRepos = false
-	@State private var _activeIndividualSource: AltSource? = nil
+	@State private var _activeIndividualSource: AltSource?
 	@State private var _isEditMode = false
 	@State private var _selectedSources: Set<AltSource> = []
 	@State private var _showDeleteConfirmation = false

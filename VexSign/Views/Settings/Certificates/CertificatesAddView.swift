@@ -8,13 +8,14 @@
 import SwiftUI
 import NimbleViews
 import UniformTypeIdentifiers
+import NimbleExtensions
 
 // MARK: - View
 struct CertificatesAddView: View {
 	@Environment(\.dismiss) private var dismiss
 	
-	@State private var _p12URL: URL? = nil
-	@State private var _provisionURL: URL? = nil
+	@State private var _p12URL: URL?
+	@State private var _provisionURL: URL?
 	@State private var _p12Password: String = ""
 	@State private var _certificateName: String = ""
 	@State private var _isSaving = false
@@ -146,4 +147,3 @@ extension CertificatesAddView {
 		}
 	}
 }
-

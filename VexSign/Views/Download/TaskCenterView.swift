@@ -11,6 +11,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct TaskCenterView: View {
 	@ObservedObject private var center = UnifiedTaskCenter.shared
@@ -152,7 +153,7 @@ private struct TaskRow: View {
 
 	private var phaseBadge: some View {
 		HStack(spacing: 3) {
-			if let stage = task.failureStage, task.phase == .failed {
+			if task.failureStage != nil, task.phase == .failed {
 				Image(systemName: "exclamationmark.arrow.triangle.2.circlepath")
 					.font(.system(size: 8, weight: .bold))
 			}

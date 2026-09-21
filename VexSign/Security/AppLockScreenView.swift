@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import NimbleExtensions
 
 struct AppLockScreenView: View {
 	@ObservedObject private var lock = AppLockManager.shared

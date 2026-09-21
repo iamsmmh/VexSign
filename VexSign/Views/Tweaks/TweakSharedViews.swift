@@ -8,6 +8,7 @@
 import SwiftUI
 import NimbleViews
 import CoreData
+import NimbleExtensions
 
 // MARK: - Targeting picker
 
@@ -238,4 +239,3 @@ struct TweakFolderPickerView: View {
 		}
 	}
 }
-

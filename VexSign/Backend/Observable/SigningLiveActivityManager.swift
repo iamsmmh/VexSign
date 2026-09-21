@@ -7,6 +7,7 @@
 
 import Foundation
 import ActivityKit
+import NimbleExtensions
 
 @MainActor
 final class SigningLiveActivityManager {

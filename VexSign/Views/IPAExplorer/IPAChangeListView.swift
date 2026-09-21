@@ -8,6 +8,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 @MainActor
 struct IPAChangeListView: View {

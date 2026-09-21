@@ -8,6 +8,7 @@ import NimbleViews
 import AltSourceKit
 import OSLog
 import UIKit.UIImpactFeedbackGenerator
+import NimbleExtensions
 
 extension SourcesAddView {
 	// MARK: - Fetch Vex Repos List
@@ -53,7 +54,6 @@ extension SourcesAddView {
 				vexReposFetchError = nil
 				Logger.misc.info("Successfully fetched \(urls.count) Vex repos")
 			}
-
 		} catch {
 			await MainActor.run {
 				if (error as NSError).code == NSURLErrorNotConnectedToInternet ||

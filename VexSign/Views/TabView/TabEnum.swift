@@ -5,6 +5,7 @@
 //
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 enum TabEnum: String, CaseIterable, Hashable, Codable {
     // Primary 6 — requested order
