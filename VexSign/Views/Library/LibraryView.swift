@@ -375,7 +375,7 @@ struct LibraryView: View {
                     HStack(spacing: 10) {
                         AsyncImage(url: item.iconURL) { phase in
                             if let img = phase.image {
-                                img.resizable().aspectRatio(contentMode: .fit)
+                                img.resizable().scaledToFit()
                             } else {
                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                                     .fill(Color.userTint.opacity(0.12))
