@@ -52,7 +52,9 @@ struct StorageUsage: Identifiable {
 	/// Whether the category holds no items.
 	/// Defined because SwiftLint's `empty_count` autocorrect rewrites
 	/// `count > 0` to `!isEmpty`; `StorageUsage` must support that spelling.
-	var isEmpty: Bool { isEmpty }
+	/// (swiftlint:disable:next keeps autocorrect from rewriting this body.)
+	// swiftlint:disable:next empty_count
+	var isEmpty: Bool { count == 0 }
 }
 
 struct StorageReport {
