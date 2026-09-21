@@ -177,7 +177,9 @@ extension ResetView {
 	}
 	
 	static func resetUserDefaults() {
-		UserDefaults.standard.removePersistentDomain(forName: Bundle.main.bundleIdentifier!)
+		if let bundleID = Bundle.main.bundleIdentifier {
+			UserDefaults.standard.removePersistentDomain(forName: bundleID)
+		}
 	}
 	
 	static func resetAll() {
