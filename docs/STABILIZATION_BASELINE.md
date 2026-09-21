@@ -242,7 +242,10 @@ are omitted below.
 | 3 | `150518b` | **fail** (check 106177012441) | **fail** (check 106177012353) | HomeView:51 missing `appearance`, :473 `startArchive` result unused; SourcesViewModel:75 `AltSource.isValid` no member; SourceHealthDashboardView:278 `Label(verbatim:)`; PerAppUpdateRulesView:36 `NBSection` title; AppearanceView:109/122/131 `$_fontFamily`/`$_fontScale`/`$_flareAnimations`; FeatureStatusView:25 `NBSection` title |
 | 4 | `1507917` (+ empty/nudge) | **not triggered** — the `pull_request` event was lost in a GitHub connectivity outage on the sandbox; no check-run was created for the commit | same | — (see §7.1) |
 | 5 | merge `4839eb3` (main `1ca6379`) | **fail** (check 106249665717) | **fail** (check 106249665865) | TaskCenterView:156 unused `stage`; StorageView:135/196 `StorageUsage.isEmpty` no member; SourceHealthDashboardView:287 second `Label(verbatim:)` |
-| 6 | `7a087a4` (round-5 fixes) | _pending — see §7.1_ | _pending_ | — |
+| 6 | `59171ad` (round-5 fixes, rebased) | **fail** (check 106286543727) | **pass** (check 106286543211) | AppStoreHelper:73 `Locale.current.regionCode` deprecated iOS 16 (warnings-as-errors). First real-app error — all prior latent files compiled |
+| 7 | `7601f29` (regionCode→`region?.identifier`) | **fail** (check 106290405492) | **fail** (check 106290405871) | StorageView:135/196 `isEmpty` no member **again** — lint-fix bot commit `5511684` (`empty_count` autocorrect) rewrote the round-5 `usage.count > 0` fix into `!usage.isEmpty` on a type without the member |
+| 8 | `3841f37` (`StorageUsage.isEmpty` added) | **pass** (check 106293626725) | **pass** (check 106293626701) | — — but the bot then rewrote `isEmpty`'s body `count == 0` into self-recursive `{ isEmpty }` (`330010b`, no CI run) |
+| 9 | `6a20b68` (`swiftlint:disable:next empty_count` guard) | **pass** (check 106297896146) | **pass** (check 106297896609) | ✅ **branch fully green** — bot made no follow-up commit; the disable comment is respected |
 
 **Recurring latent classes** (fixed in bulk rather than one-per-round):
 `Label(verbatim:)` (a `Text`-only label) appeared in 3 separate files across
@@ -289,6 +292,14 @@ call site that discards it is a warning→error; ~137 app-target files call
    is a stop condition (dependency replacement).
 5. **`VexSignApp.swift` background-task casts** — safe by construction but
    should be defensive (`as?`) in Phase 1/2.
+6. **`lint-fix`'s `empty_count` autocorrect is not type-aware.** It rewrote
+   `usage.count > 0` → `!usage.isEmpty` on a struct without that member
+   (breaking the build), then rewrote the new `isEmpty` implementation's
+   `count == 0` into a self-recursive getter. Mitigation, not config change:
+   `StorageUsage` gained a real `isEmpty` whose body is pinned with
+   `swiftlint:disable:next empty_count`. Any future count-comparison on a
+   custom type will trigger the same bot rewrite — prefer compiling against
+   the post-autocorrect spelling or pin it the same way.
 
 ## 9. Phase 0 verdict
 
