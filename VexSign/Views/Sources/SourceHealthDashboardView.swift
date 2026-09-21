@@ -276,7 +276,7 @@ struct SourceHealthDashboardView: View {
 			}
 			if health.isRateLimited, let until = health.rateLimitedUntil {
 				Label(
-					verbatim: String.localized("Paused until %@ (rate limited)", arguments: until.formatted(date: .omitted, time: .shortened)),
+					String.localized("Paused until %@ (rate limited)", arguments: until.formatted(date: .omitted, time: .shortened)),
 					systemImage: "hourglass"
 				)
 				.font(.caption2)

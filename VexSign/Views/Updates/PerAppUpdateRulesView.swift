@@ -33,7 +33,7 @@ struct PerAppUpdateRulesView: View {
 	var body: some View {
 		NBNavigationView(.localized("Update Rules"), displayMode: .inline) {
 			NBList(.localized("Update Rules")) {
-				NBSection {
+				NBSection(.localized("App")) {
 					VStack(alignment: .leading, spacing: 4) {
 						Text(appName)
 							.font(.headline)

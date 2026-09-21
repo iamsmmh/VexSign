@@ -86,7 +86,7 @@ struct OnboardingView: View {
 		guard let stagedURL = _stagePackage(url) else { return }
 		let appName = stagedURL.deletingPathExtension().lastPathComponent
 
-		downloadManager.startArchive(
+		_ = downloadManager.startArchive(
 			from: stagedURL,
 			id: "VexSignOnboardingImport_\(UUID().uuidString)",
 			appName: appName

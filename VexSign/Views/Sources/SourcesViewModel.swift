@@ -72,7 +72,7 @@ final class SourcesViewModel: ObservableObject {
 	@MainActor
 	func evictDeletedSources(valid sources: [AltSource]) {
 		let validSet = Set(sources)
-		let doomed = self.sources.keys.filter { !$0.isValid || $0.isDeleted || !validSet.contains($0) }
+		let doomed = self.sources.keys.filter { $0.isDeleted || !validSet.contains($0) }
 		guard !doomed.isEmpty else { return }
 		for source in doomed {
 			self.sources.removeValue(forKey: source)

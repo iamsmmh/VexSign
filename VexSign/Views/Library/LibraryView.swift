@@ -597,7 +597,7 @@ struct LibraryView: View {
         Button(.localized("Import from Files"), systemImage: "folder") {
             DocumentPicker.open([.ipa, .tipa], multiple: true, folder: .apps) { urls in
                 for url in urls {
-                    downloadManager.startArchive(from: url, id: "VexSignManualDownload_\(UUID().uuidString)")
+                    _ = downloadManager.startArchive(from: url, id: "VexSignManualDownload_\(UUID().uuidString)")
                 }
             }
         }

@@ -35,6 +35,8 @@ struct HomeView: View {
     @State private var quickSignApp: AnyApp?
     @State private var showAddRepository = false
 
+    @ObservedObject private var appearance = AppearanceStore.shared
+
     private var visibleAppCount: Int {
         let signed = signedApps.filter { app in
             guard lockManager.strictHidingEnabled, let uuid = app.uuid else { return true }
@@ -470,7 +472,7 @@ struct HomeView: View {
             return
         }
 
-        downloadManager.startArchive(
+        _ = downloadManager.startArchive(
             from: stagedURL,
             id: "VexSignHomeImport_\(UUID().uuidString)",
             appName: stagedURL.deletingPathExtension().lastPathComponent
