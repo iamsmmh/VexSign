@@ -118,8 +118,7 @@ struct SourceAppsDetailView: View {
 				
 				if
 					let currentVer = app.currentVersion,
-					let whatsNewDesc = app.currentAppVersion?.localizedDescription
-				{
+					let whatsNewDesc = app.currentAppVersion?.localizedDescription {
 					NBSection(.localized("What's New")) {
 						AppVersionInfo(
 							version: currentVer,
@@ -316,8 +315,7 @@ struct SourceAppsDetailView: View {
 	
 	var standardHeader: some View {
 		Image("App_Unknown")
-			.resizable()
-			.aspectRatio(contentMode: .fill)
+			.resizable().scaledToFill()
 			.frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
 			.clipped()
 	}
@@ -332,8 +330,7 @@ extension SourceAppsDetailView {
 			if let iconURL = source.currentIconURL {
 				LazyImage(url: iconURL) { state in
 					if let image = state.image {
-						image.resizable()
-							.aspectRatio(contentMode: .fill)
+						image.resizable().scaledToFill()
 							.frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
 							.clipped()
 					} else {
@@ -412,8 +409,7 @@ extension SourceAppsDetailView {
 					LazyImage(url: url) { state in
 						if let image = state.image {
 							image
-								.resizable()
-								.aspectRatio(contentMode: .fit)
+								.resizable().scaledToFit()
 								.frame(
 									maxWidth: UIScreen.main.bounds.width - 32,
 									maxHeight: 400

@@ -64,8 +64,7 @@ extension ScreenshotPreviewView {
                 LazyImage(url: screenshotURLs[index]) { state in
                     if let image = state.image {
                         image
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
+                            .resizable().scaledToFit()
                             .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
                             .overlay {
                                 RoundedRectangle(cornerRadius: 32, style: .continuous)

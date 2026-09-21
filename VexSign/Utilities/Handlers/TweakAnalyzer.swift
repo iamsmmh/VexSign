@@ -189,14 +189,13 @@ enum TweakAnalyzer {
 	private static func _analyzeAppex(at url: URL) -> TweakAnalysis {
 		var summary = String.localized("App extension.")
 		var notes: [String] = [
-			.localized("Placed in PlugIns/ and re-signed as an extension of the host app (its bundle id becomes a child of the app's)."),
+			.localized("Placed in PlugIns/ and re-signed as an extension of the host app (its bundle id becomes a child of the app's).")
 		]
 
 		if
 			let info = NSDictionary(contentsOf: url.appendingPathComponent("Info.plist")),
 			let ext = info["NSExtension"] as? [String: Any],
-			let pointId = ext["NSExtensionPointIdentifier"] as? String
-		{
+			let pointId = ext["NSExtensionPointIdentifier"] as? String {
 			summary = String.localized("%@ app extension.", arguments: _extensionKind(pointId))
 			notes.append(String.localized("Extension point: %@", arguments: pointId))
 		}

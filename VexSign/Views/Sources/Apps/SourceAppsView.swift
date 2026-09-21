@@ -196,7 +196,7 @@ struct SourceAppsView: View {
                 await refreshUpdateCountIfNeeded()
             }
         }
-        .onChange(of: updateChecker.updateCount) { newCount in
+        .onChange(of: updateChecker.updateCount) { _ in
             if let sources = _sources {
                 _localUpdateCount = calculateLocalUpdateCount(for: sources)
             }
@@ -211,7 +211,7 @@ struct SourceAppsView: View {
                 }
             }
         }
-        .onChange(of: _selectedTab) { newTab in
+        .onChange(of: _selectedTab) { _ in
             _forceUpdateTrigger += 1
         }
         .onReceive(TabSelectionObserver.shared.$sourcesRetapped.dropFirst()) { _ in

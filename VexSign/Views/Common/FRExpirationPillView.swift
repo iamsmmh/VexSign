@@ -37,4 +37,3 @@ struct FRExpirationPillView: View {
 			.clipShape(Capsule())
 	}
 }
-

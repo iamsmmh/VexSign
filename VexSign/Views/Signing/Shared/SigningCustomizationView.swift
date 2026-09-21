@@ -70,8 +70,7 @@ struct SigningCustomizationView: View {
 				Task {
 					if
 						let data = try? await newValue.loadTransferable(type: Data.self),
-						let image = UIImage(data: data)?.resizeToSquare()
-					{
+						let image = UIImage(data: data)?.resizeToSquare() {
 						appIcon = image
 					}
 				}

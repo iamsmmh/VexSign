@@ -13,21 +13,21 @@ struct AppearanceTintColorView: View {
     // Curated, organized palette — grouped conceptually, not random.
     private let _groups: [(title: String, items: [(name: String, hex: String)])] = [
         ("VexSign", [
-            ("Default",   "#848ef9"),
-            ("V2",        "#B496DC"),
+            ("Default", "#848ef9"),
+            ("V2", "#B496DC")
         ]),
         ("Vibrant", [
-            ("Berry",      "#ff7a83"),
-            ("Fuchsia",    "#FF2D55"),
-            ("Peculiar",   "#4860e8"),
-            ("Cool Blue",  "#4161F1"),
+            ("Berry", "#ff7a83"),
+            ("Fuchsia", "#FF2D55"),
+            ("Peculiar", "#4860e8"),
+            ("Cool Blue", "#4161F1")
         ]),
         ("System", [
             ("Protokolle", "#4CD964"),
-            ("Clock",      "#FF9500"),
-            ("Sky",        "#5394F7"),
-            ("Blossom",    "#e18aab"),
-        ]),
+            ("Clock", "#FF9500"),
+            ("Sky", "#5394F7"),
+            ("Blossom", "#e18aab")
+        ])
     ]
 
     private var _flat: [(name: String, hex: String)] { _groups.flatMap { $0.items } }

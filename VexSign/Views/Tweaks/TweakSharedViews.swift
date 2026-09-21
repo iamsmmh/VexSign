@@ -239,4 +239,3 @@ struct TweakFolderPickerView: View {
 		}
 	}
 }
-

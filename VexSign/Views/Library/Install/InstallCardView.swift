@@ -15,7 +15,7 @@ struct InstallCardView: View {
 	@ObservedObject var installer: AppInstaller
 	var upcoming: [AnyApp] = []
 	var onCancel: () -> Void
-	var onPause: (() -> Void)? = nil
+	var onPause: (() -> Void)?
 	var isPaused: Bool = false
 
 	var body: some View {

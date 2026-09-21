@@ -55,4 +55,3 @@ struct VersionHistoryView: View {
         }
     }
 }
-

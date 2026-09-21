@@ -14,14 +14,14 @@ struct SigningOptionsView: View {
 	@Binding var options: Options
 	var temporaryOptions: Options?
 	/// Selected certificate, used to gate options the profile can't grant (JIT).
-	var certificate: CertificatePair? = nil
+	var certificate: CertificatePair?
 
 	@AppStorage(AutoSignManager.enabledKey) private var _autoSign: Bool = false
 	@AppStorage(InstallCleanup.deleteKey) private var _deleteAfterInstall: Bool = false
 	
 	// MARK: Body
 	var body: some View {
-		if (temporaryOptions == nil) {
+		if temporaryOptions == nil {
 			NBSection(.localized("Protection")) {
 				Self.picker(
 					.localized("PPQ Protection"),
@@ -72,7 +72,7 @@ struct SigningOptionsView: View {
 			)
 		}
 		
-		if (temporaryOptions == nil) {
+		if temporaryOptions == nil {
 			NBSection(.localized("Tweaks")) {
 				Self.picker(
 					.localized("Injection Path"),
@@ -172,7 +172,7 @@ struct SigningOptionsView: View {
 			Text(.localized("By default, localized titles for the app won't be changed, however this option overrides it."))
 		}
 		
-		if (temporaryOptions == nil) {
+		if temporaryOptions == nil {
 			NBSection(.localized("Pre Signing")) {
 				_toggle(
 					.localized("Auto Sign"),

@@ -48,7 +48,7 @@ struct AppIconView: View {
 			AltIcon(displayName: "VexSign Donor", author: "claration", key: "Donor")
 		],
 		"Wingio": [
-			AltIcon(displayName: "VexSign", author: "Wingio", key: "Wing"),
+			AltIcon(displayName: "VexSign", author: "Wingio", key: "Wing")
 		]
 	]
 

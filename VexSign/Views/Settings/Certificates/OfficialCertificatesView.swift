@@ -207,7 +207,6 @@ extension OfficialCertificatesView {
 			return .secondary
 		}
 	}
-
 }
 
 // MARK: - Actions

@@ -19,8 +19,7 @@ class OptionsManager: ObservableObject {
 	init() {
 		if
 			let data = UserDefaults.standard.data(forKey: _key),
-			let savedOptions = try? JSONDecoder().decode(Options.self, from: data)
-		{
+			let savedOptions = try? JSONDecoder().decode(Options.self, from: data) {
 			self.options = savedOptions
 		} else {
 			self.options = Options.defaultOptions
@@ -113,11 +112,11 @@ struct Options: Codable, Equatable {
 	/// Injects the bundled fix that makes the document picker import files into the app's own container
 	var fixFilePicker: Bool
 	/// Resolved managed-tweak injections for this sign; per-sign working copy only. Optional so old saved options decode.
-	var tweakInjections: [TweakInjectionSpec]? = nil
+	var tweakInjections: [TweakInjectionSpec]?
 	/// Raw Info.plist overrides for this sign, kept as an XML plist blob so any value type survives.
-	var infoPlistOverrides: Data? = nil
+	var infoPlistOverrides: Data?
 	/// Info.plist keys stripped from the bundle for this sign.
-	var infoPlistRemovals: [String]? = nil
+	var infoPlistRemovals: [String]?
 	/// Removes the legacy MinimumOSVersion gate from the signed bundle.
 	var removeMinimumOSVersion: Bool
 

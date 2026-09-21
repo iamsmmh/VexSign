@@ -93,8 +93,7 @@ final class CertificateStatusManager: ObservableObject {
 	private init() {
 		if
 			let data = UserDefaults.standard.data(forKey: _storageKey),
-			let snapshots = try? JSONDecoder().decode([String: CertificateAppleStatusSnapshot].self, from: data)
-		{
+			let snapshots = try? JSONDecoder().decode([String: CertificateAppleStatusSnapshot].self, from: data) {
 			self.appleStatusSnapshots = snapshots
 		} else {
 			self.appleStatusSnapshots = [:]

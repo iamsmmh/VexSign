@@ -107,7 +107,7 @@ extension CertificatesInfoView {
 			
 			_disclosure(.localized("Team Identifiers"), keys: data.TeamIdentifier)
 			
-			if let prefix = data.ApplicationIdentifierPrefix{
+			if let prefix = data.ApplicationIdentifierPrefix {
 				_disclosure(.localized("Identifier Prefix"), keys: prefix)
 			}
 		}

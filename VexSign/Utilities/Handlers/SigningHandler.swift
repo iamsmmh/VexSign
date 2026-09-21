@@ -83,8 +83,7 @@ final class SigningHandler: NSObject {
 
 		if
 			let identifier = _options.appIdentifier,
-			let oldIdentifier = infoDictionary["CFBundleIdentifier"] as? String
-		{
+			let oldIdentifier = infoDictionary["CFBundleIdentifier"] as? String {
 			SigningLog.shared.info(.localized("Changing bundle identifier to %@", arguments: identifier))
 			try await _modifyPluginIdentifiers(old: oldIdentifier, new: identifier, for: movedAppPath)
 		}
@@ -153,8 +152,7 @@ final class SigningHandler: NSObject {
 		
 		if
 			_options.signingOption == .default,
-			let cert = appCertificate
-		{
+			let cert = appCertificate {
 			let certName = cert.nickname ?? Storage.shared.getProvisionFileDecoded(for: cert)?.Name ?? .localized("certificate")
 			SigningLog.shared.info(.localized("Signing with %@", arguments: certName))
 			try await handler.sign()
@@ -305,8 +303,7 @@ extension SigningHandler {
 		if
 			let appId = entitlements["application-identifier"] as? String,
 			let team = appId.split(separator: ".").first.map(String.init),
-			_isTeamIdentifier(team)
-		{
+			_isTeamIdentifier(team) {
 			return team
 		}
 		for group in entitlements["keychain-access-groups"] as? [String] ?? [] {
@@ -455,8 +452,7 @@ extension SigningHandler {
 				// NSExtension → NSExtensionAttributes → WKAppBundleIdentifier
 				if
 					let attributes = extensionDict["NSExtensionAttributes"] as? NSMutableDictionary,
-					let oldValue = attributes["WKAppBundleIdentifier"] as? String
-				{
+					let oldValue = attributes["WKAppBundleIdentifier"] as? String {
 					let newValue = oldValue.replacingOccurrences(of: oldIdentifier, with: newIdentifier)
 					if oldValue != newValue {
 						attributes["WKAppBundleIdentifier"] = newValue
@@ -466,8 +462,7 @@ extension SigningHandler {
 
 				// NSExtension → NSExtensionFileProviderDocumentGroup
 				if
-					let oldValue = extensionDict["NSExtensionFileProviderDocumentGroup"] as? String
-				{
+					let oldValue = extensionDict["NSExtensionFileProviderDocumentGroup"] as? String {
 					let newValue = oldValue.replacingOccurrences(of: oldIdentifier, with: newIdentifier)
 					if oldValue != newValue {
 						extensionDict["NSExtensionFileProviderDocumentGroup"] = newValue
@@ -596,8 +591,7 @@ extension SigningHandler {
 			case "framework":
 				if
 					let bundle = Bundle(url: fileURL),
-					let execURL = bundle.executableURL
-				{
+					let execURL = bundle.executableURL {
 					LCPatchMachOFixupARM64eSlice(execURL.path)
 				}
 			default:

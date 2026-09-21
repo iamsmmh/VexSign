@@ -322,7 +322,6 @@ class DownloadManager: NSObject, ObservableObject {
 		_ = saveGroup.wait(timeout: deadline)
 	}
 	
-	
 	private func startProgressTimer() {
 		guard progressUpdateTimer == nil else { return }
 

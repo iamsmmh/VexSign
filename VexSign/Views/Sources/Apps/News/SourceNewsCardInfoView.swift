@@ -30,8 +30,7 @@ struct SourceNewsCardInfoView: View {
 								if let image = state.image {
 									Color.clear.overlay(
 									image
-										.resizable()
-										.aspectRatio(contentMode: .fill)
+										.resizable().scaledToFill()
 									)
 								} else {
 									placeholderView

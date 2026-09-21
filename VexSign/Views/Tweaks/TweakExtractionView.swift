@@ -127,8 +127,7 @@ struct TweakExtractionView: View {
 						HStack {
 							Button(_selection.count == candidates.count ? .localized("Deselect All") : .localized("Select All")) {
 								withAnimation(.smooth) {
-									if _selection.count == candidates.count { _selection.removeAll() }
-									else { _selection = Set(candidates.map { $0.id }) }
+									if _selection.count == candidates.count { _selection.removeAll() } else { _selection = Set(candidates.map { $0.id }) }
 								}
 							}
 							Spacer()
@@ -217,8 +216,7 @@ struct TweakExtractionView: View {
 		HStack(spacing: 10) {
 			Button {
 				withAnimation(.smooth) {
-					if allSelected { group.items.forEach { _selection.remove($0.id) } }
-					else { group.items.forEach { _selection.insert($0.id) } }
+					if allSelected { group.items.forEach { _selection.remove($0.id) } } else { group.items.forEach { _selection.insert($0.id) } }
 				}
 			} label: {
 				Image(systemName: allSelected ? "checkmark.circle.fill" : (selectedInFolder > 0 ? "minus.circle.fill" : "circle"))

@@ -54,7 +54,6 @@ extension SourcesAddView {
 				vexReposFetchError = nil
 				Logger.misc.info("Successfully fetched \(urls.count) Vex repos")
 			}
-
 		} catch {
 			await MainActor.run {
 				if (error as NSError).code == NSURLErrorNotConnectedToInternet ||

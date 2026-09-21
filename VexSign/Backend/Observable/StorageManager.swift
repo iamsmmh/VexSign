@@ -400,8 +400,7 @@ private enum StorageScanner {
 			if
 				let age,
 				let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate,
-				Date().timeIntervalSince(modified) < age
-			{
+				Date().timeIntervalSince(modified) < age {
 				continue
 			}
 			try? fm.removeItem(at: url)

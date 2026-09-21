@@ -14,8 +14,8 @@ struct SigningEntitlementsView: View {
 	@ObservedObject private var _manager = EntitlementsManager.shared
 
 	@Binding var bindingValue: URL?
-	var app: AppInfoPresentable? = nil
-	var certificate: CertificatePair? = nil
+	var app: AppInfoPresentable?
+	var certificate: CertificatePair?
 
 	@State private var _isRenamingPresenting = false
 	@State private var _fileToRename: EntitlementsFile?

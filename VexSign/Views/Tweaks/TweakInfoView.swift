@@ -44,10 +44,10 @@ struct TweakInfoView: View {
 	let fileURL: URL
 	let type: TweakFileType
 	// The app being signed, when known — lets us check dependency satisfaction. Nil in the library.
-	var appURL: URL? = nil
-	var onApplyRecommendation: ((Options.InjectPath, Options.InjectFolder) -> Void)? = nil
+	var appURL: URL?
+	var onApplyRecommendation: ((Options.InjectPath, Options.InjectFolder) -> Void)?
 	// Current persisted injection config, so we can show "already applied" across reopens.
-	var currentConfig: TweakInjectConfig? = nil
+	var currentConfig: TweakInjectConfig?
 
 	@StateObject private var _loader = TweakAnalysisLoader()
 	@State private var _applied = false

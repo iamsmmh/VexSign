@@ -83,15 +83,15 @@ class ServerInstaller: Identifiable, ObservableObject {
 					self.backgroundTaskManager?.start()
 				}
 				return Response(status: .ok, version: req.version, headers: [
-					"Content-Type": "text/xml",
+					"Content-Type": "text/xml"
 				], body: .init(data: installManifestData))
 			case displayImageSmallEndpoint.path:
 				return Response(status: .ok, version: req.version, headers: [
-					"Content-Type": "image/png",
+					"Content-Type": "image/png"
 				], body: .init(data: displayImageSmallData))
 			case displayImageLargeEndpoint.path:
 				return Response(status: .ok, version: req.version, headers: [
-					"Content-Type": "image/png",
+					"Content-Type": "image/png"
 				], body: .init(data: displayImageLargeData))
 			case payloadEndpoint.path:
 				guard let packageUrl = packageUrl else {
