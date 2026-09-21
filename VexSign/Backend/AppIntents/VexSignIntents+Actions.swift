@@ -33,12 +33,12 @@ struct SignAppIntent: AppIntent {
 		case .success(let signed):
 			return .result(dialog: IntentDialog(stringLiteral: String.localized(
 				"Signed %@.",
-				arguments: signed.name ?? target.name
+				arguments: signed.name ?? target.name ?? .localized("app")
 			)))
 		case .failure(let error):
 			return .result(dialog: IntentDialog(stringLiteral: String.localized(
 				"Could not sign %@: %@",
-				arguments: target.name, error.localizedDescription
+				arguments: target.name ?? .localized("app"), error.localizedDescription
 			)))
 		}
 	}
@@ -122,7 +122,11 @@ struct CheckCertificatesIntent: AppIntent {
 	/// Off by default: turning it on sends certificate identifiers to the
 	/// configured responder, which is exactly what the in-app switch says.
 	@Parameter(title: "Ask the responder too (sends certificate identifiers off-device)")
-	var online: Bool = false
+	var online: Bool
+
+	init() {
+		online = false
+	}
 
 	@MainActor
 	func perform() async throws -> some IntentResult & ProvidesDialog {
@@ -153,7 +157,11 @@ struct OpenVexSignIntent: AppIntent {
 	static var openAppWhenRun: Bool = true
 
 	@Parameter(title: "Section", requestValueDialog: "Where should VexSign open?")
-	var section: VexSignSection = .home
+	var section: VexSignSection
+
+	init() {
+		section = .home
+	}
 
 	@MainActor
 	func perform() async throws -> some IntentResult {
@@ -204,7 +212,11 @@ struct SetGameModeIntent: AppIntent {
 	static var description = IntentDescription("Turns Game Mode on or off. It pauses downloads and background work only.")
 
 	@Parameter(title: "Enabled")
-	var enabled: Bool = true
+	var enabled: Bool
+
+	init() {
+		enabled = true
+	}
 
 	@MainActor
 	func perform() async throws -> some IntentResult & ProvidesDialog {

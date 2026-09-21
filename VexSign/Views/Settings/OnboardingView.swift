@@ -16,6 +16,7 @@ import CoreData
 
 struct OnboardingView: View {
 	@Environment(\.dismiss) private var dismiss
+	@StateObject private var downloadManager = DownloadManager.shared
 	@AppStorage("VexSign.onboardingCompleted") private var _completed = false
 	@AppStorage("VexSign.installationMethod") private var _installMethod = 0
 	@State private var _page = 0
@@ -76,6 +77,52 @@ struct OnboardingView: View {
 		.interactiveDismissDisabled(!_completed && _page < _pageCount - 1)
 	}
 
+	// MARK: - Actions
+
+	/// Imports the file chosen in the first-app page through the same pipeline
+	/// Home uses: stage the security-scoped copy, then run it as an archive
+	/// import so it lands in the Library like any other IPA.
+	private func _importFirstApp(from url: URL) {
+		guard let stagedURL = _stagePackage(url) else { return }
+		let appName = stagedURL.deletingPathExtension().lastPathComponent
+
+		downloadManager.startArchive(
+			from: stagedURL,
+			id: "VexSignOnboardingImport_\(UUID().uuidString)",
+			appName: appName
+		) { error in
+			// startArchive delivers its completion on the main thread.
+			if let error {
+				Toast.error(error.localizedDescription, duration: .long)
+			} else {
+				_importedAppName = appName
+				Toast.success(.localized("App imported"), systemImage: "square.and.arrow.down")
+			}
+		}
+	}
+
+	/// Copies a security-scoped document into the download staging directory
+	/// (mirrors HomeView's staging so the import pipeline never touches the
+	/// user's Documents location).
+	private func _stagePackage(_ url: URL) -> URL? {
+		let scoped = url.startAccessingSecurityScopedResource()
+		defer {
+			if scoped { url.stopAccessingSecurityScopedResource() }
+		}
+
+		let fileManager = FileManager.default
+		let directory = fileManager.downloadStaging
+		do {
+			try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+			let target = FileManagerActions.uniqueURL(for: url.lastPathComponent, in: directory)
+			try fileManager.copyItem(at: url, to: target)
+			return target
+		} catch {
+			Toast.error(error.localizedDescription, duration: .long)
+			return nil
+		}
+	}
+
 	// MARK: - Pages
 
 	private var _pageWelcome: some View {
@@ -107,14 +154,14 @@ struct OnboardingView: View {
 			}
 			.buttonStyle(.borderedProminent)
 
-			if !_certificates.isEmpty {
-				Label(
-					verbatim: String.localized("%lld certificate(s) ready", arguments: _certificates.count),
-					systemImage: "checkmark.circle.fill"
-				)
-				.font(.footnote)
-				.foregroundStyle(.green)
-			}
+		if !_certificates.isEmpty {
+			Label(
+				String.localized("%lld certificate(s) ready", arguments: _certificates.count),
+				systemImage: "checkmark.circle.fill"
+			)
+			.font(.footnote)
+			.foregroundStyle(.green)
+		}
 			Spacer()
 		}
 		.padding(28)
@@ -134,14 +181,14 @@ struct OnboardingView: View {
 			}
 			.buttonStyle(.borderedProminent)
 
-			if !_sources.isEmpty {
-				Label(
-					verbatim: String.localized("%lld source(s) added", arguments: _sources.count),
-					systemImage: "checkmark.circle.fill"
-				)
-				.font(.footnote)
-				.foregroundStyle(.green)
-			}
+		if !_sources.isEmpty {
+			Label(
+				String.localized("%lld source(s) added", arguments: _sources.count),
+				systemImage: "checkmark.circle.fill"
+			)
+			.font(.footnote)
+			.foregroundStyle(.green)
+		}
 			Spacer()
 		}
 		.padding(28)
@@ -161,11 +208,11 @@ struct OnboardingView: View {
 			}
 			.buttonStyle(.bordered)
 
-			if let name = _importedAppName {
-				Label(verbatim: String.localized("Imported %@", arguments: name), systemImage: "checkmark.circle.fill")
-					.font(.footnote)
-					.foregroundStyle(.green)
-			}
+		if let name = _importedAppName {
+			Label(String.localized("Imported %@", arguments: name), systemImage: "checkmark.circle.fill")
+			.font(.footnote)
+			.foregroundStyle(.green)
+		}
 			Spacer()
 		}
 		.padding(28)

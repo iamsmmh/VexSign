@@ -271,7 +271,7 @@ final class InstallQueue: ObservableObject {
 			let failedCount = outcomes.values.filter {
 				if case .failed = $0 { return true }
 				return false
-			}
+			}.count
 			UnifiedTaskCenter.shared.transition(
 				task,
 				to: failedCount > 0 ? .failed : .completed,

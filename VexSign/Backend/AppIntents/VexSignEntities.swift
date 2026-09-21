@@ -119,7 +119,7 @@ struct VexSignSourceQuery: EntityQuery {
 			return VexSignSourceEntity(
 				url: url,
 				name: source.name ?? url,
-				identifier: source.identifier
+				identifier: source.identifier ?? url
 			)
 		}
 	}
@@ -131,7 +131,7 @@ struct VexSignSourceQuery: EntityQuery {
 			return VexSignSourceEntity(
 				url: url,
 				name: source.name ?? url,
-				identifier: source.identifier
+				identifier: source.identifier ?? url
 			)
 		}
 	}
