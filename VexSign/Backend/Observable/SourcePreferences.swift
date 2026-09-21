@@ -200,11 +200,11 @@ enum SourcePreferences {
 	static func recordFetch(id: String, error: String?, rateLimited: Bool) {
 		let now = Date().timeIntervalSince1970
 
-		var fetches = _dictionary(lastFetchKey) as [String: Double]
+		var fetches: [String: Double] = _dictionary(lastFetchKey)
 		fetches[id] = now
 		UserDefaults.standard.set(fetches, forKey: lastFetchKey)
 
-		var errors = _dictionary(lastErrorKey) as [String: String]
+		var errors: [String: String] = _dictionary(lastErrorKey)
 		if let error, !error.isEmpty {
 			errors[id] = error
 		} else {
@@ -212,18 +212,18 @@ enum SourcePreferences {
 		}
 		UserDefaults.standard.set(errors, forKey: lastErrorKey)
 
-		var failures = _dictionary(failureCountKey) as [String: Int]
+		var failures: [String: Int] = _dictionary(failureCountKey)
 		if let error, !error.isEmpty {
 			failures[id] = (failures[id] ?? 0) + 1
 		} else {
 			failures[id] = 0
-			var successes = _dictionary(lastSuccessKey) as [String: Double]
+			var successes: [String: Double] = _dictionary(lastSuccessKey)
 			successes[id] = now
 			UserDefaults.standard.set(successes, forKey: lastSuccessKey)
 		}
 		UserDefaults.standard.set(failures, forKey: failureCountKey)
 
-		var limits = _dictionary(rateLimitUntilKey) as [String: Double]
+		var limits: [String: Double] = _dictionary(rateLimitUntilKey)
 		if rateLimited {
 			// Honor a 429 Retry-After-ish window; a cap avoids absurd server values.
 			limits[id] = now + 900
