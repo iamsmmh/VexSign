@@ -14,7 +14,13 @@ final class VexSignTests: XCTestCase {
 	/// Fetches every default repo and decodes it with a plain `JSONDecoder`,
 	/// mirroring the production path (`NBFetchService`): `ASRepository` handles
 	/// its own date parsing via `DateParsed`, so no decoding strategy is needed.
+	///
+	/// This test needs live network access, so it only runs when the CI gate
+	/// (or a developer) opts in via `VEXSIGN_INTEGRATION_TESTS=1` — the PR
+	/// suite must stay deterministic. The decode contract itself is covered
+	/// offline by `testRepoPayloadDecodesFromFixture` below.
 	func testRepoParsing() async throws {
+		try IntegrationGate.skipUnlessEnabled()
 		let repoDatas: [URL: Data] = try await withThrowingTaskGroup(of: (URL, Data).self, returning: [URL: Data].self) { group in
 			for url in repoURLs {
 				group.addTask {
@@ -43,6 +49,19 @@ final class VexSignTests: XCTestCase {
 				XCTFail("Failed to decode repo data: \(error)\n\nFailed for \(url)")
 			}
 		}
+	}
+
+	/// Offline counterpart of `testRepoParsing`: the committed sample repo
+	/// fixture must decode through the same `ASRepository` path with the same
+	/// plain `JSONDecoder` the production fetcher uses.
+	func testRepoPayloadDecodesFromFixture() throws {
+		let url = TestFixtures.url("Sources/sample-repo.json")
+		let data = try Data(contentsOf: url)
+		let repo = try JSONDecoder().decode(ASRepository.self, from: data)
+
+		XCTAssertEqual(repo.name, "VexSign")
+		XCTAssertFalse(repo.apps.isEmpty)
+		XCTAssertFalse(repo.apps[0].versions.isEmpty)
 	}
 
 	/// Repositories can be pasted as obfuscated "codes" in two known formats.
