@@ -226,14 +226,49 @@ Phase 1+ will **verify and extend** these, not reinvent them.
 
 ## 7. CI baseline runs for this branch
 
-Recorded after pushing `arena/01a0c12c-vexsign` (pristine tree, no code
-changes — only this document):
+`build-check` compiles the VexSign scheme (Debug, unsigned) and fails on any
+compiler error **and** on any first-party warning not in
+`.github/build-warnings-baseline.json`. Because xcodebuild stops after the
+first failing batch, each red run reveals only a *subset* of the errors —
+Debug and Release runs surface disjoint batches, so several rounds were
+needed to drain the queue. `quick-check`, `swiftlint --fix`, `syntax ·
+duplicates · resources`, `cloud` and `ecosystem` were green throughout and
+are omitted below.
 
-* `quick-check` (push to branch): _result pending — filled in by the agent
-  after the first push._
-* `build-check` (PR to main): _result pending._
-* `platform-check` / `ecosystem` / `server-tests` (path-filtered): _only run
-  when the PR touches their paths; not expected to run on a docs-only PR._
+| Round | Commit (head) | build-check Debug | Release | Errors surfaced (file:line) |
+|-------|---------------|-------------------|---------|------------------------------|
+| 1 | pristine `cf6b4bb` tree | **fail** (check 106170079789) | **fail** (check 106170080081) | OnboardingView missing `_importFirstApp`/`_stagePackage` + 3× `Label(verbatim:)` type; InstallQueue `.count`; AppUpdateChecker `String?` dictionary key; VexSignIntents+Actions CVarArg `String?` + 3× `@Parameter` inline-default (`extra argument 'wrappedValue'`); VexSignEntities `identifier` optionality |
+| 2 | `45d1b62` | **fail** (check 106172669406) | **fail** (check 106172669501) | VexSignApp:113 unknown `flareAnimations`; UpdatesView:87/137 missing `@State _rulesApp`; PerAppUpdateRulesView:35/54/69/77/89 `NBSection` title + 4× `\$` on computed `Binding`; DiagnosticsCenterView:51/174/223 `'()' is not a View` + `systemImage:` vs `systemName:`; CertificateInspector:115 mutating member on `let` ×2; SourcePreferences:203–226 generic `T` not inferred ×5 |
+| 3 | `150518b` | **fail** (check 106177012441) | **fail** (check 106177012353) | HomeView:51 missing `appearance`, :473 `startArchive` result unused; SourcesViewModel:75 `AltSource.isValid` no member; SourceHealthDashboardView:278 `Label(verbatim:)`; PerAppUpdateRulesView:36 `NBSection` title; AppearanceView:109/122/131 `$_fontFamily`/`$_fontScale`/`$_flareAnimations`; FeatureStatusView:25 `NBSection` title |
+| 4 | `1507917` (+ empty/nudge) | **not triggered** — the `pull_request` event was lost in a GitHub connectivity outage on the sandbox; no check-run was created for the commit | same | — (see §7.1) |
+| 5 | merge `4839eb3` (main `1ca6379`) | **fail** (check 106249665717) | **fail** (check 106249665865) | TaskCenterView:156 unused `stage`; StorageView:135/196 `StorageUsage.isEmpty` no member; SourceHealthDashboardView:287 second `Label(verbatim:)` |
+| 6 | `7a087a4` (round-5 fixes) | _pending — see §7.1_ | _pending_ | — |
+
+**Recurring latent classes** (fixed in bulk rather than one-per-round):
+`Label(verbatim:)` (a `Text`-only label) appeared in 3 separate files across
+3 rounds; `NBSection` was called without its required first title argument;
+`startArchive` returns a `Download` and is not `@discardableResult`, so every
+call site that discards it is a warning→error; ~137 app-target files call
+`String.localized`/`LocalizedStringKey.localized` without importing
+`NimbleExtensions` (added in `150518b`).
+
+### 7.1 Operational notes
+
+* **Round 4 was never built.** The `pull_request` synchronize events for
+  `1507917`/`fed5853` did not reach the workflows (only the push-triggered
+  `quick-check` fired), apparently because the sandbox's GitHub token was
+  expired mid-push. An empty commit and a no-op workflow nudge confirmed
+  the gap before the token recovered.
+* **The owner was fixing `main` in parallel.** While this branch drained
+  rounds 1–3, `main` moved from `cf6b4bb` to `1ca6379` with overlapping
+  fixes (OnboardingView, `@Parameter(default:)`, InstallQueue `.count`,
+  SourcePreferences type annotations). The branch was merged onto that main
+  (`4839eb3`), resolving the PR conflict (`MERGEABLE`) and adopting main's
+  versions where the two sides fixed the same error; this branch keeps the
+  fixes main does not yet have (Core Data schema, the import sweep, and the
+  round-3/4/5 view errors).
+* **`main` is itself red.** The latest `main` build check (`1ca6379`) also
+  fails, so a green `main` is *not* the target — a green *PR* is.
 
 <!-- CI_RESULTS_PLACEHOLDER -->
 
