@@ -319,8 +319,9 @@ struct TweakExtractionView: View {
 			_finish()
 			return
 		}
+		let combinedTweakName = addedIds.first.flatMap { manager.tweak($0)?.name } ?? ""
 		let message = combine
-			? String.localized("Imported %@", arguments: manager.tweak(addedIds.first!)?.name ?? "")
+			? String.localized("Imported %@", arguments: combinedTweakName)
 			: (addedIds.count == 1
 				? String.localized("Imported %@", arguments: chosen.first?.name ?? "")
 				: String.localized("Imported %lld tweaks", arguments: addedIds.count))

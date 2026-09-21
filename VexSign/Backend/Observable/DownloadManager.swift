@@ -660,10 +660,10 @@ class DownloadManager: NSObject, ObservableObject {
 			download.resumeData = loadResumeData(for: download)
 		}
 		
-		let session = isAppInBackground ? _backgroundSession : _foregroundSession
+		let session = (isAppInBackground ? _backgroundSession : _foregroundSession) ?? URLSession.shared
 		
 		if let resumeData = download.resumeData {
-			let task = session!.downloadTask(withResumeData: resumeData)
+			let task = session.downloadTask(withResumeData: resumeData)
 			download.task = task
 			task.resume()
 			download.isActive = true
@@ -672,7 +672,7 @@ class DownloadManager: NSObject, ObservableObject {
 			let url = download.task?.originalRequest?.url ?? download.url
 			var request = URLRequest(url: url)
 			VexSignAPI.applyAuthHeaders(to: &request)
-			let task = session!.downloadTask(with: request)
+			let task = session.downloadTask(with: request)
 			download.task = task
 			task.resume()
 			download.isActive = true
