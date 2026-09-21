@@ -8,6 +8,7 @@ import NimbleViews
 import AltSourceKit
 import OSLog
 import UIKit.UIImpactFeedbackGenerator
+import NimbleExtensions
 
 extension SourcesAddView {
 	// MARK: - Fetch Vex Repos List

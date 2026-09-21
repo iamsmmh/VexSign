@@ -8,6 +8,7 @@
 
 import Foundation
 import UIKit
+import NimbleExtensions
 
 @MainActor
 final class AppCloner {

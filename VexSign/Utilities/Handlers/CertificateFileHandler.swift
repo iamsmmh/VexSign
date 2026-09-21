@@ -7,6 +7,7 @@
 
 import Foundation
 import OSLog
+import NimbleExtensions
 
 final class CertificateFileHandler: NSObject {
 	private let _fileManager = FileManager.default

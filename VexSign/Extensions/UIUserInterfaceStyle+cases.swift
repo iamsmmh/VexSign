@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import NimbleExtensions
 
 extension UIUserInterfaceStyle: @retroactive CaseIterable {
 	public static var allCases: [UIUserInterfaceStyle] {

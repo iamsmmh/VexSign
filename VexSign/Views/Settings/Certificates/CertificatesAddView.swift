@@ -8,6 +8,7 @@
 import SwiftUI
 import NimbleViews
 import UniformTypeIdentifiers
+import NimbleExtensions
 
 // MARK: - View
 struct CertificatesAddView: View {

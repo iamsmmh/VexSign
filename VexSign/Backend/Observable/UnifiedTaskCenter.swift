@@ -22,6 +22,7 @@
 import Foundation
 import Combine
 import OSLog
+import NimbleExtensions
 
 // MARK: - Model
 

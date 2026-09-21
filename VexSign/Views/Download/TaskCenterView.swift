@@ -11,6 +11,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct TaskCenterView: View {
 	@ObservedObject private var center = UnifiedTaskCenter.shared

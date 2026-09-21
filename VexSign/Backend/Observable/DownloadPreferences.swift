@@ -9,6 +9,7 @@
 import Foundation
 import Network
 import UIKit
+import NimbleExtensions
 
 enum DownloadPreferences {
 	static let wifiOnlyKey = "VexSign.downloads.wifiOnly"

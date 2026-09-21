@@ -8,6 +8,7 @@
 import SwiftUI
 import NimbleViews
 import ZsignSwift
+import NimbleExtensions
 
 // MARK: - View
 struct CertificatesInfoView: View {

@@ -10,6 +10,7 @@
 import SwiftUI
 import NimbleViews
 import CoreData
+import NimbleExtensions
 
 struct SourceHealthDashboardView: View {
 	@ObservedObject private var viewModel = SourcesViewModel.shared

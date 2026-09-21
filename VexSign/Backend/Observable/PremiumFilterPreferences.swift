@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import NimbleExtensions
 
 enum PremiumCatalogFilter: String, CaseIterable, Identifiable {
 	case all

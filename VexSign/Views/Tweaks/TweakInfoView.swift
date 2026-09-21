@@ -9,6 +9,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - Loader
 

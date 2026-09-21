@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import NimbleExtensions
 
 struct InfoPlistCommonKey: Identifiable {
 	let key: String

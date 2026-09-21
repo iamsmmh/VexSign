@@ -9,6 +9,7 @@ import Foundation
 import Zsign
 import UIKit
 import OSLog
+import NimbleExtensions
 
 final class SigningHandler: NSObject {
 	private let _fileManager = FileManager.default

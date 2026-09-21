@@ -5,6 +5,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct AppearanceTintColorView: View {
     @AppStorage("VexSign.userTintColor") private var _selectedColorHex: String = "#848ef9"

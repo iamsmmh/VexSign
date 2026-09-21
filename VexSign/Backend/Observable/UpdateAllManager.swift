@@ -13,6 +13,7 @@ import Foundation
 import SwiftUI
 import AltSourceKit
 import CoreData
+import NimbleExtensions
 
 // MARK: - Item
 struct UpdateTask: Identifiable, Equatable {

@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import NimbleExtensions
 
 enum FeatureStatus: String, CaseIterable {
 	case implemented

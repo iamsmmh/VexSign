@@ -10,6 +10,7 @@ import AltSourceKit
 import SwiftUI
 import NimbleJSON
 import OSLog
+import NimbleExtensions
 
 // MARK: - Class
 final class SourcesViewModel: ObservableObject {

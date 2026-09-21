@@ -8,6 +8,7 @@
 import SwiftUI
 import AltSourceKit
 import CoreData
+import NimbleExtensions
 
 extension SourceAppsTableRepresentableView.Coordinator {
         // MARK: - TableView DataSource

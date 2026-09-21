@@ -5,6 +5,7 @@
 
 import SwiftUI
 import Combine
+import NimbleExtensions
 
 enum NameMatchingMode: String, CaseIterable, Identifiable {
     case off = "Off"

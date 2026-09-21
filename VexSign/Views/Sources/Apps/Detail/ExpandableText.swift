@@ -7,6 +7,7 @@
 
 
 import SwiftUI
+import NimbleExtensions
 
 struct ExpandableText: View {
 	let text: String

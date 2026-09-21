@@ -8,6 +8,7 @@
 import SwiftUI
 import NimbleViews
 import UIKit
+import NimbleExtensions
 
 struct UpdatesSettingsView: View {
 	@ObservedObject private var _manager = SelfUpdateManager.shared

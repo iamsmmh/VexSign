@@ -9,6 +9,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct GuidesView: View {
 	private let topics = GuideTopic.all

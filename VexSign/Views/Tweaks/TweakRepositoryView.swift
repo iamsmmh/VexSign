@@ -10,6 +10,7 @@
 import SwiftUI
 import UIKit
 import NimbleViews
+import NimbleExtensions
 
 struct TweakRepositoryView: View {
 	@Environment(\.dismiss) private var dismiss

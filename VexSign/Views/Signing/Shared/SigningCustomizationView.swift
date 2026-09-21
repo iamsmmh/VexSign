@@ -8,6 +8,7 @@
 import SwiftUI
 import PhotosUI
 import NimbleViews
+import NimbleExtensions
 
 struct SigningCustomizationView: View {
 	@State private var _isAltPickerPresenting = false

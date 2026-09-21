@@ -9,6 +9,7 @@ import SwiftUI
 import NimbleViews
 import Zsign
 import UIKit
+import NimbleExtensions
 
 // MARK: - View
 struct LibraryInfoView: View {

@@ -9,6 +9,7 @@
 import SwiftUI
 import AltSourceKit
 import NimbleViews
+import NimbleExtensions
 
 struct SourcePriorityView: View {
 	private let sourcesByID: [String: AltSource]

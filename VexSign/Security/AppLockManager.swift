@@ -11,6 +11,7 @@
 import Foundation
 import LocalAuthentication
 import SwiftUI
+import NimbleExtensions
 
 @MainActor
 final class AppLockManager: ObservableObject {

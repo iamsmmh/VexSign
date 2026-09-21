@@ -8,6 +8,7 @@
 import SwiftUI
 import Foundation
 import Combine
+import NimbleExtensions
 
 // MARK: - Sheet Content View
 struct DownloadOverlaySheetContent: View {

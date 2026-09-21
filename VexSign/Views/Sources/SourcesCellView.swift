@@ -8,6 +8,7 @@
 import SwiftUI
 import NimbleViews
 import NukeUI
+import NimbleExtensions
 
 // MARK: - View
 struct SourcesCellView: View {

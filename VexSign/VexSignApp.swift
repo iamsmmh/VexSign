@@ -10,6 +10,7 @@ import Nuke
 import IDeviceSwift
 import BackgroundTasks
 import OSLog
+import NimbleExtensions
 
 @main
 struct VexSignApp: App {
@@ -110,7 +111,7 @@ struct VexSignApp: App {
                             .zIndex(0)
                     }
                     .animation(
-                        flareAnimations ? .spring(response: 0.4, dampingFraction: 0.8) : nil,
+                        appearance.animationsEnabled ? .spring(response: 0.4, dampingFraction: 0.8) : nil,
                         value: hasActiveDownloads
                     )
                 } else {

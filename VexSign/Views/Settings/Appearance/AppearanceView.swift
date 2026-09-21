@@ -5,6 +5,7 @@
 import SwiftUI
 import NimbleViews
 import UIKit
+import NimbleExtensions
 
 struct AppearanceView: View {
     @AppStorage("VexSign.userInterfaceStyle") private var _userIntefacerStyle: Int = UIUserInterfaceStyle.unspecified.rawValue

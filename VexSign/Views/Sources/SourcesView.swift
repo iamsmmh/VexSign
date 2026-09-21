@@ -8,6 +8,7 @@ import CoreData
 import AltSourceKit
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct SourcesView: View {

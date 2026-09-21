@@ -9,6 +9,7 @@
 import Foundation
 import ZsignSwift
 import OSLog
+import NimbleExtensions
 
 class TweakHandler {
 	private let _fileManager = FileManager.default

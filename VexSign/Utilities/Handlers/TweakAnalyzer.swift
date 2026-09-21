@@ -10,6 +10,7 @@
 
 import Foundation
 import OSLog
+import NimbleExtensions
 
 // MARK: - Model
 

@@ -9,6 +9,7 @@ import AltSourceKit
 import NimbleViews
 import Combine
 import NukeUI
+import NimbleExtensions
 
 struct SourceAppsCellView: View {
 	@AppStorage("VexSign.storeCellAppearance") private var _storeCellAppearance: Int = 0

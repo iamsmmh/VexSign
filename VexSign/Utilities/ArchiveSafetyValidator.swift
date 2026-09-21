@@ -10,6 +10,7 @@
 
 import Foundation
 import ZIPFoundation
+import NimbleExtensions
 
 struct ArchiveSafetyValidator {
     enum ValidationError: LocalizedError {

@@ -11,6 +11,7 @@
 import Foundation
 import AppIntents
 import SwiftUI
+import NimbleExtensions
 
 // MARK: - Library app
 

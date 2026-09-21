@@ -8,6 +8,7 @@
 import SwiftUI
 import CoreData
 import NimbleViews
+import NimbleExtensions
 
 // Shared single-select picker over the app library (signed + imported).
 struct AppLibraryPicker: View {

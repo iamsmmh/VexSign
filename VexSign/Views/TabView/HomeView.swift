@@ -11,6 +11,7 @@ import SwiftUI
 import NimbleViews
 import CoreData
 import UniformTypeIdentifiers
+import NimbleExtensions
 
 struct HomeView: View {
     @ObservedObject private var updateChecker = AppUpdateChecker.shared

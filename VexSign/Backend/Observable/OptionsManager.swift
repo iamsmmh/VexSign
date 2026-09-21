@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import NimbleExtensions
 
 // MARK: - OptionsManager
 class OptionsManager: ObservableObject {

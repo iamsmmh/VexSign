@@ -10,6 +10,7 @@
 import SwiftUI
 import NimbleViews
 import LocalAuthentication
+import NimbleExtensions
 
 struct AppLockSettingsView: View {
 	@AppStorage(AppLockManager.enabledKey)

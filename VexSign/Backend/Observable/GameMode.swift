@@ -13,6 +13,7 @@
 
 import Foundation
 import UIKit
+import NimbleExtensions
 
 // MARK: - Preferences
 /// Deliberately not actor isolated: the guards live inside network entry points, some of which

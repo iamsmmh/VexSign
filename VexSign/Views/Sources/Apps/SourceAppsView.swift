@@ -12,6 +12,7 @@ import NimbleViews
 import UIKit
 import CoreData
 import OSLog
+import NimbleExtensions
 
 // MARK: - Extension: View (Enum)
 extension SourceAppsView {

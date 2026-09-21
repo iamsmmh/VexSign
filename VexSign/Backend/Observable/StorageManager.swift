@@ -7,6 +7,7 @@
 
 import Foundation
 import Nuke
+import NimbleExtensions
 
 // MARK: - Category
 enum StorageCategory: String, CaseIterable, Identifiable {

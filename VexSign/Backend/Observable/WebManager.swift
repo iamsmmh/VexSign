@@ -6,6 +6,7 @@
 import Foundation
 import UIKit
 import OSLog
+import NimbleExtensions
 
 final class WebManager: ObservableObject {
 	static let shared = WebManager()

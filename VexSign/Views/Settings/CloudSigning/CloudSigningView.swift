@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct CloudSigningView: View {
 	@StateObject private var _client = CloudSigningClient.shared

@@ -10,6 +10,7 @@ import Combine
 import AltSourceKit
 import NimbleViews
 import NukeUI
+import NimbleExtensions
 
 // MARK: - SourceAppsDetailView
 struct SourceAppsDetailView: View {

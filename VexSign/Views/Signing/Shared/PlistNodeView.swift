@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 /// Edits one nested plist container, drilling as deep as the value goes. Changes bubble up through `onChange`.
 struct PlistNodeView: View {

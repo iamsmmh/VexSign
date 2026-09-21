@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import NimbleExtensions
 
 // MARK: - Model
 struct BatchItem: Identifiable {

@@ -9,6 +9,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct FeatureStatusView: View {
 	@State private var _showingOnlyNeedsDevice = false

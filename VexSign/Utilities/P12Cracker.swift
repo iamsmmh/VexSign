@@ -8,6 +8,7 @@
 
 import Foundation
 import Security
+import NimbleExtensions
 
 @MainActor
 final class P12Cracker: ObservableObject {

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import NimbleExtensions
 
 struct TunnelHeaderView: View {
 	@State var lastHeartbeatTime = Date()

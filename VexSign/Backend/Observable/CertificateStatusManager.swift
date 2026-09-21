@@ -10,6 +10,7 @@
 
 import Foundation
 import SwiftUI
+import NimbleExtensions
 
 enum CertificateStatusValue: String, Codable {
 	case signed

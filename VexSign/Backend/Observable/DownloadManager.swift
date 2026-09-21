@@ -11,6 +11,7 @@ import UIKit
 import UserNotifications
 import BackgroundTasks
 import ActivityKit
+import NimbleExtensions
 
 class DownloadManager: NSObject, ObservableObject {
 	static let shared = DownloadManager()

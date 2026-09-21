@@ -8,6 +8,7 @@
 import Foundation
 import AltSourceKit
 import OSLog
+import NimbleExtensions
 
 @MainActor
 final class PremiumManager: ObservableObject {

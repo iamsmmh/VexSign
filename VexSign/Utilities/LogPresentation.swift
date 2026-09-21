@@ -6,6 +6,7 @@
 //
 
 import UIKit
+import NimbleExtensions
 
 enum LogKind {
 	case info, success, warn, error, detail

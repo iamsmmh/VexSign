@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NukeUI
+import NimbleExtensions
 
 struct ScreenshotPreviewView: View {
     @Environment(\.dismiss) var dismiss

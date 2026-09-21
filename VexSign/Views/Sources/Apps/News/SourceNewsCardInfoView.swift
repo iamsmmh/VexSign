@@ -9,6 +9,7 @@ import SwiftUI
 import AltSourceKit
 import NukeUI
 import NimbleViews
+import NimbleExtensions
 
 // MARK: - View
 struct SourceNewsCardInfoView: View {

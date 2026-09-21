@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AltSourceKit
+import NimbleExtensions
 
 // MARK: - VersionHistoryView
 struct VersionHistoryView: View {

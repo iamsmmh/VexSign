@@ -12,6 +12,7 @@
 import Foundation
 import AppIntents
 import SwiftUI
+import NimbleExtensions
 
 // MARK: - Sign an app
 

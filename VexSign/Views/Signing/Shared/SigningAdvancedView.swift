@@ -7,6 +7,7 @@
 
 import SwiftUI
 import NimbleViews
+import NimbleExtensions
 
 struct SigningAdvancedView: View {
 	let app: AppInfoPresentable

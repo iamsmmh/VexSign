@@ -8,6 +8,7 @@
 
 import SwiftUI
 import UIKit
+import NimbleExtensions
 
 struct SigningToggleCellView<T>: View {
 	let title: String
