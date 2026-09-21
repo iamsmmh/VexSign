@@ -17,9 +17,15 @@ import SystemConfiguration.CaptiveNetwork
 extension ServerInstaller {
 	// MARK: Setup
 	static let env: Environment = {
-		var env = try! Environment.detect()
-		try! LoggingSystem.bootstrap(from: &env)
-		return env
+		do {
+			var env = try Environment.detect()
+			try LoggingSystem.bootstrap(from: &env)
+			return env
+		} catch {
+			FileLogger.error("Failed to detect Environment or bootstrap LoggingSystem: \(error)", category: "install")
+			var env = Environment.development
+			return env
+		}
 	}()
 	
 	func setupApp(port: Int) throws -> Application {
