@@ -181,7 +181,6 @@ extension ServerInstaller {
 									   nil, socklen_t(0), NI_NUMERICHOST) == 0 {
 							address = String(cString: hostname)
 						}
-						
 					}
 				}
 				ptr = ptr!.pointee.ifa_next
