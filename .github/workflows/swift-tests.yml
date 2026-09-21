@@ -1,0 +1,212 @@
+name: Swift tests
+
+# Executes the VexSignTests XCTest bundle on an iOS Simulator. This is the
+# missing gate from the Phase 0 baseline: the suite was written but no job
+# ever ran it. The job
+#
+#   * initializes the Zsign / IDeviceKitten submodules (the tests exercise
+#     the real signing/import paths that link against them),
+#   * resolves the committed SwiftPM graph (Package.resolved),
+#   * selects the repository's supported Xcode via select_xcode.sh,
+#   * runs `xcodebuild test` against the VexSignTests scheme on a concrete
+#     iOS Simulator destination,
+#   * uploads the .xcresult and raw log so failures are inspectable,
+#   * fails when any test fails.
+#
+# Network-dependent tests are classified as integration tests and skipped
+# unless VEXSIGN_INTEGRATION_TESTS=1 (see docs/engineering/VEXSIGN_TESTING.md),
+# so the normal suite is deterministic.
+#
+# Knobs:
+#   BUILD_XCODE repository variable — pin an Xcode version prefix.
+#   workflow_dispatch inputs — one-off Xcode pin / integration toggle.
+
+on:
+  push:
+    branches: ['**']
+    paths:
+      - '**.swift'
+      - '**.pbxproj'
+      - '**.xcscheme'
+      - 'VexSign.xcworkspace/**'
+      - 'Zsign/**'
+      - 'IDeviceKitten/**'
+      - '.github/workflows/swift-tests.yml'
+      - '.github/scripts/select_xcode.sh'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      xcode:
+        description: 'Xcode version prefix (e.g. "26.3"). Empty = BUILD_XCODE variable or newest installed.'
+        required: false
+        default: ''
+      integration:
+        description: 'Run network-dependent integration tests too?'
+        type: choice
+        options: ['off', 'on']
+        required: false
+        default: 'off'
+
+permissions:
+  contents: read
+
+# A newer push to the same branch/PR cancels the stale run.
+concurrency:
+  group: swift-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: xcodebuild test · VexSignTests · iOS Simulator
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          submodules: recursive
+
+      - name: Paths
+        run: |
+          {
+            echo "DERIVED_DATA=${RUNNER_TEMP}/DerivedData"
+            echo "RESULT_BUNDLE=${RUNNER_TEMP}/VexSignTests.xcresult"
+            echo "TEST_LOG=${RUNNER_TEMP}/xcodebuild-test.log"
+          } >> "$GITHUB_ENV"
+
+      - name: Select Xcode
+        id: xcode
+        env:
+          REQUESTED_XCODE: ${{ inputs.xcode || vars.BUILD_XCODE || '' }}
+        run: bash .github/scripts/select_xcode.sh
+
+      # Same cache namespace as build-check so the SPM checkout is shared.
+      - name: Cache Swift packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/DerivedData/SourcePackages
+          key: spm-${{ runner.os }}-${{ steps.xcode.outputs.xcode_version }}-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            spm-${{ runner.os }}-${{ steps.xcode.outputs.xcode_version }}-
+            spm-${{ runner.os }}-
+
+      - name: Resolve Swift packages
+        run: |
+          set -euo pipefail
+          xcodebuild -resolvePackageDependencies \
+            -workspace VexSign.xcworkspace \
+            -scheme VexSignTests \
+            -derivedDataPath "$DERIVED_DATA" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            | tail -n 20
+
+      # The runner image's simulator lineup changes with the Xcode version,
+      # so pick the first available iPhone instead of hard-coding a name.
+      - name: Select iOS Simulator
+        id: simulator
+        run: |
+          set -euo pipefail
+          json="$(xcrun simctl list devices available -j)"
+          selection="$(python3 - "$json" <<'PY'
+          import json, sys
+          devices = json.load(sys.stdin).get("devices", {})
+          for runtime in sorted(devices, reverse=True):
+              if "iOS" not in runtime:
+                  continue
+              for device in devices[runtime]:
+                  if device.get("isAvailable") and device.get("name", "").startswith("iPhone"):
+                      print(device["udid"])
+                      print(device["name"])
+                      print(runtime.rsplit(".", 1)[-1])
+                      sys.exit(0)
+          sys.exit("No available iPhone simulator found")
+          PY
+          )"
+          udid="$(echo "$selection" | sed -n 1p)"
+          name="$(echo "$selection" | sed -n 2p)"
+          os="$(echo "$selection" | sed -n 3p)"
+          {
+            echo "udid=${udid}"
+            echo "name=${name}"
+            echo "os=${os}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Simulator: ${name} (iOS ${os}, ${udid})"
+
+      - name: Run tests
+        id: test
+        env:
+          # Integration (network-dependent) tests stay off for deterministic
+          # PR runs; enable them from workflow_dispatch when needed.
+          VEXSIGN_INTEGRATION_TESTS: ${{ inputs.integration == 'on' && '1' || '' }}
+        run: |
+          set -uo pipefail
+          xcodebuild test \
+            -workspace VexSign.xcworkspace \
+            -scheme VexSignTests \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
+            -derivedDataPath "$DERIVED_DATA" \
+            -resultBundlePath "$RESULT_BUNDLE" \
+            -skipPackagePluginValidation \
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            2>&1 | tee "$TEST_LOG" | tail -n 200
+          status=${PIPESTATUS[0]}
+          echo "exit_code=${status}" >> "$GITHUB_OUTPUT"
+          if [ "${status}" -ne 0 ]; then
+            echo "::error::xcodebuild test exited with status ${status} - see the xcresult artifact and the summary."
+          fi
+          exit "${status}"
+
+      # Always publish a test summary (counts per suite), from the xcresult
+      # when the tooling supports it, otherwise from the raw log.
+      - name: Summarize results
+        if: always() && steps.test.outcome != 'skipped'
+        run: |
+          set -uo pipefail
+          {
+            echo "## VexSignTests — run summary"
+            echo
+            echo "- Xcode: ${{ steps.xcode.outputs.xcode_version }}"
+            echo "- Simulator: ${{ steps.simulator.outputs.name }} (iOS ${{ steps.simulator.outputs.os }})"
+            echo "- xcodebuild exit: ${{ steps.test.outputs.exit_code }}"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+          if xcrun xcresulttool get test-run summary --path "$RESULT_BUNDLE" --format json > "$RUNNER_TEMP/test-summary.json" 2>/dev/null; then
+            python3 - "$RUNNER_TEMP/test-summary.json" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import json, sys
+          data = json.load(open(sys.argv[1]))
+          metrics = data.get("metrics", {})
+          print("| Metric | Value |")
+          print("|---|---|")
+          for label, key in [
+              ("Tests total", "testsCount"),
+              ("Passed", "testsPassedCount"),
+              ("Failed", "testsFailedCount"),
+              ("Skipped", "testsSkippedCount"),
+              ("Duration (s)", "testsDurationTotal"),
+          ]:
+              if key in metrics:
+                  print(f"| {label} | {metrics[key]} |")
+          PY
+          else
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            grep -E "Test Suite '(All tests|Selected tests)'|Executed .* tests" "$TEST_LOG" | tail -n 6 >> "$GITHUB_STEP_SUMMARY" || true
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload xcresult and log
+        if: always() && steps.test.outcome != 'skipped'
+        uses: actions/upload-artifact@v6
+        with:
+          name: swift-tests-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.RESULT_BUNDLE }}
+            ${{ env.TEST_LOG }}
+          if-no-files-found: warn
+          retention-days: 14
